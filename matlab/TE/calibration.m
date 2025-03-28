@@ -1,4 +1,4 @@
-clear all
+ubclear all
 close all
 addpath '/Users/rsomeya/Documents/lab/matlab/common';
 run define_path.m

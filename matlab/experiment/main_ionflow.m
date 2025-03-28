@@ -7,16 +7,22 @@ addpath '/Users/rsomeya/Documents/lab/matlab/common';
 run define_path.m
 
 %------【input】-------
-% FC合体、X点R=0.2m、ExBアウトフロー小。IDSP->230828,230829(delay=480,484,488us)
-IDSP.date = 230828;%【input】IDSP実験日
-IDSPshotlist = [5 6 8:12 15:17 19:23 25:27 31:61 63];
-cal_time = 482;%【input】プロット時間[us]482,486
+% % FC合体、X点R=0.2m、ExBアウトフロー小。IDSP->230828,230829(delay=480,484,488us)
+% IDSP.date = 230828;%【input】IDSP実験日
+% IDSPshotlist = [5 6 8:12 15:17 19:23 25:27 31:61 63];
+% cal_time = 482;%【input】プロット時間[us]482,486
 
-% % SEP合体、X点R=0.26m、ExBアウトフロー大。IDSP->230830,230831(delay=468, 472, 476us)
+% SEP合体、X点R=0.26m、ExBアウトフロー大。IDSP->230830,230831(delay=468, 472, 476us)
 % IDSP.date = 230830;%【input】IDSP実験日
-% IDSPshotlist = [11 13 14 16 17 20 22:26 28 29 32 34 37 41:45 47 49 51 54 55 57 59 60];%[13 14 16 17 20 22 23 25 26 32 37 41:45 47 49 51 54 55 57];%【input】IDSPshot番号リスト
-% cal_time = 470;%【input】プロット時間[us]470,474
+% IDSPshotlist = [13:60];%[13 14 16 17 20 22 23 25 26 32 37 41:45 47 49 51 54 55 57];%【input】IDSPshot番号リスト
+IDSP.date = 230830;%【input】IDSP実験日
+IDSPshotlist = [9 12];%[13 14 16 17 20 22 23 25 26 32 37 41:45 47 49 51 54 55 57];%【input】IDSPshot番号リスト
+cal_time = 'all';%【input】プロット時間[us]470,474
 
+% % 同極性スフェロマック合体 + 外部TF4kV
+% IDSP.date = 240828;%【input】静電プローブ計測日
+% IDSPshotlist = [49];%[11:20 22:45 47:51]【input】IDSPshot番号リスト
+% cal_time = 'all';%【input】プロット時間[us]470,474,'all'
 
 IDSP.n_CH = 28;%【input】ドップラープローブファイバーCH数(28)
 IDSP.n_r = 7;%【input】ドップラープローブr方向データ数(数値)(7)
@@ -63,11 +69,19 @@ for i=1:n_data
     EXP.EF=EFlist(i);
     FIG.start = IDSP.time;%プロット開始時刻[us]
     if not(isnan(IDSP.delay))
-        if IDSP.time == cal_time
-            %IDSP計算
-            IDSPdata = cal_ionflow(IDSP,pathname,show_offset,plot_fit,save_fit);
-            %イオン流速プロット
-            plot_ionflow(IDSPdata,EXP,IDSP,pathname,factor,false,save_fig,'ionflow')
+        switch cal_time
+            case 'all'
+                %IDSP計算
+                IDSPdata = cal_ionflow(IDSP,pathname,show_offset,plot_fit,save_fit);
+                %イオン流速プロット
+                plot_ionflow(IDSPdata,EXP,IDSP,pathname,factor,false,save_fig,'ionflow')
+            otherwise
+                if IDSP.time == cal_time
+                    %IDSP計算
+                    IDSPdata = cal_ionflow(IDSP,pathname,show_offset,plot_fit,save_fit);
+                    %イオン流速プロット
+                    plot_ionflow(IDSPdata,EXP,IDSP,pathname,factor,false,save_fig,'ionflow')
+                end
         end
     end
 end

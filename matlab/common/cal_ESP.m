@@ -28,8 +28,14 @@ if exist(savename,"file")
 else
     z = linspace(-0.15,0.15,ESP.mesh);%プロットメッシュZ座標[m]
     z_probe = linspace(0.15,-0.15,21);%静電プローブ計測点Z座標[m](CH1がZ=0.15m、CH21が-0.15mであることに注意!)
-    ESPdata2D.ng_ch = [4 6 16 21];%死んだCH
+    ESPdata2D.ng_ch = ESP.ng_ch;%死んだCH
     z_probe(ESPdata2D.ng_ch) = [];%z_probeから死んだCHを除く
+    while z(1) < min(z_probe)%zの範囲から死んだCHの範囲を除く
+        z(1) = [];
+    end
+    while z(end) > max(z_probe)%zの範囲から死んだCHの範囲を除く
+        z(end) = [];
+    end
     ESPdata2D.zprobe = z_probe;
     r = linspace(min(ESP.rlist),max(ESP.rlist),ESP.mesh)*1E-3;%プロットメッシュR座標[m]
     r_probe = unique(ESP.rlist)*1E-3;%静電プローブ計測点R座標[m]
@@ -42,7 +48,10 @@ else
         idx_r = find(r_probe==ESP.rlist(i)*1E-3);
         cnt_r(idx_r) = cnt_r(idx_r) + 1;
         filename = sprintf("%s%03d%s",[pathname.ESP '/' num2str(ESP.date) '/ES_' num2str(ESP.date)], ESP.shotlist(i), '.csv');
-        ESPdata = readmatrix(filename,'Range',sprintf('B%d:V%d',ESP.trange(1)*10+2,ESP.trange(end)*10+2));
+        t_ref = readmatrix(filename,'Range','A2:A6000');
+        idx_start = knnsearch(t_ref,ESP.trange(1));
+        idx_end = knnsearch(t_ref,ESP.trange(end));
+        ESPdata = readmatrix(filename,'Range',sprintf('B%d:V%d',idx_start+1,idx_end+1));
         phi(:,:,idx_r) = (phi(:,:,idx_r)*(cnt_r(idx_r)-1) + ESPdata)/cnt_r(idx_r);
     end
     phi(:,ESPdata2D.ng_ch,:) = [];%死んだCHを除去
@@ -50,15 +59,24 @@ else
 
     [ESPdata2D.zq,ESPdata2D.rq] = meshgrid(z,r);
     ESPdata2D.trange = ESP.trange;
-    ESPdata2D.phi = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
-    ESPdata2D.Ez = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
-    ESPdata2D.Er = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
+    ESPdata2D.phi = zeros(numel(ESP.trange),numel(r),numel(z));
+    ESPdata2D.Ez = zeros(numel(ESP.trange),numel(r),numel(z));
+    ESPdata2D.Er = zeros(numel(ESP.trange),numel(r),numel(z));
     for i = 1:numel(ESP.trange)
         ESPdata2D.phi(i,:,:) = griddata(z_probe,r_probe,squeeze(phi(i,:,:))',ESPdata2D.zq,ESPdata2D.rq);
         ESPdata2D.phi(i,:,:) = movmean(ESPdata2D.phi(i,:,:),round(ESP.mesh/7),1);%移動平均
         ESPdata2D.phi(i,:,:) = movmean(ESPdata2D.phi(i,:,:),round(ESP.mesh/7),2);%移動平均
         ESPdata2D.Ez(i,:,2:end) = -diff(squeeze(ESPdata2D.phi(i,:,:)),1,2)/(z(2)-z(1));
         ESPdata2D.Er(i,2:end,:) = -diff(squeeze(ESPdata2D.phi(i,:,:)),1,1)/(r(2)-r(1));
+        E_z = squeeze(ESPdata2D.Ez(i,:,:));
+        E_z = movmean(E_z,3,1);
+        E_z = movmean(E_z,3,2);
+        ESPdata2D.Ez(i,:,:) = E_z;
+        E_r = squeeze(ESPdata2D.Er(i,:,:));
+        E_r = movmean(E_r,3,1);
+        E_r = movmean(E_r,3,2);
+        ESPdata2D.Er(i,:,:) = E_r;
     end
+    
     save(savename,'ESPdata2D')
 end

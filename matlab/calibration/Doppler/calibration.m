@@ -1,33 +1,45 @@
 %ドップラープローブ分光器校正用
 
 close all
+addpath '/Users/rsomeya/Documents/lab/matlab/common';
+run define_path.m
 
 %--【Input】----
-date = 230807;%校正実験日
-calib_CHlist = [50:53];%校正CH番号リスト
+date = 240607;%校正実験日
+calib_CHlist = [19];%校正CH番号リスト
 plot_cont = false;%等高線図を描画
 cal_CH1 = true;%1st用CH位置特定
 cal_1st = true;%1stピーク特定
-save_fit = true;%フィッティングをpngで保存
-save_cal = true;%校正結果をmatで保存
-N_CH = 1;%校正CH総数(基本的には1)
-width = 6;%チャンネル切り取り幅
+save_fit = false;%フィッティングをpngで保存
+save_cal = false;%校正結果をmatで保存
+w_CH = 3;%チャンネル切り取り幅
 th_ratio = 0.8;
 l_mov = 15;
 
+lambda0 = 480.602;%使用スペクトル(nm)
+
 for m = 1:size(calib_CHlist,2)
-    figure('Position',[300 50 1000 1000],'visible','on')
     calib_CH = calib_CHlist(m);%校正CH番号
+    % if calib_CH < 33
+    %     cal_group = 'red';
+    % elseif calib_CH < 65
+    %     cal_group = 'white';
+    % elseif calib_CH < 97
+    %     cal_group = 'orange';
+    % elseif calib_CH < 129
+    %     cal_group = 'green';
+    % end
     if calib_CH < 33
         cal_group = 'red';
     elseif calib_CH < 65
-        cal_group = 'white';
-    elseif calib_CH < 97
         cal_group = 'orange';
-    elseif calib_CH < 129
+    elseif calib_CH < 97
         cal_group = 'green';
+    else
+        warning('calib CH is wrong.')
+        return
     end
-    cal_filename = ['/Volumes/experiment/results/Doppler/Andor/IDSP/230807/Xe_',cal_group,'.asc'];%ICCDファイル名
+    cal_filename = [pathname.IDSP,'/',num2str(date),'/Xe ',cal_group,' dial 482.6nm.asc'];%ICCDファイル名
 
     lambda_1st = 480.7019;%第1ピーク波長
     switch cal_group
@@ -42,30 +54,50 @@ for m = 1:size(calib_CHlist,2)
     end
     % lambda_3rd = 484.3293;
     switch cal_group
+        % case {'red'}
+        %     Min_CH_CH1 = round(855.1-21.45*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+        %     Min_L_CH1 = 800;%第1ピーク用波長軸切り取り最小値(1~1024)
+        %     Min_L_CH2 = 300;%第2ピーク用波長軸切り取り最小値(1~1024)
+        % case {'white'}
+        %     Min_CH_CH1 = round(867-21.92*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+        %     Min_L_CH1 = 580;%第1ピーク用波長軸切り取り最小値(1~1024)
+        %     Min_L_CH2 = 80;%第2ピーク用波長軸切り取り最小値(1~1024)
+        % case {'orange'}
+        %     Min_CH_CH1 = round(875.8-22.24*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+        %     Min_L_CH1 = 330;%第1ピーク用波長軸切り取り最小値(1~1024)
+        %     Min_L_CH2 = 650;%第2ピーク用波長軸切り取り最小値(1~1024)
+        % case {'green'}
+        %     % return
         case {'red'}
-            Min_CH_CH1 = round(855.1-21.45*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
-            Min_L_CH1 = 800;%第1ピーク用波長軸切り取り最小値(1~1024)
-            Min_L_CH2 = 300;%第2ピーク用波長軸切り取り最小値(1~1024)
-        case {'white'}
-            Min_CH_CH1 = round(867-21.92*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
-            Min_L_CH1 = 580;%第1ピーク用波長軸切り取り最小値(1~1024)
-            Min_L_CH2 = 80;%第2ピーク用波長軸切り取り最小値(1~1024)
+            Min_CH_CH1 = round(746-21.64*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_CH_CH2 = Min_CH_CH1+6;%第2ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_L_CH1 = 700;%第1ピーク用波長軸切り取り最小値(1~1024)
+            Min_L_CH2 = 180;%第2ピーク用波長軸切り取り最小値(1~1024)
+            Max_L_CH2 = Min_L_CH2+100;%第2ピーク用波長軸切り取り最大値(1~1024)
+            th_ratio2 = th_ratio;
         case {'orange'}
-            Min_CH_CH1 = round(875.8-22.24*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
-            Min_L_CH1 = 330;%第1ピーク用波長軸切り取り最小値(1~1024)
-            Min_L_CH2 = 650;%第2ピーク用波長軸切り取り最小値(1~1024)
+            Min_CH_CH1 = round(748-20.96*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_CH_CH2 = Min_CH_CH1-6;%第2ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_L_CH1 = 460;%第1ピーク用波長軸切り取り最小値(1~1024)
+            Min_L_CH2 = 820;%第2ピーク用波長軸切り取り最小値(1~1024)
+            Max_L_CH2 = Min_L_CH2+50;%第2ピーク用波長軸切り取り最大値(1~1024)
+            th_ratio2 = 0.5;
         case {'green'}
-            % return
+            Min_CH_CH1 = round(748-21.09*mod(calib_CH-1,32))-12;%第1ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_CH_CH2 = Min_CH_CH1-6;%第2ピーク用チャンネル軸切り取り最小値(1~1024)
+            Min_L_CH1 = 210;%第1ピーク用波長軸切り取り最小値(1~1024)
+            Min_L_CH2 = 550;%第2ピーク用波長軸切り取り最小値(1~1024)
+            Max_L_CH2 = Min_L_CH2+40;%第2ピーク用波長軸切り取り最大値(1~1024)
+            th_ratio2 = 0.5;
     end
     Max_CH_CH1 = Min_CH_CH1+24;%第1ピーク用チャンネル軸切り取り最大値(1~1024)
-    Min_CH_CH2 = Min_CH_CH1+8;%第2ピーク用チャンネル軸切り取り最小値(1~1024)
-    Max_CH_CH2 = Max_CH_CH1+8;%第2ピーク用チャンネル軸切り取り最大値(1~1024)
+    Max_CH_CH2 = Min_CH_CH2+24;%第2ピーク用チャンネル軸切り取り最大値(1~1024)
     Max_L_CH1 = Min_L_CH1+100;%第1ピーク用波長軸切り取り最大値(1~1024)
-    Max_L_CH2 = Min_L_CH2+100;%第2ピーク用波長軸切り取り最大値(1~1024)
     Min_L_L1 = Min_L_CH1;%第1ピーク用波長軸切り取り最小値(1~1024)
     Max_L_L1 = Max_L_CH1;%第1ピーク用波長軸切り取り最大値(1~1024)
     Min_L_L2 = Min_L_CH2;%第2ピーク用波長軸切り取り最小値(1~1024)
     Max_L_L2 = Max_L_CH2;%第2ピーク用波長軸切り取り最大値(1~1024)
+
 
     %-----校正ファイル読み込み----
     cal_data = importdata(cal_filename);
@@ -73,7 +105,6 @@ for m = 1:size(calib_CHlist,2)
 
     %----配列定義----
     ax_pixel = transpose(linspace(1,1024,1024));%1~1024の整数軸
-    cal_result = zeros(1,7);%校正結果
 
     %-----ICCD生データをプロット-----
     if plot_cont
@@ -84,6 +115,7 @@ for m = 1:size(calib_CHlist,2)
         hold off
     end
 
+    figure('Position',[300 50 1000 1000],'visible','on')
     %-------第1ピーク用CH位置特定------
     if cal_CH1
         spectrum_CH1 = ...
@@ -94,15 +126,16 @@ for m = 1:size(calib_CHlist,2)
             [Min_CH_CH1-5:Min_CH_CH1, Max_CH_CH1:Max_CH_CH1+5]),'all') * (Max_L_CH1 - Min_L_CH1 + 1);
         Y_CH1 = spectrum_CH1 - Offset_CH1;
         f_CH1 = fit(ax_pixel(Min_CH_CH1:Max_CH_CH1),Y_CH1,'gauss1');
-        % figure
+        Coef_CH1 = coeffvalues(f_CH1);
         subplot(2,2,1)
         plot(f_CH1,ax_pixel(Min_CH_CH1:Max_CH_CH1),Y_CH1)
+        hold on
+        xline(Coef_CH1(1,2),'m','LineWidth',1);
+        xlim([Min_CH_CH1 Max_CH_CH1])
         title('Detecting CH position for the 1st peak')
         legend('off')
         xlabel('Pixel number in CH direction')
         ylabel('Intensity [cnt]')
-        Coef_CH1 = coeffvalues(f_CH1);
-        cal_result(1,1) = sort(Coef_CH1(1,2),'descend');%縦位置を大きい順で取得
     end
 
     %-------第2ピーク用CH位置特定------
@@ -113,18 +146,21 @@ for m = 1:size(calib_CHlist,2)
         Offset_CH2 = ...
             mean(cal_data([Min_L_CH2-5:Min_L_CH2, Max_L_CH2:Max_L_CH2+5],...
             [Min_CH_CH2-5:Min_CH_CH2, Max_CH_CH2:Max_CH_CH2+5]),'all') * (Max_L_CH2 - Min_L_CH2 + 1);
+        % Offset_CH2 = ...
+        %     mean(cal_data(Min_L_CH2:Max_L_CH2,900:1000),'all') * (Max_L_L2 - Min_L_L2 + 1);
         Y_CH2 = spectrum_CH2 - Offset_CH2;
-        % Y_CH2 = movmean(Y_CH2,15);
+        Y_CH2 = movmean(Y_CH2,15);
         f_CH2 = fit(ax_pixel(Min_CH_CH2:Max_CH_CH2),Y_CH2,'gauss1');
-        % figure
+        Coef_CH2 = coeffvalues(f_CH2);
         subplot(2,2,2)
         plot(f_CH2,ax_pixel(Min_CH_CH2:Max_CH_CH2),Y_CH2)
+        hold on
+        xline(Coef_CH2(1,2),'m','LineWidth',1);
+        xlim([Min_CH_CH2 Max_CH_CH2])
         title('Detecting CH position for the 2nd peak')
         legend('off')
         xlabel('Pixel number in CH direction')
         ylabel('Intensity [cnt]')
-        Coef_CH2 = coeffvalues(f_CH2);
-        cal_result(1,7) = sort(Coef_CH2(1,2),'descend');%縦位置を大きい順で取得
     end
 
     %-------波長位置特定--------
@@ -132,8 +168,8 @@ for m = 1:size(calib_CHlist,2)
     if cal_1st
         % figure
         subplot(2,2,3)
-        Min_CH_L1 = round(cal_result(1,1)-width);%チャンネル軸切り取り最小値
-        Max_CH_L1 = round(cal_result(1,1)+width);%チャンネル軸切り取り最大値
+        Min_CH_L1 = round(Coef_CH1(1,2)-w_CH);%チャンネル軸切り取り最小値
+        Max_CH_L1 = round(Coef_CH1(1,2)+w_CH);%チャンネル軸切り取り最大値
         spectrum_L1 = ...
             sum(cal_data(Min_L_L1:Max_L_L1,Min_CH_L1:Max_CH_L1),2);
         % Offset_L1 = mean(spectrum_L1(1:10,1));
@@ -173,24 +209,23 @@ for m = 1:size(calib_CHlist,2)
         ylabel('Intensity [cnt]')
         xlim([Min_L_L1 Max_L_L1])
         Coef_L1 = coeffvalues(f_L1);
-        cal_result(1,2) = Coef_L1(1,2);%第1ピークを取得
-        cal_result(1,4) = Coef_L1(1,3);%第1ピークσ(装置関数)を取得
-        cal_result(1,5) = Coef_L1(1,1)/1e5;%相対感度を取得
+        instrument = Coef_L1(1,3);%第1ピークσ(装置関数)を取得
+        strength = Coef_L1(1,1)/1e5;%相対感度を取得
     end
 
     %第2Xeピーク検出
     if cal_2nd
         % figure
         subplot(2,2,4)
-        Min_CH_L2 = round(cal_result(1,7)-width);%チャンネル軸切り取り最小値
-        Max_CH_L2 = round(cal_result(1,7)+width);%チャンネル軸切り取り最大値
+        Min_CH_L2 = round(Coef_CH2(1,2)-w_CH);%チャンネル軸切り取り最小値
+        Max_CH_L2 = round(Coef_CH2(1,2)+w_CH);%チャンネル軸切り取り最大値
         spectrum_L2 = ...
             sum(cal_data(Min_L_L2:Max_L_L2,Min_CH_L2:Max_CH_L2),2);
         % Offset_L2 = mean(spectrum_L2(1:10,1));
         Offset_L2 = ...
-            mean(cal_data([Min_L_L2-30:Min_L_L2, Max_L_L2:Max_L_L2+30],...
-            [Min_CH_L2-30:Min_CH_L2, Max_CH_L2:Max_CH_L2+30]),'all') * (Max_CH_L2 - Min_CH_L2 + 1);
+            mean(cal_data(Min_L_L2:Max_L_L2,900:1000),'all') * (Max_CH_L2 - Min_CH_L2 + 1);
         Y_L2 = spectrum_L2 - Offset_L2;
+        % Y_L2 = spectrum_L2;
         Y_L2 = movmean(Y_L2,l_mov);
         MAX2 = max(Y_L2);
         S2 = [ax_pixel(Min_L_L2:Max_L_L2) Y_L2]; %[波長,強度]
@@ -199,7 +234,7 @@ for m = 1:size(calib_CHlist,2)
         ori_S2 = S2;
         j = 1;
         while j < s1(1)+1 %SNの悪いデータを除く
-            if S2(j,2) < MAX2*th_ratio
+            if S2(j,2) < MAX2*th_ratio2
                 deleted_S2 = cat(1,deleted_S2,S2(j,:));
                 S2(j,:) = [];
             else
@@ -207,8 +242,8 @@ for m = 1:size(calib_CHlist,2)
             end
             s1 = size(S2);
         end
-        % f_L2 = fit(ax_pixel(Min_L_L2:Max_L_L2),Y_L2,'gauss1');
-        % plot(f_L2,ax_pixel(Min_L_L2:Max_L_L2),Y_L2)
+        f_L2 = fit(ax_pixel(Min_L_L2:Max_L_L2),Y_L2,'gauss1');
+        plot(f_L2,ax_pixel(Min_L_L2:Max_L_L2),Y_L2)
         f_L2 = fit(S2(:,1),S2(:,2),'gauss1');
         plot(f_L2,'r-',ori_S2(:,1),ori_S2(:,2),'.w');
         hold on
@@ -216,17 +251,18 @@ for m = 1:size(calib_CHlist,2)
         hold on
         plot(deleted_S2(:,1),deleted_S2(:,2),'kx');
         hold on
-        yline(MAX2*th_ratio,'g','LineWidth',3);
+        yline(MAX2*th_ratio2,'g','LineWidth',3);
         title('Detecting Lambda position for the 2nd peak')
         legend('off')
         xlabel('Pixel number in Lambda direction')
         ylabel('Intensity [cnt]')
         xlim([Min_L_L2 Max_L_L2])
+        ylim([0 MAX2])
         Coef_L2 = coeffvalues(f_L2);
-        cal_result(1,6) = Coef_L2(1,2);%第2ピークを取得
-        cal_result(1,3) = -(lambda_1st - lambda_2nd)/(cal_result(1,2) - cal_result(1,6));%px2nmを計算
+        px2nm = -(lambda_1st - lambda_2nd)/(Coef_L1(1,2)-Coef_L2(1,2));%px2nmを計算
     else
-        cal_result(1,3) = 0.0046;
+        % px2nm = 0.0046;
+        px2nm = 0.0042;
     end
     sgtitle(['CH',num2str(calib_CH)])
 
@@ -234,16 +270,18 @@ for m = 1:size(calib_CHlist,2)
         if not(exist(num2str(date),'dir'))
             mkdir(num2str(date));
         end
-        saveas(gcf,[num2str(date),'/fit_CH',num2str(calib_CH),'.png'])
+        saveas(gcf,[num2str(date),'/fit_CH',num2str(calib_CH),'_w_CH=',num2str(w_CH),'.png'])
         hold off
         close
     end
-
-    cal_result = [calib_CH cal_result(1,1:5)]
+    centerY = Coef_CH1(1,2);
+    centerX = -(lambda0-lambda_1st)/px2nm+Coef_L1(1,2);
+    % all_cal_result = cal_result;
+    cal_result = [calib_CH centerY centerX px2nm instrument strength]
     if cal_1st && save_cal
         if not(exist(num2str(date),'dir'))
             mkdir(num2str(date));
         end
-        save([num2str(date),'/calibation',num2str(calib_CH),'.mat'],'cal_result')
+        save([num2str(date),'/calibation',num2str(calib_CH),'_w_CH=',num2str(w_CH),'.mat'],'cal_result')
     end
 end

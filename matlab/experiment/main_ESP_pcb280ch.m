@@ -26,23 +26,53 @@ run define_path.m
 
 % %SEP合体、X点R=0.26m、ExBアウトフロー大。IDSP->230830,230831(delay=468, 472, 476us)
 ESP.date = 230830;%【input】静電プローブ計測日
-ESP.shotlist = [11 13 14 16 17 20 22:26 28 29 32 34 37 41:45 47 49 51 54 55 57 59 60];%32 34【input】静電プローブ解析shotlist(同一オペレーション)
-FIG.start = 474;%【input】プロット開始時刻[us]
-FIG.dt = 1;%【input】プロット時間間隔[us]
+ESP.shotlist = [13 14 16 17 20 22 23 25 26 32 37 41:45 47 49 51 54 55 57];%[11 13 14 16 17 20 22:26 28 29 32 34 37 41:45 47 49 51 54 55 57 59 60]【input】静電プローブ解析shotlist(同一オペレーション)
+ESP.ng_ch = [4 6 16];
+FIG.start = 478;%【input】プロット開始時刻[us]
+FIG.dt = 4;%【input】プロット時間間隔[us]
 PCB.date = 230830;%【input】重ねる磁気面計測日
 PCB.IDX = 22;%【input】重ねる磁気面shot番号
+
+% % 同極性スフェロマック合体 + 外部TF4kV
+% ESP.date = 240827;%【input】静電プローブ計測日
+% ESP.shotlist = [11:20 22:45 47:51];%【input】静電プローブ解析shotlist(同一オペレーション)
+% ESP.ng_ch = [4 11 12 14:21];
+% FIG.start = 470;%【input】プロット開始時刻[us]
+% FIG.dt = 4;%【input】プロット時間間隔[us]
+% PCB.date = 240827;%【input】重ねる磁気面計測日
+% PCB.IDX = 22;%【input】重ねる磁気面shot番号
+
+% % 同極性スフェロマック合体 + 外部TF5kV
+% ESP.date = 240828;%【input】静電プローブ計測日
+% ESP.shotlist = [30:41 43:46 48:54];%【input】静電プローブ解析shotlist(同一オペレーション)
+% ESP.ng_ch = [14:21];
+% FIG.start = 470;%【input】プロット開始時刻[us]
+% FIG.dt = 4;%【input】プロット時間間隔[us]
+% PCB.date = 240828;%【input】重ねる磁気面計測日
+% PCB.IDX = 30;%【input】重ねる磁気面shot番号
+
+% % 同極性スフェロマック合体 + 外部TF6kV
+% ESP.date = 240828;%【input】静電プローブ計測日
+% ESP.shotlist = [3:12 14:22 25:29];%【input】静電プローブ解析shotlist(同一オペレーション)
+% ESP.ng_ch = [14:21];
+% FIG.start = 470;%【input】プロット開始時刻[us]
+% FIG.dt = 4;%【input】プロット時間間隔[us]
+% PCB.date = 240828;%【input】重ねる磁気面計測日
+% PCB.IDX = 12;%【input】重ねる磁気面shot番号
 
 FIG.tate = 1;%【input】プロット枚数(縦)
 FIG.yoko = 1;%【input】プロット枚数(横)
 
 ESP.mesh = 21;%【input】静電プローブ補間メッシュ数(21)
 % ESP.mesh = 40;%【input】静電プローブ補間メッシュ数
-ESP.trange = 460:0.1:500;%【input】計算時間範囲(0.1刻み)
-ESP.vector = true;%【input】電場ベクトルをプロット
+ESP.trange = 450:0.1:500;%【input】静電プローブ計算時間範囲(0.1us刻み)
+ExB.trange = 450:500;%【input】ExB計算時間範囲(1us刻み)
+% ESP.vector = true;%【input】電場ベクトルをプロット
 
-color_type = 'phi';%【input】カラープロット種類('phi','psi','Ez','Er','Et',...
-% 'Bz','Br','Bt_ext','Bt_plasma','absB','absB2','Jt','VExBr','VExBz','|VExB|')
-vector_type = 'Ep';%【input】ベクトルプロット種類('Ep','VExB')
+color_type = 'Jt';%【input】カラープロット種類('phi','psi','Ez','Er','Et',...
+% 'Bz','Br','Bt_plasma','absB','absB2','Jt','VExBr','VExBz','|VExB|',...
+% 'EdotB','absE','absE2','cosEB','angleEB')
+vector_type = '';%【input】ベクトルプロット種類('Ep','VExB')
 
 % profileplot = 'VExBz';%【input】一次元プロット種類('VExBr','VExBz','|VExB|')
 
@@ -71,15 +101,13 @@ IDSP.r = (IDSPminRlist:2.5:IDSPminRlist+6*2.5)*1E-2;
 ESPdata2D = cal_ESP(pathname,ESP);
 %磁気プローブ計算
 [PCBgrid2D,PCBdata2D] = cal_psi(PCB,pathname);
-%ExBドリフト計算
-[ExBdata2D,newPCBdata2D] = cal_ExB(pathname,PCBgrid2D,PCBdata2D,ESPdata2D,ESP,PCB,FIG);
+% ExBドリフト計算
+[ExBdata2D,newPCBdata2D] = cal_ExB(pathname,PCBgrid2D,PCBdata2D,ESPdata2D,ESP,PCB,ExB.trange);
 
-%磁気面、ExBドリフト2次元プロット
+% 磁気面、ExBドリフト2次元プロット
 plot_ExB(PCBgrid2D,PCBdata2D,ESPdata2D,ExBdata2D,newPCBdata2D,IDSP,FIG,color_type,vector_type,false)
 
-%磁気面、ExBドリフト2次元プロット
-% movie_ExB(PCBgrid2D,PCBdata2D,ESPdata2D,ExBdata2D,newPCBdata2D,IDSP,FIG,colorplot)
+% %磁気面、ExBドリフト2次元プロット
+% movie_ExB(PCBgrid2D,PCBdata2D,ESPdata2D,ExBdata2D,newPCBdata2D,IDSP,FIG,color_type,vector_type)
 %ExBドリフト1次元プロット
 % plot_flow_profile(ExBdata2D,IDSP,FIG,profileplot)
-
-% [dBxBdata2D] = cal_dBxB(pathname,PCBgrid2D,PCBdata2D,PCB,FIG);

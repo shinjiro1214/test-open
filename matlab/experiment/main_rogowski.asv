@@ -1,0 +1,20 @@
+clear all
+addpath '/Users/rsomeya/Documents/lab/matlab/common';
+run define_path.m
+
+date = 230830;%230523;
+shot = 22;%8;
+ch = [1 3 4];% 7 8];
+calib(ch) = [116.6647*12,225.71*3,-174.19*3/30*35.7];%,63.9568,223.2319];
+ch = [3 4];% 7 8];
+calib(ch) = [225.71*3,-174.19*3/30*35.7];%,63.9568,223.2319];
+FIG.start = 0;%0以上0.1の倍数(us)
+FIG.end = 1000;%FIG.start以上0.1の倍数(us)
+FIG.smooth = 20;%移動平均長さ(1以下なら移動平均とらない)
+
+rgw2txt(date,shot)
+plot_rogowski(pathname,date,shot,ch,calib,FIG)
+ylabel("I [kA・Turn]")
+xlabel("Time [us]")
+legend("TF","PF1","PF2")
+fontsize(30,"points")

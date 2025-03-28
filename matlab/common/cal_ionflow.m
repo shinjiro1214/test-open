@@ -4,14 +4,15 @@ function [IDSPdata] = cal_ionflow(IDSP,pathname,show_offset,plot_fit,save_fit)
 w_CH = 6;%【input】チャンネル方向(Y方向)足し合わせ幅[px]6
 l_mov_flow = 15;%【input】波長方向移動平均長さ[px]15
 th_ratio_flow = 0.8;%【input】フィッティング時閾値[px]0.8
-l_mov_temp = l_mov_flow ;%【input】波長方向移動平均長さ[px]15
-th_ratio_temp = th_ratio_flow;%【input】フィッティング時閾値[px]0.8
-l_L1 = 61;%【input】波長軸の切り取り長さ[px]
-d_L1 = 38;%【input】波長方向位置ずれ調整[px]
-d_CH = -7;%【input】CH方向位置ずれ調整[px]
-pre_offset = 0.086;%【input】分光器波長方向位置ずれ調整[nm]
+l_mov_temp = 15 ;%【input】波長方向移動平均長さ[px]15
+th_ratio_temp = 0.5;%【input】フィッティング時閾値[px]0.8
+l_L1 = 81;%【input】波長軸の切り取り長さ[px]
+d_L1 = 45;%【input】波長方向位置ずれ調整[px]
+d_CH = -7;%【input】CH方向位置ずれ調整[px]d_CH = -22(240827)
+pre_offset = 0.086;%【input】分光器波長方向位置ずれ調整[nm]pre_offset = 0.086(240827)
 
-savename = [pathname.mat,'/ionflow/',num2str(IDSP.date),'_shot',num2str(IDSP.shot),'_',num2str(IDSP.delay),'us_w=',num2str(IDSP.width),'_gain=',num2str(IDSP.gain),'.mat'];
+% savename =[];
+savename = [pathname.mat,'/ionflow/cal25_',num2str(IDSP.date),'_shot',num2str(IDSP.shot),'_',num2str(IDSP.delay),'us_w=',num2str(IDSP.width),'_gain=',num2str(IDSP.gain),'.mat'];
 if exist(savename,"file")
     load(savename,'IDSPdata')
 else
@@ -23,7 +24,6 @@ else
             A = 40;%原子量
             lambda0 = 480.602;%使用スペクトル(nm)
             lambda1 = 480.7019;%校正ランプスペクトル(nm)
-            lambda2 = 479.2619;%校正ランプスペクトル(nm)
         case 'H'%水素の時
             A = 1;%原子量
             lambda0 = 486.135;%使用スペクトル(nm)
@@ -178,19 +178,21 @@ else
 
 
     % offset_mean = (IDSPdata.offset(2,1) + IDSPdata.offset(3,1))/2;
-    for k = [1 5:7]
-        IDSPdata.offset(k,1) = IDSPdata.offset(3,1);
-    end
+    % for k = [1 5:7]
+    %     IDSPdata.offset(k,1) = IDSPdata.offset(3,1);
+    % end
     % IDSPdata.offset(1,1) = IDSPdata.offset(2,1);%1番の視線2が波形汚くoffsetが信用できないため導入(20230807校正のとき)
     % IDSPdata.offset(6,1) = IDSPdata.offset(5,1);
     % IDSPdata.offset(5,1) = IDSPdata.offset(6,1);%5番の視線1と視線2が連番でなくoffsetが信用できないため導入(20230807校正のとき)
+
+    IDSPdata.offset(6,1) = (IDSPdata.offset(2,1)+IDSPdata.offset(3,1))/2;%6番の視線2が怪しくoffsetが信用できないため導入(20240607校正のとき)
 
     %data1の流速計算用ガウスフィッティング
     if plot_fit
         if save_fit
             figure('Position',[300 50 1000 1000],'visible','off')
         else
-            figure('Position',[300 50 1000 1000],'visible','on')
+            figure('Position',[300 50 1000 1000],'visible','off')
         end
         sgtitle(['Fitting data for flow (Horizontal：View Line, Vertical：Measured Position)',newline, ...
             'shot',num2str(IDSP.shot),'-',num2str(IDSP.delay),'us-w=',num2str(IDSP.width),'-gain=',num2str(IDSP.gain),'.asc'])
@@ -263,11 +265,11 @@ else
     if plot_fit
         if save_fit
             time = round(IDSP.delay+IDSP.width/2);%計測時刻
-            if (l_mov_flow == l_mov_temp) && (th_ratio_flow == th_ratio_temp)
-                saveas(gcf,[pathname.fig,'/fit/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_both.png'])
-            else
-                saveas(gcf,[pathname.fig,'/fit/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_flow.png'])
-            end
+            % if (l_mov_flow == l_mov_temp) && (th_ratio_flow == th_ratio_temp)
+            %     saveas(gcf,[pathname.fig,'/fit/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_both.png'])
+            % else
+            %     saveas(gcf,[pathname.fig,'/fit/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_flow.png'])
+            % end
             hold off
             close
         else
@@ -292,9 +294,9 @@ else
         %data1の温度計算用ガウスフィッティング
         if plot_fit
             if save_fit
-                figure('Position',[300 50 1000 1000],'visible','off')
+                figure('Position',[100 50 1000 1000],'visible','off')
             else
-                figure('Position',[300 50 1000 1000],'visible','on')
+                figure('Position',[100 50 1000 1000],'visible','on')
             end
             sgtitle(['Fitting data for temp. (Horizontal：View Line, Vertical：Measured Position)',newline, ...
                 'shot',num2str(IDSP.shot),'-',num2str(IDSP.delay),'us-w=',num2str(IDSP.width),'-gain=',num2str(IDSP.gain),'.asc'])
@@ -354,8 +356,8 @@ else
         end
         if plot_fit
             if save_fit
-                % time = round(IDSP.delay+IDSP.width/2);%計測時刻
-                % saveas(gcf,[pathname.fig,'/fit/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_temp.png'])
+                time = round(IDSP.delay+IDSP.width/2);%計測時刻
+                saveas(gcf,[pathname.fig,'/fit/cal25_',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_fit_for_temp.png'])
                 hold off
                 close
             else
@@ -368,9 +370,11 @@ else
         set = (i-1)*4;
         Va = -shift(set+4,1)/lambda0*Vc;
         Vb = -shift(set+3,1)/lambda0*Vc;
+        Vz1 = -shift(set+1,1)/lambda0*Vc;
         Vz2 = -shift(set+2,1)/lambda0*Vc;
         err_Va = err_shift(set+4,1)/lambda0*Vc;
         err_Vb = err_shift(set+3,1)/lambda0*Vc;
+        err_Vz1 = err_shift(set+1,1)/lambda0*Vc;
         err_Vz2 = err_shift(set+2,1)/lambda0*Vc;
         %視線3と視線4で計算
         IDSPdata.V_i(i,1) = (Va-Vb)/(2*cos(Angle*pi/180));%Vz
@@ -387,11 +391,11 @@ else
         %     IDSPdata.absV(i,1) = sqrt(IDSPdata.V_i(i,1)^2 + IDSPdata.V_i(i,2)^2);
         % end
         % if i == 6
-        %     %視線2と視線3で計算
-        %     IDSPdata.V_i(i,1) = Vz2;%Vz
-        %     IDSPdata.V_i(i,2) = -Vz2/tan(Angle*pi/180)-Vb/sin(Angle*pi/180);%Vr
-        %     IDSPdata.err_V_i(i,1) = err_Vz2;%err_Vz
-        %     IDSPdata.err_V_i(i,2) = err_Vz2/tan(Angle*pi/180)+err_Vb/sin(Angle*pi/180);%err_Vr
+        %     %視線1と視線4で計算
+        %     IDSPdata.V_i(i,1) = -Vz1;%Vz
+        %     IDSPdata.V_i(i,2) = -Vz1/tan(Angle*pi/180)-Va/sin(Angle*pi/180);%Vr
+        %     IDSPdata.err_V_i(i,1) = err_Vz1;%err_Vz
+        %     IDSPdata.err_V_i(i,2) = err_Vz1/tan(Angle*pi/180)+err_Va/sin(Angle*pi/180);%err_Vr
         %     IDSPdata.absV(i,1) = sqrt(IDSPdata.V_i(i,1)^2 + IDSPdata.V_i(i,2)^2);
         % end
         % IDSPdata.T_i(i,1) = mean(IDSPdata.T_CH(set+1:set+4,1));

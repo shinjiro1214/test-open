@@ -1,14 +1,15 @@
 %フィルタ透過特性の入射角依存性実験結果解析
 
-clear all
+% clear all
 close all
 addpath '/Users/rsomeya/Documents/lab/matlab/common';
 run define_path.m
 
 date = 20240313;
 % angle = [-20 -15 -10 -5 -2.5 0 2.5 5 10 15 20];
-angle = [-5 -2.5 0 2.5 5];
-% angle = [-2.5, 0, 2.5, 5];
+% angle = [-10 -5 -2.5 0 2.5 5 10];
+% angle = [-5 -2.5 0 2.5 5];
+angle = [-2.5, 0, 2.5, 5];
 x_min = 1;
 x_max = 1024;
 y_min = 450;
@@ -56,7 +57,8 @@ for i=1:size(angle,2)
     savename = [pathname.TE,'/mat/',num2str(angle(i)),'degrees.mat'];
     save(savename,'lambda_transmit','transmit')
 end
-newcolors = ["#005AFF" "#03AF7A" "#F6AA00" "#FF4B00"];
+newcolors = ["#FF4B00","#F6AA00","#FFF100","#03AF7A","#4DC4FF","#005AFF","#990099","#000000"];
+% newcolors = ["#005AFF" "#03AF7A" "#F6AA00" "#FF4B00"];
 colororder(newcolors)
 xline(529.05,'LineWidth',3)%C VI 529.05nm
 xlabel('Wavelength [nm]')
@@ -66,7 +68,7 @@ legend(legendCell)
 xlim([526 532])
 ylim([0 1.2])
 ax = gca;
-ax.FontSize = 18;
+ax.FontSize = 22;
 hold off
 
 % figure
@@ -96,3 +98,13 @@ hold off
 % ax = gca;
 % ax.FontSize = 18;
 % hold off
+
+figure
+plot(angle,lambda_center,'bo-','LineWidth',3,'MarkerSize',10)
+yline(529.05,'LineWidth',3)%C VI 529.05nm
+xlabel('Filter Tilt Angle [°]')
+ylabel('Filter Center Wavelength [nm]')
+ylim([528.9 529.3])
+ax = gca;
+ax.FontSize = 22;
+hold off

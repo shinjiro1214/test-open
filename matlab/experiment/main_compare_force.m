@@ -1,6 +1,6 @@
 clear all
 addpath '/Users/rsomeya/Documents/lab/matlab/common';
-addpath '/Users/rsomeya/Documents/lab/matlab/common'/curvature;
+addpath '/Users/rsomeya/Documents/lab/matlab/common/curvature';
 run define_path.m
 
 PCB.date = 230830;
@@ -12,6 +12,7 @@ CURVE.ds_rate = 5;
 CURVE.A = 40;
 NABLAB.A = 40;
 NABLAB.T_i = 10;
+POLAR.A = 40;
 q_i = 1.6E-19;
 % range.z_min = 0;
 % range.z_max = 0.05;
@@ -28,8 +29,8 @@ range.r_max = 0.33;
 FIG.tate = 1;%【input】プロット枚数(縦)
 FIG.yoko = 1;%【input】プロット枚数(横)
 FIG.dt = 1;%【input】プロット時間間隔[us]
-cal_type = 'nablaB';%'contop','magline','curve','ExB','nablaB'
-plot_type = 'F_z';%'V_zr','V_z','V_r','V','F_zr','F_z','F_r','F_r/F_z','F','scatter'
+cal_type = 'polar';%'contop','magline','curve','ExB','nablaB','polar'
+plot_type = 'V';%'V_zr','V_z','V_r','V','F_zr','F_z','F_r','F_r/F_z','F','scatter'
 
 switch PCB.date
     case 230828
@@ -44,6 +45,7 @@ switch PCB.date
         savename.highmesh_psi = [pathname.mat,'/pcb_processed/','mesh500_a039_2437.mat'];
         savename.pcb = [pathname.mat,'/pcb_processed/','a039_2437.mat'];
         savename.ESP = [pathname.mat,'/ESP/','230830_shot11_13-14_16-17_20_22-26_28-29_32_34_37_41-45_47_49_51_54-55_57_59-60_mesh21.mat'];
+        savename.ExB = [pathname.mat,'/ExB/','230830_shot11_13-14_16-17_20_22-26_28-29_32_34_37_41-45_47_49_51_54-55_57_59-60-a039_2437_' , num2str(FIG.start - 2), '_1_5.mat'];
     case 230914
         PCB.shot = 2862;
         FIG.start = 500;
@@ -78,6 +80,9 @@ switch cal_type
     case 'nablaB'
         [NablaBdata2D] = cal_nablaB_drift(NABLAB,PCB,FIG,pathname,savename,range);
         plot_nablaB_drift(NablaBdata2D,plot_type,FIG,savename)
+    case 'polar'
+        [Polardata2D] = cal_polar_drift(POLAR,PCB,FIG,pathname,savename,range);
+        plot_polar_drift(Polardata2D,plot_type,savename)
     case 'ExB'
         if exist(savename.ESP,"file")
             load(savename.ESP,'ESPdata2D')
@@ -96,7 +101,11 @@ switch cal_type
         r1 = r(idx_range.r_min:idx_range.r_max);
         [mesh_z,mesh_r] = meshgrid(z1,r1);
         E_z = squeeze(ESPdata2D.Ez(idx_time,idx_range.r_min:idx_range.r_max,idx_range.z_min:idx_range.z_max));
+        E_z = movmean(E_z,3,1);
+        E_z = movmean(E_z,3,2);
         E_r = squeeze(ESPdata2D.Er(idx_time,idx_range.r_min:idx_range.r_max,idx_range.z_min:idx_range.z_max));
+        E_r = movmean(E_r,3,1);
+        E_r = movmean(E_r,3,2);
         absE = sqrt(E_z.^2+E_r.^2);
         Fe_z = q_i*E_z;
         Fe_r = q_i*E_r;
@@ -122,6 +131,28 @@ switch cal_type
                 colormap(jet)
                 clim([0 3E-16])
                 c.Label.String = 'Strength of Electrical Force [N]';
+            case 'F_zr'
+                magnitude = sqrt(Fe_z.^2+Fe_r.^2);
+                mlim = [1E-16 5E-16];
+                n_colors = 64;
+                cmap = jet(n_colors);
+                mthresholds = linspace(mlim(1),mlim(2),n_colors);
+                % for each color
+                for ii = 1:n_colors
+                    % find the indicies of the magnitudes at this color level
+                    if ii == 1
+                        idx = magnitude < mthresholds(ii);
+                    elseif ii == n_colors
+                        idx = magnitude >= mthresholds(ii);
+                    else
+                        idx = magnitude >= mthresholds(ii) & magnitude < mthresholds(ii+1);
+                    end
+                    % create the quiver plot of the right color, with no auto-scaling
+                    factor = 2E13;
+                    q = quiver(mesh_z(idx),mesh_r(idx),Fe_z(idx)*factor,Fe_r(idx)*factor,'off','Color',cmap(ii,:));
+                    q.LineWidth = 8;
+                    hold on
+                end
             case 'F_z/F_r'
                 contourf(mesh_z,mesh_r,abs(Fe_z)./abs(Fe_r),[0:0.1:30],'edgecolor','none')
                 c = colorbar;
@@ -136,13 +167,14 @@ switch cal_type
             contour(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),squeeze(PCBdata2D.psi(:,:,idx_pcb)),[-20e-3:0.1e-3:40e-3],'black','LineWidth',1)
         end
         ax = gca;
-        ax.FontSize = 60;
+        % ax.FontSize = 60;
         xlabel('Z [m]')
         ylabel('R [m]')
         daspect([1 1 1])
         view([90 -90])%RZ反転
         % clim([0 1.2E-17])
-        xlim([-0.01 0.05])
+        % xlim([-0.01 0.05])
+        xlim([-0.04 0.07])
         ylim([0.1 0.27])
         c.Location = "north";
 end

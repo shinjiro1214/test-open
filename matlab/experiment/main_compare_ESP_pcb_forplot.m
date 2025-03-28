@@ -1,0 +1,181 @@
+%磁気プローブ、静電プローブデータz分布時間発展比較。見やすいプロットを作る用
+
+clear all
+% close all
+addpath '/Users/rsomeya/Documents/lab/matlab/common'
+run define_path.m
+
+num_data = 3;%【input】比較条件数
+filename_STA = strings(num_data,1);%比較したいmain_pcb_statistics.mで作ったmatファイルリスト
+filename_ESP = strings(num_data,1);%比較したいmain_ESP.mで作ったmatファイルリスト
+filename_ExB = strings(num_data,1);%比較したいmain_ESP_pcb280ch.mで作ったmatファイルリスト
+filename_STA(1) = [pathname.mat,'/PCB_STA/240827_shot11-20_22-45_47-51_450-500.mat'];%【input】磁気プローブ統計data1
+filename_STA(2) = [pathname.mat,'/PCB_STA/240828_shot30-41_43-46_48-54_450-500.mat'];%【input】磁気プローブ統計data2
+filename_STA(3) = [pathname.mat,'/PCB_STA/240828_shot3-12_14-22_25-29_450-500.mat'];%【input】磁気プローブ統計data3
+filename_ESP(1) = [pathname.mat,'/ESP/240827_shot11-20_22-45_47-51_mesh21.mat'];%【input】ESPdata1
+filename_ESP(2) = [pathname.mat,'/ESP/240828_shot30-41_43-46_48-54_mesh21.mat'];%【input】ESPdata2
+filename_ESP(3) = [pathname.mat,'/ESP/240828_shot3-12_14-22_25-29_mesh21.mat'];%【input】ESPdata3
+filename_ExB(1) = [pathname.mat,'/ExB/240827_shot11-20_22-45_47-51-a039_4851_450_1_500.mat'];%【input】ExBdata1
+filename_ExB(2) = [pathname.mat,'/ExB/240828_shot30-41_43-46_48-54-a039_4912_450_1_500.mat'];%【input】ExBdata2
+filename_ExB(3) = [pathname.mat,'/ExB/240828_shot3-12_14-22_25-29-a039_4893_450_1_500.mat'];%【input】ExBdata3
+labellist = ["B_t = 0.20 T","B_t = 0.25 T","B_t = 0.30 T"];%【input】比較するデータの説明。各グラフのタイトルになる。
+delaylist = [0 3 5];%【input】data1を基準0として、比較するデータ時間ずれ[us]
+Btlist = [0.2 0.25 0.3];%【input】比較するデータのBt大きさ
+Brlist = [sqrt((43^2+41^2)/2) sqrt((42^2+40^2)/2) sqrt((38^2+38^2)/2)];%【input】比較するデータのBr大きさ
+
+z_range = [0 0.04];
+r_range = [0 0.4];
+% t_range = [474 478];
+start_t = 475;%【input】プロット開始時刻[us]
+dt = 1;%【input】プロット時間間隔[us]
+num_t = 1;%【input】プロット時間数[us]
+
+colorlist = ["b","g","r",];%プロット色の順番
+
+%データ読み込み
+for i_data = 1:num_data
+    load(filename_STA(i_data));
+    if not(isfield(PCB_STAdata2D,'absBzr'))
+        PCB_STAdata2D.absBzr = sqrt(PCB_STAdata2D.Bz.^2 + PCB_STAdata2D.Br.^2);
+        PCB_STAdata2D.absBzr_std = sqrt(PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Br.^2.*PCB_STAdata2D.Br_std.^2)./PCB_STAdata2D.absBzr;
+        save(filename_STA(i_data),"PCB_STAgrid2D","PCB_STAdata2D")
+    end
+    if not(isfield(PCB_STAdata2D,'absB'))
+        PCB_STAdata2D.absB = sqrt(PCB_STAdata2D.Bz.^2 + PCB_STAdata2D.Br.^2 + PCB_STAdata2D.Bt_ext.^2);
+        PCB_STAdata2D.absB_std = sqrt(PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Bt_ext.^2.*PCB_STAdata2D.Bt_ext_std.^2)./PCB_STAdata2D.absB;
+        save(filename_STA(i_data),"PCB_STAgrid2D","PCB_STAdata2D")
+    end
+    multi_PCBgrid2D(i_data) = PCB_STAgrid2D;
+    multi_PCBdata2D(i_data) = PCB_STAdata2D;
+    load(filename_ESP(i_data));
+    if not(isfield(ESPdata2D,'absEzr'))
+        ESPdata2D.absEzr = sqrt(ESPdata2D.Ez.^2 + ESPdata2D.Er.^2);
+        save(filename_ESP(i_data),"ESPdata2D")
+    end
+    multi_ESPdata2D(i_data) = ESPdata2D;
+    load(filename_ExB(i_data));
+    multi_ExBdata2D(i_data) = ExBdata2D;
+end
+
+%ExB比較
+r_xp = zeros(3,1);
+figure('Position', [0 0 500 450],'visible','on')
+for i_data = 1:3%num_data
+    for i_t = 1:num_t
+        plot_time = start_t + dt*(i_t-1) + delaylist(i_data);
+        x = multi_ExBdata2D(1).rq(:,1);
+        idx_r_min = knnsearch(x,r_range(1));
+        idx_r_max = knnsearch(x,r_range(end));
+        x = x(idx_r_min:idx_r_max);
+        idx_ExB_t = knnsearch(multi_ExBdata2D(i_data).trange',plot_time);
+        scan_ax = multi_ExBdata2D(1).zq(1,:)';
+        idx_scan_min = knnsearch(scan_ax,z_range(1));
+        idx_scan_max = knnsearch(scan_ax,z_range(end));
+        idx_PCB_t = knnsearch(multi_PCBdata2D(i_data).trange',plot_time);
+        r_xp(i_data,1) = multi_PCBdata2D(i_data).x_pos(idx_PCB_t,2);
+        err = 1 *ones(size(x,1),1);%暫定値
+        y = mean(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_ExB_t-5:idx_ExB_t+5),3);
+        y = mean(y,2);
+        y = y./Brlist(i_data).*Brlist(1);
+        % x = x - r_xp(i_data,1) + r_xp(1,1);
+        p = errorbar(x,y,err,'LineWidth',3);
+        % p.Color = colorlist(i_data);
+        hold on
+    end
+end
+% title([num2str(start_t),'us'])
+% xlim([0.12 0.16])
+% xticks(0.12:0.02:0.16)
+% ylim([500 3000])
+% yticks(500:500:3000)
+yline(0,'LineWidth',2)
+ylabel('v_{ExB_r} [km/s]')
+xlabel('r [m]')
+lgd = legend(labellist);
+lgd.Location = 'northwest';
+ax = gca;
+ax.FontSize = 24;
+grid on
+
+z_range = [0 0.04];
+r_range = [0.1 0.15];
+yy_Bt = zeros(3,1);
+yy_Br = zeros(3,1);
+% figure('Position', [0 0 500 450],'visible','on')
+for i_data = 1:3%num_data
+    for i_t = 1:num_t
+        plot_time = start_t + dt*(i_t-1) + delaylist(i_data);
+        x = multi_ESPdata2D(1).rq(:,1);
+        idx_r_min = knnsearch(x,r_range(1));
+        idx_r_max = knnsearch(x,r_range(end));
+        x = x(idx_r_min:idx_r_max);
+        idx_ESP_t = knnsearch(multi_ESPdata2D(i_data).trange',plot_time);
+        scan_ax = multi_ESPdata2D(1).zq(1,:)';
+        idx_scan_min = knnsearch(scan_ax,z_range(1));
+        idx_scan_max = knnsearch(scan_ax,z_range(end));
+        err = 100 *ones(size(x,1),1);%暫定値
+        y = mean(multi_ESPdata2D(i_data).Ez(idx_ESP_t-2:idx_ESP_t+2,idx_r_min:idx_r_max,idx_scan_min:idx_scan_max),3);
+        y = mean(y,1);
+        yy_Bt(i_data,1) = mean(y,2)./Brlist(i_data).*Brlist(1);
+        yy_Br(i_data,1) = mean(y,2)./Btlist(i_data).*Btlist(1);
+        % p = errorbar(x,y,err,'LineWidth',3);
+        % p.Color = colorlist(i_data);
+        hold on
+    end
+end
+% title([num2str(start_t),'us'])
+% xlim([0.12 0.16])
+% ylim([500 3000])
+% yticks(500:500:3000)
+% xticks(0.12:0.02:0.16)
+% ylabel('E_z [V/m]')
+% xlabel('r [m]')
+% legend(labellist);
+% ax = gca;
+% ax.FontSize = 24;
+
+figure('Position', [0 0 500 450],'visible','on')
+xx = Btlist;
+a = (xx * yy_Bt) / (xx * xx');
+x_fit = linspace(0,0.4,10)';
+y_fit = a * x_fit;
+err = 150;
+for i_data =1:num_data
+    p = errorbar(xx(i_data),yy_Bt(i_data),err,'+','LineWidth',3);
+    % p.Color = colorlist(i_data);
+    hold on
+end
+hold on
+plot(x_fit, y_fit, 'm-', 'LineWidth', 2, 'DisplayName', sprintf('y = %.2fx', a));
+hold off;
+grid on
+ylabel('E_zB_{rec0}/B_{rec} [V/m]')
+xlabel('B_t [T]')
+xlim([0 0.4])
+xticks(0:0.1:0.4)
+ylim([0 3000])
+ax = gca;
+ax.FontSize = 20;
+
+lgd = legend([labellist,"近似曲線"]);
+lgd.Location = 'northwest';
+hold off
+
+% figure('Position', [0 0 500 450],'visible','on')
+% xx = Brlist;
+% xxx = linspace(0,50,100)';
+% p = polyfit(xx,yy_Br,1);
+% f = polyval(p,xxx); 
+% err = 100*ones(1,3);
+% errorbar(xx,yy_Br,err,'o','LineWidth',3)
+% hold on
+% plot(xxx,f,'r-','LineWidth',2)
+% % scatter(xx,yy)
+% xlim([0 50])
+% xticks(0:10:50)
+% % ylim([0 2500])
+% grid on
+% ylabel('E_z/|B_t| [V/m]')
+% xlabel('B_r [mT]')
+% ax = gca;
+% ax.FontSize = 24;

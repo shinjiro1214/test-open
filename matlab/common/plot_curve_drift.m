@@ -41,10 +41,43 @@ for i_t = 1:FIG.tate*FIG.yoko
             % clim([0 3E-16])
             c.Label.String = 'Strength of Centrifugal Force [N]';
         case 'F_zr'
-            q = quiver(Curvedata2D.zq,Curvedata2D.rq,squeeze(Curvedata2D.Fcurve_z(:,:,i_t)),squeeze(Curvedata2D.Fcurve_r(:,:,i_t)));
-            q.Color = 'b';
-            q.LineWidth = 2;
-            q.AutoScaleFactor = 0.5;
+            ds_rate_r = 5;
+            ds_rate_z = 2;
+            zq = downsample(Curvedata2D.zq,ds_rate_r);
+            zq = downsample(zq',ds_rate_z)';
+            rq = downsample(Curvedata2D.rq,ds_rate_r);
+            rq = downsample(rq',ds_rate_z)';
+            Fcurve_z = squeeze(Curvedata2D.Fcurve_z(:,:,i_t));
+            Fcurve_z = downsample(Fcurve_z,ds_rate_r);
+            Fcurve_z = downsample(Fcurve_z',ds_rate_z)';
+            Fcurve_r = squeeze(Curvedata2D.Fcurve_r(:,:,i_t));
+            Fcurve_r = downsample(Fcurve_r,ds_rate_r);
+            Fcurve_r = downsample(Fcurve_r',ds_rate_z)';
+            magnitude = sqrt(Fcurve_z.^2+Fcurve_r.^2);
+            mlim = [1E-18 1.3E-17];
+            n_colors = 64;
+            cmap = jet(n_colors);
+            mthresholds = linspace(mlim(1),mlim(2),n_colors);
+            % for each color
+            for ii = 1:n_colors
+                % find the indicies of the magnitudes at this color level
+                if ii == 1
+                    idx = magnitude < mthresholds(ii);
+                elseif ii == n_colors
+                    idx = magnitude >= mthresholds(ii);
+                else
+                    idx = magnitude >= mthresholds(ii) & magnitude < mthresholds(ii+1);
+                end
+                % create the quiver plot of the right color, with no auto-scaling
+                factor = 8E14;
+                q = quiver(zq(idx),rq(idx),Fcurve_z(idx)*factor,Fcurve_r(idx)*factor,'off','Color',cmap(ii,:));
+                q.LineWidth = 8;
+                hold on
+            end
+            % q = quiver(Curvedata2D.zq,Curvedata2D.rq,squeeze(Curvedata2D.Fcurve_z(:,:,i_t)),squeeze(Curvedata2D.Fcurve_r(:,:,i_t)));
+            % q.Color = 'b';
+            % q.LineWidth = 2;
+            % q.AutoScaleFactor = 0.5;
         case 'V_r'
             contourf(Curvedata2D.zq,Curvedata2D.rq,squeeze(Curvedata2D.Vcurve_r(:,:,i_t)),100,'edgecolor','none')
             c = colorbar;
@@ -88,7 +121,7 @@ for i_t = 1:FIG.tate*FIG.yoko
     xlabel('Z [m]')
     ylabel('R [m]')
     ax = gca;
-    ax.FontSize = 60;
+    % ax.FontSize = 60;
 end
 
 % switch plot_type
@@ -101,5 +134,6 @@ end
 % end
 
 view([90 -90])%RZ反転
-xlim([-0.01 0.05])
+% xlim([-0.01 0.05])
+xlim([-0.04 0.07])
 c.Location = "north";

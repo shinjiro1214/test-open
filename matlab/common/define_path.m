@@ -2,12 +2,15 @@
 setenv("NIFS_path","/Volumes/experiment/results")%smb接続
 % setenv("NIFS_path","/Users/rsomeya/sshfs/mnt/data")%koala経由
 setenv('rsOnedrive','/Users/rsomeya/Library/CloudStorage/OneDrive-TheUniversityofTokyo/lab')
+setenv('TErsGdrive','/Users/rsomeya/Library/CloudStorage/GoogleDrive-rsomeya.uot@gmail.com/マイドライブ')
 setenv('MDSPLUS_DIR','/usr/local/mdsplus');
 setenv('Fourier','/Volumes/md0');
 pathname.fourier=getenv('Fourier');%resultsまでのpath（ドップラー、SXR）
 pathname.NIFS=getenv('NIFS_path');%resultsまでのpath（ドップラー、SXR）
 setenv("Local_NIFS","/Users/rsomeya/Documents/NIFS_copy")%ローカルにコピーしたNIFS
 setenv("Local_TE","/Users/rsomeya/Desktop/TE")%ローカルにコピーしたTE
+% pathname.ST40_Doppler=[getenv('TErsGdrive') '/ST40_Doppler'];%GDriveにコピーしたST40Dopplerデータ
+pathname.ST40_Doppler='/Volumes/experiment/results/ST40/2024';
 pathname.IDSP=[pathname.NIFS,'/Doppler/Andor/IDSP'];%smb接続
 pathname.IDS288ch=[pathname.NIFS,'/Doppler/Andor/320CH'];%smb接続
 pathname.ST40_CX=[pathname.NIFS,'/ST40/2023/Doppler'];%smb接続

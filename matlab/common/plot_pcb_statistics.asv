@@ -1,0 +1,194 @@
+function plot_pcb_statistics(PCB_STAgrid2D,PCB_STAdata2D,FIG,color_type)
+%平均値
+figure('Position', [0 0 1500 1500],'visible','on')
+for i_t=1:FIG.tate*FIG.yoko
+    idx_t = knnsearch(PCB_STAdata2D.trange',FIG.start+FIG.dt*(i_t-1));
+    t=PCB_STAdata2D.trange(idx_t);
+    subplot(FIG.tate,round(FIG.yoko),i_t)
+    sgtitle('Mean Value')
+    %カラープロット
+    switch color_type
+        case 'psi'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.psi(:,:,idx_t),80,'LineStyle','none')
+            colormap(jet)
+            % clim([-10e-3,10e-3])%psi
+            clim([0,4e-3])%psi
+            c = colorbar;
+            c.Label.String = 'Psi [Wb]';
+        case 'Bt'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt(:,:,idx_t),[0:1e-3:0.4],'LineStyle','none')
+            colormap(jet)
+            clim([0.1,0.4])%Bt
+            c = colorbar;
+            c.Label.String = 'B_t [T]';
+        case 'Bt_ext'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt_ext(:,:,idx_t),50,'LineStyle','none')
+            colormap(jet)
+            clim([0.1,0.4])%Bt_ext
+            c = colorbar;
+            c.Label.String = 'B_t by TF cur. [T]';
+        case 'Bt_plasma'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt_plasma(:,:,idx_t),50,'LineStyle','none')
+            colormap(jet)
+            clim([-0.01,0.04])%Bt_plasma
+            c = colorbar;
+            c.Label.String = 'B_t by plasma [T]';
+        case 'Br'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Br(:,:,idx_t),100,'LineStyle','none')
+            colormap(jet)
+            clim([-0.04,0.04])%Br
+            c = colorbar;
+            c.Label.String = 'B_r [T]';
+        case 'Bz'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bz(:,:,idx_t),[-0.05:1e-3:0.05],'LineStyle','none')
+            colormap(jet)
+            clim([-0.02,0.02])%Bz
+            c = colorbar;
+            c.Label.String = 'B_z [T]';
+        case 'Et'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Et(:,:,idx_t),100,'LineStyle','none')
+            colormap(jet)
+            clim([-500,500])%Et
+            c = colorbar;
+            c.Label.String = 'E_t [V/m]';
+        case 'Jt'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Jt(:,:,idx_t),[-1.5e6:2e4:1.5e6],'LineStyle','none')
+            colormap(jet)
+            clim([-1.5E6,1.5E6])%Jt
+            c = colorbar;
+            c.Label.String = 'Jt [A/m^{2}]';
+    end
+    hold on
+    %磁気面
+    contour(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),squeeze(PCB_STAdata2D.psi(:,:,idx_t)),[-20e-3:0.2e-3:40e-3],'black','LineWidth',1)
+    % plot(PCB_STAgrid2D.zq(1,squeeze(mid(opoint(:,:,i_t),:,i_t))),PCB_STAgrid2D.rq(opoint(:,:,i_t),1),"bo")
+    % plot(PCB_STAgrid2D.zq(1,squeeze(mid(xpoint(:,:,i_t),:,i_t))),PCB_STAgrid2D.rq(xpoint(:,:,i_t),1),"bx")
+    hold on
+    % %Bz磁気プローブ計測点
+    % for i_r = 1: size(PCB_STAgrid2D.ok_bz_matrix,1)
+    %     for i_z = 1: size(PCB_STAgrid2D.ok_bz_matrix,2)
+    %         if PCB_STAgrid2D.ok_bz_matrix(i_r,i_z) == 1
+    %             p = plot(PCB_STAgrid2D.zprobepcb(i_z),PCB_STAgrid2D.rprobepcb(i_r),"m+",'LineWidth',3);%測定位置
+    %         end
+    %     end
+    % end
+    % hold on
+    % %Bt磁気プローブ計測点
+    % for i_r = 1: size(PCB_STAgrid2D.ok_bt_matrix,1)
+    %     for i_z = 1: size(PCB_STAgrid2D.ok_bt_matrix,2)
+    %         if PCB_STAgrid2D.ok_bt_matrix(i_r,i_z) == 1
+    %             p = plot(PCB_STAgrid2D.zprobepcb(i_z),PCB_STAgrid2D.rprobepcb(i_r),"yo",'LineWidth',2,"MarkerSize",10);%測定位置
+    %         end
+    %     end
+    % end
+    title(string(t)+' us')
+    xlim([-0.1275 0.1275])
+    % ylim([0.12 0.3])
+    % ylim([0.07 0.3])
+    daspect([1 1 1])
+    xlabel('z [m]')
+    ylabel('r [m]')
+    ax = gca;
+    ax.FontSize = 20;
+    % ax.XTickLabel = cell(size(ax.XTickLabel));
+    % ax.YTickLabel = cell(size(ax.YTickLabel));
+    % view([90 -90])%RZ反転
+end
+
+%標準偏差
+figure('Position', [0 0 1500 1500],'visible','on')
+for i_t=1:FIG.tate*FIG.yoko
+    idx_t = knnsearch(PCB_STAdata2D.trange',FIG.start+FIG.dt*(i_t-1));
+    t=PCB_STAdata2D.trange(idx_t);
+    subplot(FIG.tate,round(FIG.yoko),i_t)
+    sgtitle('Standard Deviation')
+    %カラープロット
+    switch color_type
+        case 'psi'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.psi_std(:,:,idx_t),80,'LineStyle','none')
+            colormap(jet)
+            % clim([-10e-3,10e-3])%psi
+            clim([0,4e-4])%psi
+            c = colorbar;
+            c.Label.String = 'Psi [Wb]';
+        case 'Bt'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt_std(:,:,idx_t),50,'LineStyle','none')
+            colormap(jet)
+            clim([0,0.004])%Bt
+            c = colorbar;
+            c.Label.String = 'B_t [T]';
+        case 'Bt_ext'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt_ext_std(:,:,idx_t),50,'LineStyle','none')
+            colormap(jet)
+            clim([0,0.004])%Bt_ext
+            c = colorbar;
+            c.Label.String = 'B_t by TF cur. [T]';
+        case 'Bt_plasma'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bt_plasma_std(:,:,idx_t),50,'LineStyle','none')
+            colormap(jet)
+            clim([-0.01,0.04])%Bt_plasma
+            c = colorbar;
+            c.Label.String = 'B_t by plasma [T]';
+        case 'Br'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Br_std(:,:,idx_t),100,'LineStyle','none')
+            colormap(jet)
+            clim([0,0.004])%Br
+            c = colorbar;
+            c.Label.String = 'B_r [T]';
+        case 'Bz'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Bz_std(:,:,idx_t),100,'LineStyle','none')
+            colormap(jet)
+            clim([0,5E-3])%Bz
+            c = colorbar;
+            c.Label.String = 'B_z [T]';
+        case 'Et'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Et_std(:,:,idx_t),100,'LineStyle','none')
+            colormap(jet)
+            clim([0,50])%Et
+            c = colorbar;
+            c.Label.String = 'E_t [V/m]';
+        case 'Jt'
+            contourf(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),PCB_STAdata2D.Jt_std(:,:,idx_t),[-1.5e6:2e4:1.5e6],'LineStyle','none')
+            colormap(jet)
+            clim([0,1.5E5])%Jt
+            c = colorbar;
+            c.Label.String = 'Jt [A/m^{2}]';
+    end
+    hold on
+    %磁気面
+    contour(PCB_STAgrid2D.zq(1,:),PCB_STAgrid2D.rq(:,1),squeeze(PCB_STAdata2D.psi(:,:,idx_t)),[-20e-3:0.2e-3:40e-3],'black','LineWidth',1)
+    % plot(PCB_STAgrid2D.zq(1,squeeze(mid(opoint(:,:,i_t),:,i_t))),PCB_STAgrid2D.rq(opoint(:,:,i_t),1),"bo")
+    % plot(PCB_STAgrid2D.zq(1,squeeze(mid(xpoint(:,:,i_t),:,i_t))),PCB_STAgrid2D.rq(xpoint(:,:,i_t),1),"bx")
+    hold on
+    %Bz磁気プローブ計測点
+    for i_r = 1: size(PCB_STAgrid2D.ok_bz_matrix,1)
+        for i_z = 1: size(PCB_STAgrid2D.ok_bz_matrix,2)
+            if PCB_STAgrid2D.ok_bz_matrix(i_r,i_z) == 1
+                p = plot(PCB_STAgrid2D.zprobepcb(i_z),PCB_STAgrid2D.rprobepcb(i_r),"m+",'LineWidth',3);%測定位置
+            end
+        end
+    end
+    hold on
+    %Bt磁気プローブ計測点
+    for i_r = 1: size(PCB_STAgrid2D.ok_bt_matrix,1)
+        for i_z = 1: size(PCB_STAgrid2D.ok_bt_matrix,2)
+            if PCB_STAgrid2D.ok_bt_matrix(i_r,i_z) == 1
+                p = plot(PCB_STAgrid2D.zprobepcb(i_z),PCB_STAgrid2D.rprobepcb(i_r),"yo",'LineWidth',2,"MarkerSize",10);%測定位置
+            end
+        end
+    end
+    title(string(t)+' us')
+    xlim([-0.1275 0.1275])
+    % ylim([0.12 0.3])
+    % ylim([0.07 0.3])
+    daspect([1 1 1])
+    xlabel('z [m]')
+    ylabel('r [m]')
+    ax = gca;
+    ax.FontSize = 12;
+    % ax.XTickLabel = cell(size(ax.XTickLabel));
+    % ax.YTickLabel = cell(size(ax.YTickLabel));
+    % view([90 -90])%RZ反転
+end
+end
+

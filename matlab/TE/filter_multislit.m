@@ -12,7 +12,7 @@ frame_n = 5;%frame総数
 frame_target = 5;%解析frame番号
 ch_target = 6;%解析ch
 angle = -2.5;%フィルタ傾け角度-2.5,0,2.5,5
-x_type = 'nm';%x軸('nm','px')
+x_type = 'px';%x軸('nm','px')
 
 %校正データ
 calib_filename = [pathname.TE,'/smile.txt'];
@@ -54,17 +54,19 @@ switch x_type
         x_ax_right = idx_ax_right;
 end
 
+% data = data - mean(data(1:10,ch_target,frame_target));
+
 figure
 legStr = "";
 hs = char.empty;
-h = plot(x_ax(:,ch_target),data(:,ch_target,frame_target),'r--','LineWidth',2);
-[hs,legStr] = make_legend(hs,h,legStr,"w/o Filter");
+h = plot(x_ax_left(:,ch_target),data(:,ch_target,frame_target),'g','LineWidth',2);
+[hs,legStr] = make_legend(hs,h,legStr,"Slit1");
 hold on
-h = plot(x_ax_left(:,ch_target),data(:,ch_target,frame_target),'g--','LineWidth',2);
-[hs,legStr] = make_legend(hs,h,legStr,"w/o Filter");
+h = plot(x_ax(:,ch_target),data(:,ch_target,frame_target),'r','LineWidth',2);
+[hs,legStr] = make_legend(hs,h,legStr,"Slit2");
 hold on
-h = plot(x_ax_right(:,ch_target),data(:,ch_target,frame_target),'b--','LineWidth',2);
-[hs,legStr] = make_legend(hs,h,legStr,"w/o Filter");
+h = plot(x_ax_right(:,ch_target),data(:,ch_target,frame_target),'b','LineWidth',2);
+[hs,legStr] = make_legend(hs,h,legStr,"Slit3");
 legend(hs,legStr)
 switch x_type
     case 'nm'
@@ -75,9 +77,10 @@ switch x_type
         xlabel('Pixel Number')
 end
 ylabel('Strength [a.u.]')
-ylim([0 inf])
+% ylim([0 inf])
+ylim([0 3E4])
 ax = gca;
-ax.FontSize = 18;
+ax.FontSize = 22;
 hold off
 
 for i=1:size(angle,2)
@@ -90,26 +93,26 @@ for i=1:size(angle,2)
     negative = find(transmit_interp<0);
     transmit_interp(negative) = zeros(size(negative));
     data_filtered = data(:,ch_target,frame_target).*transmit_interp;
-    yyaxis right
-    h = plot(x_ax(:,ch_target),transmit_interp,'LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
-    hold on
-    h = plot(x_ax_left(:,ch_target),transmit_interp,'LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
-    hold on
-    h = plot(x_ax_right(:,ch_target),transmit_interp,'LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
-    hold on
-
-    yyaxis left
-    h = plot(x_ax(:,ch_target),data_filtered,'r-','LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°");
-    hold on
+    % yyaxis right
+    % h = plot(x_ax(:,ch_target),transmit_interp,'LineWidth',2);
+    % [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
+    % hold on
+    % h = plot(x_ax_left(:,ch_target),transmit_interp,'LineWidth',2);
+    % [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
+    % hold on
+    % h = plot(x_ax_right(:,ch_target),transmit_interp,'LineWidth',2);
+    % [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°-Transmittance");
+    % hold on
+    % 
+    % yyaxis left
     h = plot(x_ax_left(:,ch_target),data_filtered,'g-','LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°");
+    [hs,legStr] = make_legend(hs,h,legStr,"Slit1");
+    hold on
+    h = plot(x_ax(:,ch_target),data_filtered,'r-','LineWidth',2);
+    [hs,legStr] = make_legend(hs,h,legStr,"Slit2");
     hold on
     h = plot(x_ax_right(:,ch_target),data_filtered,'b-','LineWidth',2);
-    [hs,legStr] = make_legend(hs,h,legStr,num2str(angle(i)) + "°");
+    [hs,legStr] = make_legend(hs,h,legStr,"Slit3");
     hold on
     legend(hs,legStr)
     switch x_type
@@ -121,9 +124,10 @@ for i=1:size(angle,2)
             xlabel('Pixel Number')
     end
     ylabel('Strength [a.u.]')
-    ylim([0 inf])
+    % ylim([0 inf])
+    ylim([0 3E4])
     ax = gca;
-    ax.FontSize = 18;
+    ax.FontSize = 22;
     hold off
 end
 % legend(hs,legStr)

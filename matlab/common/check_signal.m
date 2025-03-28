@@ -109,8 +109,8 @@ figure_switch = ["on","on","on","on","off","off"];%bz1,bz2,bt1,bt2,bz_vs_z,bt_vs
 
 r = 7;%プローブ本数＝グラフ出力時の縦に並べる個数
 col = 10;%グラフ出力時の横に並べる個数
-y_upper_lim = 0.2;%縦軸プロット領域（b_z上限）
-y_lower_lim = -0.2;%縦軸プロット領域（b_z下限）
+y_upper_lim = 1;%縦軸プロット領域（b_z上限）
+y_lower_lim = -1;%縦軸プロット領域（b_z下限）
 t_start=400;%横軸プロット領域（開始時間）
 t_end=700;%横軸プロット領域（終了時間）
 t = 470;
@@ -131,7 +131,8 @@ for i=1:r
         end
         title(num2str(2.*(col*(i-1)+j)-1));
         xticks([t_start t_end]);
-        ylim([y_lower_lim y_upper_lim]);
+        xlim([400 500])
+        % ylim([y_lower_lim y_upper_lim]);
     end
 end
 sgtitle('Bz signal probe1-5')
@@ -148,7 +149,8 @@ for i=1:r
         end
         title(num2str(2.*(col*(i+r-1)+j)-1));
         xticks([t_start t_end]);
-        ylim([y_lower_lim y_upper_lim]);
+        xlim([400 500])
+        % ylim([y_lower_lim y_upper_lim]);
     end
 end
 sgtitle('Bz signal probe6-10')
@@ -165,9 +167,9 @@ for i=1:r
         end
         title(num2str(2.*(col*(i-1)+j)));
         xticks([t_start t_end]);
-        %ylim([-0.2 0.2]);
-        ylim([y_lower_lim y_upper_lim]);
-        % xlim([450 500])
+        % ylim([-0.2 0.2]);
+        % ylim([y_lower_lim y_upper_lim]);
+        xlim([450 500])
     end
 end
 sgtitle('Bt signal probe1-5')
@@ -184,9 +186,9 @@ for i=1:r
         end
         title(num2str(2.*(col*(i+r-1)+j)));
         xticks([t_start t_end]);
-        %ylim([-0.2 0.2]);
-        ylim([y_lower_lim y_upper_lim]);
-        % xlim([450 500])
+        % ylim([-0.2 0.2]);
+        % ylim([y_lower_lim y_upper_lim]);
+        xlim([450 500])
     end
 end
 sgtitle('Bt signal probe6-10')

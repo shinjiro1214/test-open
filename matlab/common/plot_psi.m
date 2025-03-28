@@ -10,23 +10,23 @@ for m=1:FIG.tate*FIG.yoko
             contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.psi(:,:,i),80,'LineStyle','none')
             colormap(jet)
             % clim([-10e-3,10e-3])%psi
-            clim([0,18e-3])%psi
+            clim([0,8e-3])%psi
             c = colorbar;
             c.Label.String = 'Psi [Wb]';
         case 'Bt'
-            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt(:,:,i),50,'LineStyle','none')
+            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt(:,:,i),[0:1e-3:0.4],'LineStyle','none')
             colormap(jet)
             clim([0.1,0.4])%Bt
             c = colorbar;
             c.Label.String = 'B_t [T]';
         case 'Bt_ext'
-            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt_ext(:,:,i),50,'LineStyle','none')
+            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt_ext(:,:,i),[0:1e-3:0.4],'LineStyle','none')
             colormap(jet)
             clim([0.1,0.4])%Bt_ext
             c = colorbar;
             c.Label.String = 'B_t by TF cur. [T]';
         case 'Bt_plasma'
-            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt_plasma(:,:,i),50,'LineStyle','none')
+            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bt_plasma(:,:,i),[-0.01:1e-3:0.04],'LineStyle','none')
             colormap(jet)
             clim([-0.01,0.04])%Bt_plasma
             c = colorbar;
@@ -38,9 +38,9 @@ for m=1:FIG.tate*FIG.yoko
             c = colorbar;
             c.Label.String = 'B_r [T]';
         case 'Bz'
-            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bz(:,:,i),100,'LineStyle','none')
+            contourf(PCBgrid2D.zq(1,:),PCBgrid2D.rq(:,1),PCBdata2D.Bz(:,:,i),[-0.05:1e-3:0.05],'LineStyle','none')
             colormap(jet)
-            clim([-0.05,0.05])%Bz
+            clim([-0.02,0.02])%Bz
             c = colorbar;
             c.Label.String = 'B_z [T]';
         case 'Et'
@@ -63,31 +63,39 @@ for m=1:FIG.tate*FIG.yoko
     % plot(PCBgrid2D.zq(1,squeeze(mid(opoint(:,:,i),:,i))),PCBgrid2D.rq(opoint(:,:,i),1),"bo")
     % plot(PCBgrid2D.zq(1,squeeze(mid(xpoint(:,:,i),:,i))),PCBgrid2D.rq(xpoint(:,:,i),1),"bx")
     hold on
+    % %Bz磁気プローブ計測点
     % for i_r = 1: size(PCBgrid2D.ok_bz_matrix,1)
     %     for i_z = 1: size(PCBgrid2D.ok_bz_matrix,2)
     %         if PCBgrid2D.ok_bz_matrix(i_r,i_z) == 1
-    %             p = plot(PCBgrid2D.zprobepcb(i_z),PCBgrid2D.rprobepcb(i_r),"m+");%測定位置
-    %             p.LineWidth = 3;
-    %             p.MarkerSize = 12;
+    %             p = plot(PCBgrid2D.zprobepcb(i_z),PCBgrid2D.rprobepcb(i_r),"m+",'LineWidth',3);%測定位置
+    %         end
+    %     end
+    % end
+    % hold on
+    % %Bt磁気プローブ計測点
+    % for i_r = 1: size(PCBgrid2D.ok_bt_matrix,1)
+    %     for i_z = 1: size(PCBgrid2D.ok_bt_matrix,2)
+    %         if PCBgrid2D.ok_bt_matrix(i_r,i_z) == 1
+    %             p = plot(PCBgrid2D.zprobepcb(i_z),PCBgrid2D.rprobepcb(i_r),"yo",'LineWidth',2,"MarkerSize",10);%測定位置
     %         end
     %     end
     % end
     % [ok_z,ok_r] = meshgrid(PCBgrid2D.zprobepcb,PCBgrid2D.rprobepcb);
-    % p = plot(ok_z,ok_r,"r+");%測定位置
-    % p.LineWidth = 3;
-    % p.MarkerSize = 12;
+    % p = plot(ok_z,ok_r,"b+");%測定位置
     % hold on
-    % %IDSP計測点
-    % plot(IDSP.z,IDSP.r,'r+')
-    % hold on
+    %IDSP計測点
+    plot(IDSP.z,IDSP.r,'r+','LineWidth',3)
+    hold on
     title(string(t)+' us')
-    xlim([-0.1275 0.1275])
-    % ylim([0.07 0.3])
+    % xlim([-0.1275 0.1275])
+    xlim([-0.08 0.12])
+    % ylim([0.12 0.3])
+    ylim([0.07 0.3])
     daspect([1 1 1])
-    xlabel('Z [m]')
-    ylabel('R [m]')
+    xlabel('z [m]')
+    ylabel('r [m]')
     ax = gca;
-    ax.FontSize = 20;
+    ax.FontSize = 12;
     % ax.XTickLabel = cell(size(ax.XTickLabel));
     % ax.YTickLabel = cell(size(ax.YTickLabel));
     view([90 -90])%RZ反転

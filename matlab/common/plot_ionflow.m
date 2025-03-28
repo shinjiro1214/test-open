@@ -9,7 +9,7 @@ if overlay_plot%Ž¥‹C–Ê‚Æd‚Ë‚é
 else
     unit = 1e2;%’PˆÊ‚ðm‚©‚çcm‚É•ÏŠ·
     if save_fig
-        figure('Position',[300 150 600 600],'visible','off')
+        figure('Position',[300 150 600 600],'visible','on')
     else
         figure('Position',[300 150 600 600],'visible','on')
     end
@@ -48,14 +48,19 @@ for j = 1:IDSP.n_z
         % txtstr = num2str(IDSPdata.absV(i,j));
         switch cal_type
             case 'ionflow'
-                txtstr = sprintf('V_z = %.1f}%.1f\nV_r = %.1f}%.1f',IDSPdata.V_i(i,(j-1)*2+1),IDSPdata.err_V_i(i,(j-1)*2+1),IDSPdata.V_i(i,(j-1)*2+2),IDSPdata.err_V_i(i,(j-1)*2+2));
+                txtstr_Vi = sprintf('V_z = %.1f}%.1f\nV_r = %.1f}%.1f',IDSPdata.V_i(i,(j-1)*2+1),IDSPdata.err_V_i(i,(j-1)*2+1),IDSPdata.V_i(i,(j-1)*2+2),IDSPdata.err_V_i(i,(j-1)*2+2));
+                txtstr_Ti = sprintf('T_i = %.1f}%.1f',IDSPdata.T_i(i,j),IDSPdata.err_T_i(i,j));
+                txt_Ti = text(IDSP.z(i,j)-0.1*unit,IDSP.r(i,j)+0.005*unit,txtstr_Ti);
+                txt_Ti.FontSize = 18;
+                txt_Ti.Color = 'b';
+                txt_Ti.FontWeight = 'bold';
             case 'ionvdist'
-                txtstr = sprintf('V_z = %.1f\nV_r = %.1f',IDSPdata.V_i(i,(j-1)*2+1),IDSPdata.V_i(i,(j-1)*2+2));
+                txtstr_Vi = sprintf('V_z = %.1f\nV_r = %.1f',IDSPdata.V_i(i,(j-1)*2+1),IDSPdata.V_i(i,(j-1)*2+2));
         end
-        txt = text(IDSP.z(i,j)+0.02*unit,IDSP.r(i,j)+0.005*unit,txtstr);
-        txt.FontSize = 18;
-        txt.Color = 'r';
-        txt.FontWeight = 'bold';
+        txt_Vi = text(IDSP.z(i,j)+0.05*unit,IDSP.r(i,j)+0.005*unit,txtstr_Vi);
+        txt_Vi.FontSize = 18;
+        txt_Vi.Color = 'r';
+        txt_Vi.FontWeight = 'bold';
     end
 end
 if overlay_plot
@@ -108,10 +113,10 @@ else
     daspect([1 1 1])
     if save_fig
         if IDSP.shot > 0
-            saveas(gcf,[pathname.fig,'/',cal_type,'/',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_PF1_',num2str(EXP.PF1), ...
+            saveas(gcf,[pathname.fig,'/',cal_type,'/cal25_',num2str(IDSP.date),'_shot', num2str(IDSP.shot),'_',num2str(time),'us_PF1_',num2str(EXP.PF1), ...
                 'kV_PF2_',num2str(EXP.PF2),'kV_TF_',num2str(EXP.TF),'kV_EF_',num2str(EXP.EF),'A.png'])
         elseif IDSP.shot == 0
-            saveas(gcf,[pathname.fig,'/',cal_type,'/',num2str(IDSP.date),'_shot', num2str(IDSP.shotlist(1)),'-',num2str(IDSP.shotlist(end)),'_',num2str(time),'us_PF1_',num2str(EXP.PF1), ...
+            saveas(gcf,[pathname.fig,'/',cal_type,'/cal25_',num2str(IDSP.date),'_shot', num2str(IDSP.shotlist(1)),'-',num2str(IDSP.shotlist(end)),'_',num2str(time),'us_PF1_',num2str(EXP.PF1), ...
                 'kV_PF2_',num2str(EXP.PF2),'kV_TF_',num2str(EXP.TF),'kV_EF_',num2str(EXP.EF),'A.png'])
         end
         hold off

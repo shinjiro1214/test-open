@@ -1,0 +1,1123 @@
+%磁気プローブ、静電プローブデータz分布時間発展比較
+
+clear all
+% close all
+addpath '/Users/rsomeya/Documents/lab/matlab/common'
+run define_path.m
+
+num_data = 3;%【input】比較条件数
+filename_STA = strings(num_data,1);%比較したいmain_pcb_statistics.mで作ったmatファイルリスト
+filename_ESP = strings(num_data,1);%比較したいmain_ESP.mで作ったmatファイルリスト
+filename_ExB = strings(num_data,1);%比較したいmain_ESP_pcb280ch.mで作ったmatファイルリスト
+filename_STA(1) = [pathname.mat,'/PCB_STA/240827_shot11-20_22-45_47-51_450-500.mat'];%【input】磁気プローブ統計data1
+filename_STA(2) = [pathname.mat,'/PCB_STA/240828_shot30-41_43-46_48-54_450-500.mat'];%【input】磁気プローブ統計data2
+filename_STA(3) = [pathname.mat,'/PCB_STA/240828_shot3-12_14-22_25-29_450-500.mat'];%【input】磁気プローブ統計data3
+filename_ESP(1) = [pathname.mat,'/ESP/240827_shot11-20_22-45_47-51_mesh21.mat'];%【input】ESPdata1
+filename_ESP(2) = [pathname.mat,'/ESP/240828_shot30-41_43-46_48-54_mesh21.mat'];%【input】ESPdata2
+filename_ESP(3) = [pathname.mat,'/ESP/240828_shot3-12_14-22_25-29_mesh21.mat'];%【input】ESPdata3
+filename_ExB(1) = [pathname.mat,'/ExB/240827_shot11-20_22-45_47-51-a039_4851_450_1_500.mat'];%【input】ExBdata1
+filename_ExB(2) = [pathname.mat,'/ExB/240828_shot30-41_43-46_48-54-a039_4912_450_1_500.mat'];%【input】ExBdata2
+filename_ExB(3) = [pathname.mat,'/ExB/240828_shot3-12_14-22_25-29-a039_4893_450_1_500.mat'];%【input】ExBdata3
+labellist = ["B_t = 0.20 T","B_t = 0.25 T","B_t = 0.30 T"];%【input】比較するデータの説明。各グラフのタイトルになる。
+delaylist = [0 3 5];%【input】data1を基準0として、比較するデータ時間ずれ[us]
+Btlist = [4 5 6];%【input】比較するデータのBt大きさ
+Brlist = [sqrt((43^2+41^2)/2) sqrt((42^2+40^2)/2) sqrt((38^2+38^2)/2)];%【input】比較するデータのBr大きさ
+yaxis_type = 'Ez';%【input】プロットy軸種類'Et','Br','Bz','|Bzr|','Bt','psi','Bt_plasma','Bt_ext','Bz/|Br|','Bz|Bt|','Bz|Bt|/|Br|','|Bzr||Bt|','dBz/dr'
+% 'Ez','Er',|Ezr|','phi','VExBr','VExBz','|VExB|','Et/|Br|','Et|Bt|/|Br|','Ez/|Br||Bt|','Er/|Br||Bt|','VExBr/|Br|','VExBz/|Br|','|VExB|/|Br|'
+xaxis_type = 't';%【input】プロットx軸種類'z','r','t'
+show_type = 'mean';%【input】プロット表示種類'multi','mean'
+z_range = [0 0.04];
+r_range = [0.1 0.15];%[0 0.40][0.1 0.15]
+t_range = [400 500];
+start_t = 470;%【input】プロット開始時刻[us]
+dt = 5;%【input】プロット時間間隔[us]
+num_t = 6;%【input】プロット時間数[us]
+
+colorlist = ["#FF4B00","#F6AA00","#FFF100","#03AF7A","#4DC4FF","#005AFF","#990099","#000000"];%プロット色の順番
+
+%データ読み込み
+for i_data = 1:num_data
+    load(filename_STA(i_data));
+    if not(isfield(PCB_STAdata2D,'absBzr'))
+        PCB_STAdata2D.absBzr = sqrt(PCB_STAdata2D.Bz.^2 + PCB_STAdata2D.Br.^2);
+        PCB_STAdata2D.absBzr_std = sqrt(PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Br.^2.*PCB_STAdata2D.Br_std.^2)./PCB_STAdata2D.absBzr;
+        save(filename_STA(i_data),"PCB_STAgrid2D","PCB_STAdata2D")
+    end
+    if not(isfield(PCB_STAdata2D,'absB'))
+        PCB_STAdata2D.absB = sqrt(PCB_STAdata2D.Bz.^2 + PCB_STAdata2D.Br.^2 + PCB_STAdata2D.Bt_ext.^2);
+        PCB_STAdata2D.absB_std = sqrt(PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Bz.^2.*PCB_STAdata2D.Bz_std.^2 + PCB_STAdata2D.Bt_ext.^2.*PCB_STAdata2D.Bt_ext_std.^2)./PCB_STAdata2D.absB;
+        save(filename_STA(i_data),"PCB_STAgrid2D","PCB_STAdata2D")
+    end
+    multi_PCBgrid2D(i_data) = PCB_STAgrid2D;
+    multi_PCBdata2D(i_data) = PCB_STAdata2D;
+    load(filename_ESP(i_data));
+    if not(isfield(ESPdata2D,'absEzr'))
+        ESPdata2D.absEzr = sqrt(ESPdata2D.Ez.^2 + ESPdata2D.Er.^2);
+        save(filename_ESP(i_data),"ESPdata2D")
+    end
+    multi_ESPdata2D(i_data) = ESPdata2D;
+    load(filename_ExB(i_data));
+    multi_ExBdata2D(i_data) = ExBdata2D;
+end
+
+switch xaxis_type
+    case 'z'
+        figure('Position', [0 0 1500 1500],'visible','on')
+        t = tiledlayout("horizontal");
+        scan_type = 'r';
+        for i_data = 1:num_data
+            if i_data == 1
+                legendStrings = "";%凡例生成用定義
+                hs = char.empty;%凡例生成用定義
+            end
+            nexttile
+            for i_t = 1:num_t
+                plot_time = start_t + dt*(i_t-1) + delaylist(i_data);
+                switch yaxis_type
+                    case {'Et','Br','Bz','|Bzr|','Bt','Bt_plasma','Bt_ext','psi','|B|','Et/|Br|'}%PCBdata
+                        x = multi_PCBgrid2D(1).zq(1,:);
+                        idx_z_min = knnsearch(x',z_range(1));
+                        idx_z_max = knnsearch(x',z_range(end));
+                        x = x(idx_z_min:idx_z_max);
+                        idx_PCB_t = knnsearch(multi_PCBdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_PCBgrid2D(1).rq(:,1);
+                        idx_scan_min = knnsearch(scan_ax,r_range(1));
+                        idx_scan_max = knnsearch(scan_ax,r_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        for i_r=1:numel(scan_ax)
+                            idx_scan = idx_scan_min + i_r-1;
+                            if i_t == 1 && i_r == 1
+                                switch yaxis_type
+                                    case 'Et'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Et(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Et_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Br'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Br(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Br_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bz'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bz_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case '|Bzr|'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).absBzr(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).absBzr_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Bt(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt_plasma'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Bt_plasma(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_plasma_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt_ext'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Bt_ext(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_ext_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'psi'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).psi(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).psi_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case '|B|'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).absB(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).absB_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Et/|Br|'
+                                        p = errorbar(x,multi_PCBdata2D(i_data).Et(idx_scan,idx_z_min:idx_z_max,idx_PCB_t)./Brlist(i_data),...
+                                            multi_PCBdata2D(i_data).Et_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t)./Brlist(i_data));
+                                end
+                                p.Color = colorlist(i_t);
+                                p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                            else
+                                switch yaxis_type
+                                    case 'Et'
+                                        p_array(:,i_t,i_r)= errorbar(x,multi_PCBdata2D(i_data).Et(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Et_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Br'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Br(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Br_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bz'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bz_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case '|Bzr|'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).absBzr(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).absBzr_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Bt(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt_plasma'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Bt_plasma(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_plasma_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Bt_ext'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Bt_ext(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).Bt_ext_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'psi'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).psi(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).psi_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case '|B|'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).absB(idx_scan,idx_z_min:idx_z_max,idx_PCB_t),...
+                                            multi_PCBdata2D(i_data).absB_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t));
+                                    case 'Et/|Br|'
+                                        p_array(:,i_t,i_r) = errorbar(x,multi_PCBdata2D(i_data).Et(idx_scan,idx_z_min:idx_z_max,idx_PCB_t)./Brlist(i_data),...
+                                            multi_PCBdata2D(i_data).Et_std(idx_scan,idx_z_min:idx_z_max,idx_PCB_t)./Brlist(i_data));
+                                end
+                                p_array(:,i_t,i_r).Color = colorlist(i_t);
+                            end
+                            hold on
+                        end
+                    case {'phi','Ez','Er','|Ezr|','Ez/|Br||Bt|','Er/|Br||Bt|'}%ESPdata
+                        x = multi_ESPdata2D(1).zq(1,:);
+                        idx_z_min = knnsearch(x',z_range(1));
+                        idx_z_max = knnsearch(x',z_range(end));
+                        x = x(idx_z_min:idx_z_max);
+                        idx_ESP_t = knnsearch(multi_ESPdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_ESPdata2D(1).rq(:,1);
+                        idx_scan_min = knnsearch(scan_ax,r_range(1));
+                        idx_scan_max = knnsearch(scan_ax,r_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        for i_r=1:numel(scan_ax)
+                            idx_scan = idx_scan_min + i_r-1;
+                            if i_t == 1 && i_r == 1
+                                switch yaxis_type
+                                    case 'phi'
+                                        err = 30 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case 'Ez'
+                                        err = 100 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case 'Er'
+                                        err = 100 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case '|Ezr|'
+                                        err = 100 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case 'Ez/|Br||Bt|'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_scan,idx_z_min:idx_z_max))./Brlist(i_data)./Btlist(i_data),err);
+                                    case 'Er/|Br||Bt|'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_scan,idx_z_min:idx_z_max))./Brlist(i_data)./Btlist(i_data),err);
+                                end
+                                p.Color = colorlist(i_t);
+                                p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                            else
+                                switch yaxis_type
+                                    case 'phi'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                        drawnow
+                                    case 'Ez'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case 'Er'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case '|Ezr|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_scan,idx_z_min:idx_z_max)),err);
+                                    case 'Ez/|Br||Bt|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_scan,idx_z_min:idx_z_max))./Brlist(i_data)./Btlist(i_data),err);
+                                    case 'Er/|Br||Bt|'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_scan,idx_z_min:idx_z_max))./Brlist(i_data)./Btlist(i_data),err);
+                                end
+                                p_array(:,i_t,i_r).Color = colorlist(i_t);
+                            end
+                            hold on
+                        end
+                    case {'VExBr','VExBz','|VExB|','VExBr/|Br|','VExBz/|Br|','|VExB|/|Br|'}%ExBdata
+                        x = multi_ExBdata2D(1).zq(1,:);
+                        idx_z_min = knnsearch(x',z_range(1));
+                        idx_z_max = knnsearch(x',z_range(end));
+                        x = x(idx_z_min:idx_z_max);
+                        idx_ExB_t = knnsearch(multi_ExBdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_ExBdata2D(1).rq(:,1);
+                        idx_scan_min = knnsearch(scan_ax,r_range(1));
+                        idx_scan_max = knnsearch(scan_ax,r_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        for i_r=1:numel(scan_ax)
+                            idx_scan = idx_scan_min + i_r-1;
+                            if i_t == 1 && i_r == 1
+                                switch yaxis_type
+                                    case 'VExBr'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case 'VExBz'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case '|VExB|'
+                                        err = 1 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case 'VExBr/|Br|'
+                                        err = 0.03 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                    case 'VExBz/|Br|'
+                                        err = 0.03 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                    case '|VExB|/|Br|'
+                                        err = 0.03 *ones(size(x,2),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                end
+                                p.Color = colorlist(i_t);
+                                p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                            else
+                                switch yaxis_type
+                                    case 'VExBr'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case 'VExBz'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case '|VExB|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_scan,idx_z_min:idx_z_max,idx_ExB_t)),err);
+                                    case 'VExBr/|Br|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                    case 'VExBz/|Br|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                    case '|VExB|/|Br|'
+                                        p_array(:,i_t,i_r) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_scan,idx_z_min:idx_z_max,idx_ExB_t))./Brlist(i_data),err);
+                                end
+                                p_array(:,i_t,i_r).Color = colorlist(i_t);
+                            end
+                            hold on
+                        end
+                end
+                if i_data == 1
+                    h = plot(nan,nan,'LineWidth',3);
+                    h.Color = colorlist(i_t);
+                    hold on
+                    if isempty(hs)
+                        hs = h;
+                    else
+                        hs = [hs h];
+                    end
+                    if legendStrings == ""
+                        legendStrings = [num2str(plot_time),'us'];
+                    else
+                        legendStrings = [legendStrings, string([num2str(plot_time),'us'])];
+                    end
+                end
+                hold on
+            end
+            title([convertStringsToChars(labellist(i_data)),' (t +',num2str(delaylist(i_data)),'us)'],'FontSize',24)
+            xlabel('z [m]')
+            xlim([x(1) x(end)])
+            switch yaxis_type
+                case 'Et'
+                    ylabel('E_t [V/m]')
+                    ylim([-300 120])
+                case 'Br'
+                    ylabel('B_r [T]')
+                    ylim([-0.05 0.05])
+                case 'Bz'
+                    ylabel('B_z [T]')
+                    ylim([-0.03 0.07])
+                case '|Bzr|'
+                    ylabel('|B_zr| [T]')
+                    ylim([0 0.07])
+                case 'Bt'
+                    ylabel('B_t [T]')
+                    ylim([0.05 0.65])
+                case '|B|'
+                    ylabel('|B| [T]')
+                    ylim([0.05 1])
+                case 'Bt_plasma'
+                    ylabel('B_t by Plasma [T]')
+                    % ylim([0.05 0.65])
+                case 'Bt_ext'
+                    ylabel('B_t by TF current [T]')
+                    ylim([0.05 0.8])
+                case 'psi'
+                    ylabel('Psi [Wb]')
+                    ylim([-3E-3 6E-3])
+                case 'Et/|Br|'
+                    ylabel('E_t/|B_r| [V/(m・mT)]')
+                    ylim([-10 5])
+                case 'phi'
+                    ylabel('Floating Potential [V]')
+                    ylim([-200 200])
+                case 'Er'
+                    ylabel('E_r [V/m]')
+                    ylim([-3500 3000])
+                case 'Ez'
+                    ylabel('E_z [V/m]')
+                    ylim([-1500 3500])
+                case 'Ez/|Br||Bt|'
+                    ylabel('E_z/|B_r||Bt| [a.u.]')
+                    ylim([-10 20])
+                case 'Er/|Br||Bt|'
+                    ylabel('E_r/|B_r||Bt| [a.u.]')
+                    ylim([-20 20])
+                case '|Ezr|'
+                    ylabel('|E_zr| [V/m]')
+                    ylim([0 3500])
+                case 'VExBr'
+                    ylabel('r component of V_{ExB} [km/s]')
+                    ylim([-8 8])
+                case 'VExBz'
+                    ylabel('z component of V_{ExB} [km/s]')
+                    ylim([-15 15])
+                case '|VExB|'
+                    ylabel('|V_{ExB}| [km/s]')
+                    ylim([0 16])
+                case 'VExBr/|Br|'
+                    ylabel('r component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    ylim([-0.2 0])
+                case 'VExBz/|Br|'
+                    ylabel('z component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    ylim([-0.2 0.2])
+                case '|VExB|/|Br|'
+                    ylabel('|V_{ExB}|/|B_r| [km/(s・mT)]')
+                    ylim([0 0.2])
+            end
+        end
+        xlabel(t,'z [m]','FontSize',24)
+    case 'r'
+        figure('Position', [0 0 1500 1500],'visible','on')
+        t = tiledlayout("horizontal");
+        scan_type = 'z';
+        for i_data = 1:num_data
+            if i_data == 1
+                legendStrings = "";%凡例生成用定義
+                hs = char.empty;%凡例生成用定義
+            end
+            nexttile
+            for i_t = 1:num_t
+                plot_time = start_t + dt*(i_t-1) + delaylist(i_data);
+                switch yaxis_type
+                    case {'Et','Br','Bz','|Bzr|','Bt','Bt_plasma','Bt_ext','psi','|B|','Et/|Br|','Bz/|Br|','dBz/dr','dBz/dr|Br|'}%PCBdata
+                        x = multi_PCBgrid2D(i_data).rq(:,1);
+                        idx_r_min = knnsearch(x,r_range(1));
+                        idx_r_max = knnsearch(x,r_range(end));
+                        x = x(idx_r_min:idx_r_max);
+                        idx_PCB_t = knnsearch(multi_PCBdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_PCBgrid2D(1).zq(1,:)';
+                        idx_scan_min = knnsearch(scan_ax,z_range(1));
+                        idx_scan_max = knnsearch(scan_ax,z_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        switch show_type
+                            case 'multi'
+                                for i_z=1:numel(scan_ax)
+                                    idx_scan = idx_scan_min + i_z-1;
+                                    if i_t == 1 && i_z == 1
+                                        switch yaxis_type
+                                            case 'Et'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Br'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Br(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Br_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bz'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case '|Bzr|'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Bt(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt_plasma'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Bt_plasma(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_plasma_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt_ext'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Bt_ext(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_ext_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'psi'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).psi(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).psi_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case '|B|'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).absB(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).absB_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Et/|Br|'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./Brlist(i_data),...
+                                                    multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./Brlist(i_data));
+                                            case 'Bz/|Br|'
+                                                p = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./(Brlist(i_data)*1e-3),...
+                                                    multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./(Brlist(i_data)*1e-3));
+                                            case 'dBz/dr'
+                                                p = errorbar(x(1:end-1),(multi_PCBdata2D(i_data).Bz(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t)-multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1)),...
+                                                    (multi_PCBdata2D(i_data).Bz_std(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t) + multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1)));
+                                            case 'dBz/dr|Br|'
+                                                p = errorbar(x(1:end-1),(multi_PCBdata2D(i_data).Bz(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t)-multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1))./(Brlist(i_data)*1e-3),...
+                                                    (multi_PCBdata2D(i_data).Bz_std(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t) + multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1))./(Brlist(i_data)*1e-3));
+                                        end
+                                        p.Color = colorlist(i_t);
+                                        p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                                    else
+                                        switch yaxis_type
+                                            case 'Et'
+                                                p_array(:,i_t,i_z)= errorbar(x,multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Br'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Br(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Br_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bz'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case '|Bzr|'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Bt(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt_plasma'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Bt_plasma(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_plasma_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Bt_ext'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Bt_ext(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).Bt_ext_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'psi'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).psi(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).psi_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case '|B|'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).absB(idx_r_min:idx_r_max,idx_scan,idx_PCB_t),...
+                                                    multi_PCBdata2D(i_data).absB_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t));
+                                            case 'Et/|Br|'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./Brlist(i_data),...
+                                                    multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./Brlist(i_data));
+                                            case 'Bz/|Br|'
+                                                p_array(:,i_t,i_z) = errorbar(x,multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./(Brlist(i_data)*1e-3),...
+                                                    multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan,idx_PCB_t)./Brlist(i_data));
+                                            case 'dBz/dr'
+                                                p_array(:,i_t,i_z) = errorbar(x(1:end-1),(multi_PCBdata2D(i_data).Bz(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t)-multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1)),...
+                                                    (multi_PCBdata2D(i_data).Bz_std(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t) + multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1)));
+                                            case 'dBz/dr|Br|'
+                                                p_array(:,i_t,i_z) = errorbar(x(1:end-1),(multi_PCBdata2D(i_data).Bz(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t)-multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1))./(Brlist(i_data)*1e-3),...
+                                                    (multi_PCBdata2D(i_data).Bz_std(idx_r_min+1:idx_r_max,idx_scan,idx_PCB_t) + multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max-1,idx_scan,idx_PCB_t))./(x(2)-x(1))./(Brlist(i_data)*1e-3));
+                                        end
+                                        p_array(:,i_t,i_z).Color = colorlist(i_t);
+                                    end
+                                    hold on
+                                end
+                            case 'mean'
+                                if i_t == 1
+                                    switch yaxis_type
+                                        case 'Et'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Br'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Br(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Br_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bz'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case '|Bzr|'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt_plasma'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt_plasma(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_plasma_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt_ext'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt_ext(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_ext_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'psi'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).psi(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).psi_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case '|B|'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).absB(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).absB_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Et/|Br|'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./Brlist(i_data),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./Brlist(i_data));
+                                        case 'Bz/|Br|'
+                                            p = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./(Brlist(i_data)*1e-3),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./(Brlist(i_data)*1e-3));
+                                    end
+                                    p.Color = colorlist(i_t);
+                                    p_array = repmat(p,[1,num_t]);
+                                else
+                                    switch yaxis_type
+                                        case 'Et'
+                                            p_array(:,i_t)= errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Br'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Br(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Br_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bz'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case '|Bzr|'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt_plasma'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt_plasma(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_plasma_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Bt_ext'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bt_ext(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bt_ext_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'psi'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).psi(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).psi_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case '|B|'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).absB(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).absB_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2)));
+                                        case 'Et/|Br|'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./Brlist(i_data),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./Brlist(i_data));
+                                        case 'Bz/|Br|'
+                                            p_array(:,i_t) = errorbar(x,squeeze(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./(Brlist(i_data)*1e-3),...
+                                                squeeze(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_scan_min:idx_scan_max,idx_PCB_t),2))./Brlist(i_data));
+                                    end
+                                    p_array(:,i_t).Color = colorlist(i_t);
+                                end
+                                hold on
+                        end
+                    case {'phi','Ez','Er','|Ezr|','Ez/|Br||Bt|','Er/|Br||Bt|'}%ESPdata
+                        x = multi_ESPdata2D(1).rq(:,1);
+                        idx_r_min = knnsearch(x,r_range(1));
+                        idx_r_max = knnsearch(x,r_range(end));
+                        x = x(idx_r_min:idx_r_max);
+                        idx_ESP_t = knnsearch(multi_ESPdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_ESPdata2D(1).zq(1,:)';
+                        idx_scan_min = knnsearch(scan_ax,z_range(1));
+                        idx_scan_max = knnsearch(scan_ax,z_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        switch show_type
+                            case 'multi'
+                                for i_z=1:numel(scan_ax)
+                                    idx_scan = idx_scan_min + i_z-1;
+                                    if i_t == 1 && i_z == 1
+                                        switch yaxis_type
+                                            case 'phi'
+                                                err = 30 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Ez'
+                                                err = 100 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Er'
+                                                err = 100 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case '|Ezr|'
+                                                err = 100 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Ez/|Br||Bt|'
+                                                err = 1 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                            case 'Er/|Br||Bt|'
+                                                err = 1 *ones(size(x,1),1);%暫定値
+                                                p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                        end
+                                        p.Color = colorlist(i_t);
+                                        p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                                    else
+                                        switch yaxis_type
+                                            case 'phi'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Ez'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Er'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case '|Ezr|'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                            case 'Ez/|Br||Bt|'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                            case 'Er/|Br||Bt|'
+                                                p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                        end
+                                        p_array(:,i_t,i_z).Color = colorlist(i_t);
+                                    end
+                                    hold on
+                                end
+                            case 'mean'
+                                if i_t == 1
+                                    switch yaxis_type
+                                        case 'phi'
+                                            err = 30 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,mean(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_r_min:idx_r_max,idx_scan_min:idx_scan_max),3),err);
+                                        case 'Ez'
+                                            err = 100 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,mean(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan_min:idx_scan_max),3),err);
+                                        case 'Er'
+                                            err = 100 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                        case '|Ezr|'
+                                            err = 100 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                        case 'Ez/|Br||Bt|'
+                                            err = 1 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                        case 'Er/|Br||Bt|'
+                                            err = 1 *ones(size(x,1),1);%暫定値
+                                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                    end
+                                    p.Color = colorlist(i_t);
+                                    p_array = repmat(p,[1,num_t]);
+                                else
+                                    switch yaxis_type
+                                        case 'phi'
+                                            p_array(:,i_t) = errorbar(x,mean(multi_ESPdata2D(i_data).phi(idx_ESP_t,idx_r_min:idx_r_max,idx_scan_min:idx_scan_max),3),err);
+                                        case 'Ez'
+                                            p_array(:,i_t) = errorbar(x,mean(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan_min:idx_scan_max),3),err);
+                                        case 'Er'
+                                            p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                        case '|Ezr|'
+                                            p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(idx_ESP_t,idx_r_min:idx_r_max,idx_scan)),err);
+                                        case 'Ez/|Br||Bt|'
+                                            p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Ez(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                        case 'Er/|Br||Bt|'
+                                            p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                                    end
+                                    p_array(:,i_t).Color = colorlist(i_t);
+                                end
+                                hold on
+                        end
+                    case {'VExBr','VExBz','|VExB|','VExBr/|Br|','VExBz/|Br|','|VExB|/|Br|'}%ExBdata
+                        x = multi_ExBdata2D(1).rq(:,1);
+                        idx_r_min = knnsearch(x,r_range(1));
+                        idx_r_max = knnsearch(x,r_range(end));
+                        x = x(idx_r_min:idx_r_max);
+                        idx_ExB_t = knnsearch(multi_ExBdata2D(i_data).trange',plot_time);
+                        scan_ax = multi_ExBdata2D(1).zq(1,:)';
+                        idx_scan_min = knnsearch(scan_ax,z_range(1));
+                        idx_scan_max = knnsearch(scan_ax,z_range(end));
+                        scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                        for i_z=1:numel(scan_ax)
+                            idx_scan = idx_scan_min + i_z-1;
+                            if i_t == 1 && i_z == 1
+                                switch yaxis_type
+                                    case 'VExBr'
+                                        err = 1 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case 'VExBz'
+                                        err = 1 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case '|VExB|'
+                                        err = 1 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case 'VExBr/|Br|'
+                                        err = 0.03 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                    case 'VExBz/|Br|'
+                                        err = 0.03 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                    case '|VExB|/|Br|'
+                                        err = 0.03 *ones(size(x,1),1);%暫定値
+                                        p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                end
+                                p.Color = colorlist(i_t);
+                                p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                            else
+                                switch yaxis_type
+                                    case 'VExBr'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case 'VExBz'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case '|VExB|'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                    case 'VExBr/|Br|'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                    case 'VExBz/|Br|'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                    case '|VExB|/|Br|'
+                                        p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                end
+                                p_array(:,i_t,i_z).Color = colorlist(i_t);
+                            end
+                            hold on
+                        end
+                        hold on
+                end
+                if i_data == 1
+                    h = plot(nan,nan,'LineWidth',3);
+                    h.Color = colorlist(i_t);
+                    hold on
+                    if isempty(hs)
+                        hs = h;
+                    else
+                        hs = [hs h];
+                    end
+                    if legendStrings == ""
+                        legendStrings = [num2str(plot_time),'us'];
+                    else
+                        legendStrings = [legendStrings, string([num2str(plot_time),'us'])];
+                    end
+                end
+            end
+            title([convertStringsToChars(labellist(i_data)),' (t +',num2str(delaylist(i_data)),'us)'],'FontSize',24)
+            xlabel('r [m]')
+            xlim([x(1) x(end)])
+            switch yaxis_type
+                case 'Et'
+                    ylabel('E_t [V/m]')
+                    ylim([-300 120])
+                case 'Br'
+                    ylabel('B_r [T]')
+                    ylim([-0.05 0.05])
+                case 'Bz'
+                    ylabel('B_z [T]')
+                    ylim([-0.03 0.07])
+                case '|Bzr|'
+                    ylabel('|B_zr| [T]')
+                    ylim([0 0.07])
+                case 'Bt'
+                    ylabel('B_t [T]')
+                    ylim([0.05 0.65])
+                case '|B|'
+                    ylabel('|B| [T]')
+                    ylim([0.05 1])
+                case 'Bt_plasma'
+                    ylabel('B_t by Plasma [T]')
+                    ylim([-0.01 0.05])
+                case 'psi'
+                    ylabel('Psi [Wb]')
+                    ylim([-3E-3 6E-3])
+                case 'Bt_ext'
+                    ylabel('B_t by TF current [T]')
+                    ylim([0.05 0.8])
+                case 'Et/|Br|'
+                    ylabel('E_t/|B_r| [V/(m・mT)]')
+                    ylim([-10 5])
+                case 'Bz/|Br|'
+                    ylabel('B_z/|B_r| [ ]')
+                    ylim([-1 1])
+                case 'dBz/dr'
+                    ylabel('dB_z/dr [T/m]')
+                    ylim([-1 0.5])
+                case 'dBz/dr|Br|'
+                    ylabel('dB_z/dr|B_r| [/m]')
+                    ylim([-20 5])
+                case 'phi'
+                    ylabel('Floating Potential [V]')
+                    ylim([-200 200])
+                case 'Er'
+                    ylabel('E_r [V/m]')
+                    ylim([-3500 3000])
+                case 'Ez'
+                    ylabel('E_z [V/m]')
+                    ylim([-1500 3500])
+                case 'Ez/|Br||Bt|'
+                    ylabel('E_z/|B_r||Bt| [a.u.]')
+                    ylim([-10 20])
+                case 'Er/|Br||Bt|'
+                    ylabel('E_r/|B_r||Bt| [a.u.]')
+                    ylim([-20 20])
+                case '|Ezr|'
+                    ylabel('|E_zr| [V/m]')
+                    ylim([0 3500])
+                case 'VExBr'
+                    ylabel('r component of V_{ExB} [km/s]')
+                    ylim([-8 8])
+                case 'VExBz'
+                    ylabel('z component of V_{ExB} [km/s]')
+                    ylim([-10 10])
+                case '|VExB|'
+                    ylabel('|V_{ExB}| [km/s]')
+                    ylim([-5 16])
+                case 'VExBr/|Br|'
+                    ylabel('r component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    ylim([-0.2 0])
+                case 'VExBz/|Br|'
+                    ylabel('z component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    ylim([-0.2 0.2])
+                case '|VExB|/|Br|'
+                    ylabel('|V_{ExB}|/|B_r| [km/(s・mT)]')
+                    ylim([0 0.2])
+            end
+        end
+        xlabel(t,'r [m]','FontSize',24)
+    case 't'
+        figure('Position', [0 0 800 1000],'visible','on')
+        for i_data = 1:num_data
+            switch yaxis_type
+                case {'Et','Br','Bz','|Bzr|','|Bzr||Bt|','Bt','Bt_plasma','Bt_ext','psi','|B|','Et/|Br|','Et|Bt|/|Br|','Bz/|Br|','Bz|Bt|/|Br|','Bz|Bt|'}%PCBdata
+                    x = multi_PCBdata2D(i_data).trange';
+                    idx_t_min = knnsearch(x,t_range(1));
+                    idx_t_max = knnsearch(x,t_range(end));
+                    x = x(idx_t_min:idx_t_max) - delaylist(i_data);
+                    scan_r = multi_PCBgrid2D(i_data).rq(:,1);
+                    idx_r_min = knnsearch(scan_r,r_range(1));
+                    idx_r_max = knnsearch(scan_r,r_range(end));
+                    scan_r = scan_r(idx_r_min:idx_r_max);
+                    scan_z = multi_PCBgrid2D(1).zq(1,:)';
+                    idx_z_min = knnsearch(scan_z,z_range(1));
+                    idx_z_max = knnsearch(scan_z,z_range(end));
+                    scan_z = scan_z(idx_z_min:idx_z_max,1);
+                    switch yaxis_type
+                        case 'Et'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'Br'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Br(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Br_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'Bz'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case '|Bzr|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case '|Bzr||Bt|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).absBzr(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)).*Btlist(i_data),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).absBzr_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)).*Btlist(i_data));
+                        case 'Bt'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bt(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bt_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'Bt_plasma'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bt_plasma(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bt_plasma_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'Bt_ext'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bt_ext(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bt_ext_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'psi'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).psi(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).psi_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case '|B|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).absB(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).absB_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)));
+                        case 'Et/|Br|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./Brlist(i_data),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./Brlist(i_data));
+                        case 'Et|Bt|/|Br|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Et(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./Brlist(i_data).*Btlist(i_data),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Et_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./Brlist(i_data).*Btlist(i_data));
+                        case 'Bz/|Br|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./(Brlist(i_data)*1e-3),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./(Brlist(i_data)*1e-3));
+                        case 'Bz|Bt|/|Br|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./(Brlist(i_data)*1e-3).*Btlist(i_data),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2))./(Brlist(i_data)*1e-3).*Btlist(i_data));
+                        case 'Bz|Bt|'
+                            p = errorbar(x,squeeze(mean(mean(multi_PCBdata2D(i_data).Bz(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)).*Btlist(i_data),...
+                                squeeze(mean(mean(multi_PCBdata2D(i_data).Bz_std(idx_r_min:idx_r_max,idx_z_min:idx_z_max,idx_t_min:idx_t_max),1),2)).*Btlist(i_data));
+                    end
+                    p.LineWidth = 2;
+                    hold on
+                case {'phi','Ez','Er','|Ezr|','Ez/|Br||Bt|','Er/|Br||Bt|'}%ESPdata
+                    x = multi_ESPdata2D(i_data).trange';
+                    idx_t_min = knnsearch(x,t_range(1));
+                    idx_t_max = knnsearch(x,t_range(end));
+                    x = x(idx_t_min:idx_t_max) - delaylist(i_data);
+                    scan_r = multi_ESPdata2D(1).rq(:,1);
+                    idx_r_min = knnsearch(scan_r,r_range(1));
+                    idx_r_max = knnsearch(scan_r,r_range(end));
+                    scan_r = scan_r(idx_r_min:idx_r_max);
+                    scan_z = multi_ESPdata2D(1).zq(1,:)';
+                    idx_z_min = knnsearch(scan_z,z_range(1));
+                    idx_z_max = knnsearch(scan_z,z_range(end));
+                    scan_z = scan_z(idx_z_min:idx_z_max,1);
+                    switch yaxis_type
+                        case 'phi'
+                            err = 30 *ones(size(x,1),1);%暫定値
+                            p = errorbar(x,mean(mean(multi_ESPdata2D(i_data).phi(idx_t_min:idx_t_max,idx_r_min:idx_r_max,idx_z_min:idx_z_max),3),2),err);
+                        case 'Ez'
+                            err = 100 *ones(size(x,1),1);%暫定値
+                            Y = movmean(multi_ESPdata2D(i_data).Ez(idx_t_min:idx_t_max,idx_r_min:idx_r_max,idx_z_min:idx_z_max),10,1);
+                            p = errorbar(dowx,mean(mean(Y,3),2),err);
+                        case 'Er'
+                            err = 100 *ones(size(x,1),1);%暫定値
+                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(:,idx_r_min:idx_r_max,idx_scan)),err);
+                        case '|Ezr|'
+                            err = 100 *ones(size(x,1),1);%暫定値
+                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).absEzr(:,idx_r_min:idx_r_max,idx_scan)),err);
+                        case 'Ez/|Br||Bt|'
+                            err = 1 *ones(size(x,1),1);%暫定値
+                            Y = movmean(multi_ESPdata2D(i_data).Ez(idx_t_min:idx_t_max,idx_r_min:idx_r_max,idx_z_min:idx_z_max),10,1);
+                            p = errorbar(x,mean(mean(Y,3),2)./Brlist(i_data)./Btlist(i_data),err);
+                        case 'Er/|Br||Bt|'
+                            err = 1 *ones(size(x,1),1);%暫定値
+                            p = errorbar(x,squeeze(multi_ESPdata2D(i_data).Er(idx_ESP_t,idx_r_min:idx_r_max,idx_scan))./Brlist(i_data)./Btlist(i_data),err);
+                    end
+                    p.LineWidth = 2;
+                    hold on
+                case {'VExBr','VExBz','|VExB|','VExBr/|Br|','VExBz/|Br|','|VExB|/|Br|'}%ExBdata
+                    x = multi_ExBdata2D(1).rq(:,1);
+                    idx_r_min = knnsearch(x,r_range(1));
+                    idx_r_max = knnsearch(x,r_range(end));
+                    x = x(idx_r_min:idx_r_max);
+                    idx_ExB_t = knnsearch(multi_ExBdata2D(i_data).trange',plot_time);
+                    scan_ax = multi_ExBdata2D(1).zq(1,:)';
+                    idx_scan_min = knnsearch(scan_ax,z_range(1));
+                    idx_scan_max = knnsearch(scan_ax,z_range(end));
+                    scan_ax = scan_ax(idx_scan_min:idx_scan_max,1);
+                    for i_z=1:numel(scan_ax)
+                        idx_scan = idx_scan_min + i_z-1;
+                        if i_t == 1 && i_z == 1
+                            switch yaxis_type
+                                case 'VExBr'
+                                    err = 1 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case 'VExBz'
+                                    err = 1 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case '|VExB|'
+                                    err = 1 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case 'VExBr/|Br|'
+                                    err = 0.03 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                case 'VExBz/|Br|'
+                                    err = 0.03 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                case '|VExB|/|Br|'
+                                    err = 0.03 *ones(size(x,1),1);%暫定値
+                                    p = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                            end
+                            p.Color = colorlist(i_t);
+                            p_array = repmat(p,[1,num_t,numel(scan_ax)]);
+                        else
+                            switch yaxis_type
+                                case 'VExBr'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case 'VExBz'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case '|VExB|'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t)),err);
+                                case 'VExBr/|Br|'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_r(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                case 'VExBz/|Br|'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).VExB_z(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                                case '|VExB|/|Br|'
+                                    p_array(:,i_t,i_z) = errorbar(x,squeeze(multi_ExBdata2D(i_data).absVExB(idx_r_min:idx_r_max,idx_scan,idx_ExB_t))/Brlist(i_data),err);
+                            end
+                            p_array(:,i_t,i_z).Color = colorlist(i_t);
+                        end
+                        hold on
+                    end
+                    hold on
+            end
+            % if i_data == 1
+            %     h = plot(nan,nan,'LineWidth',3);
+            %     h.Color = colorlist(i_t);
+            %     hold on
+            %     if isempty(hs)
+            %         hs = h;
+            %     else
+            %         hs = [hs h];
+            %     end
+            %     if legendStrings == ""
+            %         legendStrings = [num2str(plot_time),'us'];
+            %     else
+            %         legendStrings = [legendStrings, string([num2str(plot_time),'us'])];
+            %     end
+            % end
+            % title([convertStringsToChars(labellist(i_data)),' (t +',num2str(delaylist(i_data)),'us)'],'FontSize',24)
+            xlabel('Time [us]')
+            xlim([x(1)+5 x(end)])
+            switch yaxis_type
+                case 'Et'
+                    ylabel('E_t [V/m]')
+                    % ylim([-300 120])
+                case 'Br'
+                    ylabel('B_r [T]')
+                    % ylim([-0.05 0.05])
+                case 'Bz'
+                    ylabel('B_z [T]')
+                    % ylim([-0.03 0.07])
+                case '|Bzr|'
+                    ylabel('|B_zr| [T]')
+                    % ylim([0 0.07])
+                case '|Bzr||Bt|'
+                    ylabel('|B_zr||Bt| [T^2]')
+                case 'Bt'
+                    ylabel('B_t [T]')
+                    % ylim([0.05 0.65])
+                case '|B|'
+                    ylabel('|B| [T]')
+                    % ylim([0.05 1])
+                case 'Bt_plasma'
+                    ylabel('B_t by Plasma [T]')
+                    % ylim([-0.01 0.05])
+                case 'psi'
+                    ylabel('Psi [Wb]')
+                    % ylim([-3E-3 6E-3])
+                case 'Bt_ext'
+                    ylabel('B_t by TF current [T]')
+                    % ylim([0.05 0.8])
+                case 'Et/|Br|'
+                    ylabel('E_t/|B_r| [V/(m・mT)]')
+                    % ylim([-10 5])
+                case 'Et|Bt|/|Br|'
+                    ylabel('E_t|B_t|/|B_r| [a.u.]')
+                case 'Bz/|Br|'
+                    ylabel('B_z/|B_r| [ ]')
+                    % ylim([-1 1])
+                case 'Bz|Bt|/|Br|'
+                    ylabel('B_z|Bt|/|B_r| [mT]')
+                case 'Bz|Bt|'
+                    ylabel('B_z|Bt| [mT・T]')
+                case 'phi'
+                    ylabel('Floating Potential [V]')
+                    % ylim([-200 200])
+                case 'Er'
+                    ylabel('E_r [V/m]')
+                    % ylim([-3500 3000])
+                case 'Ez'
+                    ylabel('E_z [V/m]')
+                    % ylim([-1500 3500])
+                case 'Ez/|Br||Bt|'
+                    ylabel('E_z/|B_r||Bt| [a.u.]')
+                    % ylim([-10 20])
+                case 'Er/|Br||Bt|'
+                    ylabel('E_r/|B_r||Bt| [a.u.]')
+                    % ylim([-20 20])
+                case '|Ezr|'
+                    ylabel('|E_zr| [V/m]')
+                    % ylim([0 3500])
+                case 'VExBr'
+                    ylabel('r component of V_{ExB} [km/s]')
+                    % ylim([-8 8])
+                case 'VExBz'
+                    ylabel('z component of V_{ExB} [km/s]')
+                    % ylim([-10 10])
+                case '|VExB|'
+                    ylabel('|V_{ExB}| [km/s]')
+                    % ylim([-5 16])
+                case 'VExBr/|Br|'
+                    ylabel('r component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    % ylim([-0.2 0])
+                case 'VExBz/|Br|'
+                    ylabel('z component of V_{ExB}/|B_r| [km/(s・mT)]')
+                    % ylim([-0.2 0.2])
+                case '|VExB|/|Br|'
+                    ylabel('|V_{ExB}|/|B_r| [km/(s・mT)]')
+                    % ylim([0 0.2])
+            end
+        end
+end
+
+switch xaxis_type
+    case {'z' 'r'}
+        switch yaxis_type
+            case 'Et'
+                ylabel(t,'E_t [V/m]','FontSize',24)
+            case 'Br'
+                ylabel(t,'B_r [T]','FontSize',24)
+            case 'Bz'
+                ylabel(t,'B_z [T]','FontSize',24)
+            case '|Bzr|'
+                ylabel(t,'|B_zr| [T]','FontSize',24)
+            case 'Bt'
+                ylabel(t,'B_t [T]','FontSize',24)
+            case '|B|'
+                ylabel(t,'|B| [T]','FontSize',24)
+            case 'Bt_plasma'
+                ylabel(t,'B_t by Plasma [T]','FontSize',24)
+            case 'Bt_ext'
+                ylabel(t,'B_t by TF current [T]','FontSize',24)
+            case 'psi'
+                ylabel(t,'Psi [Wb]','FontSize',24)
+            case 'Et/|Br|'
+                ylabel(t, 'E_t/|B_r| [V/(m・mT)]','FontSize',24)
+            case 'phi'
+                ylabel(t,'Floating Potential [V]','FontSize',24)
+            case 'Er'
+                ylabel(t,'E_r [V/m]','FontSize',24)
+            case 'Ez'
+                ylabel(t,'E_z [V/m]','FontSize',24)
+            case 'VExBr'
+                ylabel(t,'r component of V_{ExB} [km/s]','FontSize',24)
+            case 'VExBz'
+                ylabel(t,'z component of V_{ExB} [km/s]','FontSize',24)
+            case '|VExB|'
+                ylabel(t,'|V_{ExB}| [km/s]','FontSize',24)
+            case 'VExBr/|Br|'
+                ylabel(t, 'r component of V_{ExB}/|B_r| [km/(s・mT)]','FontSize',24)
+            case 'VExBz/|Br|'
+                ylabel(t, 'z component of V_{ExB}/|B_r| [km/(s・mT)]','FontSize',24)
+            case '|VExB|/|Br|'
+                ylabel(t, '|V_{ExB}|/|B_r| [km/(s・mT)]','FontSize',24)
+        end
+        title(t,['Time Evolution of ',xaxis_type,' vs ',yaxis_type,' (', scan_type,' = ',num2str(round(scan_ax(1),2)),'~',num2str(round(scan_ax(end),2)),' [m] ',show_type,')'],'FontSize',30,'Interpreter','none');
+        lgd = legend(hs,legendStrings,'FontSize',20);
+        lgd.Layout.Tile = 'east';
+        title(lgd,'t')
+    case 't'
+        ax = gca;
+        ax.FontSize = 20;
+        lgd = legend(labellist);
+        lgd.Location = 'northwest';
+        title(['Time Evolution of ',yaxis_type,' (z = ',num2str(round(scan_z(1),2)),'~',num2str(round(scan_z(end),2)),' [m], r = ',...
+            num2str(round(scan_r(1),2)),'~',num2str(round(scan_r(end),2)),' [m] )'],'FontSize',20,'Interpreter','none');
+end

@@ -49,7 +49,7 @@ end
 legendStrings = "CH" + string(ch);
 legend(legendStrings)
 xlabel('us')
-ylabel('V')
+ylabel('kA')
 xlim([FIG.start FIG.end])
 % ylim([0 40])
 % ylim([-30 50])

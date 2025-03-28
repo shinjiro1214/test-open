@@ -40,10 +40,38 @@ for i_t = 1:FIG.tate*FIG.yoko
             clim([min(NablaBdata2D.FnablaB,[],"all") max(NablaBdata2D.FnablaB,[],"all")])
             c.Label.String = 'Strength of Grad B Force [N]';
         case 'F_zr'
-            q = quiver(NablaBdata2D.zq,NablaBdata2D.rq,squeeze(NablaBdata2D.FnablaB_z(:,:,i_t)),squeeze(NablaBdata2D.FnablaB_r(:,:,i_t)));
-            q.Color = 'b';
-            q.LineWidth = 2;
-            q.AutoScaleFactor = 0.5;
+            ds_rate = 2;
+            zq = downsample(NablaBdata2D.zq,ds_rate);
+            rq = downsample(NablaBdata2D.rq,ds_rate);
+            FnablaB_z = squeeze(NablaBdata2D.FnablaB_z(:,:,i_t));
+            FnablaB_z = downsample(FnablaB_z,ds_rate);
+            FnablaB_r = squeeze(NablaBdata2D.FnablaB_r(:,:,i_t));
+            FnablaB_r = downsample(FnablaB_r,ds_rate);
+            magnitude = sqrt(FnablaB_z.^2+FnablaB_r.^2);
+            mlim = [5E-18 1.5E-17];
+            n_colors = 64;
+            cmap = jet(n_colors);
+            mthresholds = linspace(mlim(1),mlim(2),n_colors);
+            % for each color
+            for ii = 1:n_colors
+                % find the indicies of the magnitudes at this color level
+                if ii == 1
+                    idx = magnitude < mthresholds(ii);
+                elseif ii == n_colors
+                    idx = magnitude >= mthresholds(ii);
+                else
+                    idx = magnitude >= mthresholds(ii) & magnitude < mthresholds(ii+1);
+                end
+                % create the quiver plot of the right color, with no auto-scaling
+                factor = 7E14;
+                q = quiver(zq(idx),rq(idx),FnablaB_z(idx)*factor,FnablaB_r(idx)*factor,'off','Color',cmap(ii,:));
+                q.LineWidth = 8;
+                hold on
+            end
+            % q = quiver(NablaBdata2D.zq,NablaBdata2D.rq,squeeze(NablaBdata2D.FnablaB_z(:,:,i_t)),squeeze(NablaBdata2D.FnablaB_r(:,:,i_t)));
+            % q.Color = 'b';
+            % q.LineWidth = 2;
+            % q.AutoScaleFactor = 0.5;
         case 'V_r'
             contourf(NablaBdata2D.zq,NablaBdata2D.rq,squeeze(NablaBdata2D.VnablaB_r(:,:,i_t)),100,'edgecolor','none')
             c = colorbar;
@@ -85,7 +113,7 @@ for i_t = 1:FIG.tate*FIG.yoko
     xlabel('Z [m]')
     ylabel('R [m]')
     ax = gca;
-    ax.FontSize = 60;
+    % ax.FontSize = 60;
 end
 
 % switch plot_type
@@ -98,6 +126,7 @@ end
 % end
 
 view([90 -90])%RZ反転
-xlim([-0.01 0.05])
+% xlim([-0.01 0.05])
+xlim([-0.04 0.07])
 ylim([0.1 0.27])
 c.Location = "north";
