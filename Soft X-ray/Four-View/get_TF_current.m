@@ -51,7 +51,7 @@ data = readmatrix(path,"FileType","text");
 step = aquisition_rate * time_step;
 x = t_start * aquisition_rate : step : t_end * aquisition_rate;
 I_TF = data(x,2+2)*calibration;
-figure;plot(x,I_TF);
+% figure;plot(x,I_TF);
 
 end
 

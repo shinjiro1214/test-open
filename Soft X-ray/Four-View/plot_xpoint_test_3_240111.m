@@ -18,11 +18,16 @@ nShot_35_2 = 25;
 nShot_35_3 = 25;
 nShot_35_4 = 25;
 % nShot_35_4 = 7;
-nShot_40_1 = 28;
-nShot_40_2 = 28;
-nShot_40_3 = 28; %or29
-% nShot_40_4 = 7;
-nShot_40_4 = 28;
+% nShot_40_1 = 28;
+% nShot_40_2 = 28;
+% nShot_40_3 = 28; %or29
+% % nShot_40_4 = 7;
+% nShot_40_4 = 28;
+
+nShot_40_1 = 29;
+nShot_40_2 = 29;
+nShot_40_3 = 29;
+nShot_40_4 = 29;
 
 mPath_25_1 = strcat(pathFirstHalf,num2str(nShot_25_1),pathLastHalf);
 mPath_25_2 = strcat(pathFirstHalf,num2str(nShot_25_2),'/3.mat');
@@ -167,6 +172,7 @@ SXRdata40.t = t;
 
 nameList = {'E < 50 eV', 'E < 80 eV', 'E > 100 eV'};
 cLimList = {[0 1],[0 0.6],[0 0.3]};
+cLimList2 = {[0 0.8],[0 0.8],[0 0.3]};
 
 f = figure;
 % f.Position = [0,0,1150,750];
@@ -205,7 +211,11 @@ for i = 1:3
         end
         % p = positionList(j);
         nexttile(j+3*(i-1));
-        cRange = cell2mat(cLimList(j));
+        if i==3
+            cRange = cell2mat(cLimList2(j));
+        else
+            cRange = cell2mat(cLimList(j));
+        end
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,20);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,linspace(cRange(1),cRange(2),20));clim(cRange);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,20);colorbar;

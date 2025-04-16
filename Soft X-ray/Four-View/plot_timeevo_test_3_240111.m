@@ -95,7 +95,8 @@ f = figure;
 f.Position = [0,0,1150,750];
 tiledlayout(3,3,'TileSpacing','tight','Padding','tight');
 for i = 1:3
-    t = 465+i*(i-1);
+    % t = 465+i*(i-1);
+    t = 463+2*(i-1);
     t_idx = find(data2D.trange==t);
     psi = data2D.psi(:,:,t_idx);
     Bz = data2D.Bz(:,:,t_idx);
@@ -144,7 +145,8 @@ for i = 1:3
         hp.LineWidth = 1.5;
 
         if i == 3
-            xticks([-0.1,0,0.1]);
+            % xticks([-0.1,0,0.1]);
+            xticks([-0.03,0.03]);
             xlabel('z [m]')
         else
             xticks([]);
@@ -160,7 +162,8 @@ for i = 1:3
     
         hold off;
         % xlim([-0.02,0.02]);ylim([0.23,0.29]);
-        xlim([-0.1,0.1]);ylim([0.12,0.32]);
+        xlim([-0.04,0.04]);ylim([0.2,0.32]);
+        % xlim([-0.1,0.1]);ylim([0.12,0.32]);
         if i == 1
             title(string(nameList(j)));
         end
