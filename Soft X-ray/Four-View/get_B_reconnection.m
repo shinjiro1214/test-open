@@ -11,7 +11,7 @@ zq = grid2D.zq;
 psi = data2D.psi;
 figure;
 for j = 1:4
-    t_j = 450+5*j;
+    t_j = 460+2*j;
     [~,I] = max(psi(:,:,trange==t_j),[],1,'linear');
     subplot(2,2,j);
     Br_t = Br(:,:,trange==t_j);
@@ -31,7 +31,8 @@ for i = 1:numel(trange)
     if numel(magaxis.r) == 2
         range = rq>=min(magaxis.r)&rq<=max(magaxis.r)&zq>=min(magaxis.z)&zq<=max(magaxis.z);
         Br_t = Br(:,:,i);
-        B_reconnection(1,i) = max(abs(Br_t(range)),[],'all');
+        % B_reconnection(1,i) = max(abs(Br_t(range)),[],'all');
+        B_reconnection(1,i) = min([max(Br_t(range),[],'all'),abs(min(Br_t(range),[],"all"))]);
         mergingRatio(1,i) = xpoint.psi/mean(magaxis.psi);
     else
         B_reconnection(1,i) = NaN;
@@ -46,7 +47,7 @@ timing_last = find(mergingRatio==0,1,'last');
 B_r = B_reconnection(1,timing_last);
 % B_r = B_reconnection(1,knnsearch(mergingRatio.',0.2));
 
-figure;plot(trange,B_reconnection);
-figure;plot(trange,mergingRatio);
+figure;plot(trange,B_reconnection);%xlim([460 500]);
+figure;plot(trange,mergingRatio);%xlim([460 500]);
 
 end

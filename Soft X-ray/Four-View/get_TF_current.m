@@ -1,6 +1,6 @@
 function [I_TF,x,aquisition_rate] = get_TF_current(PCB,pathname)
 
-directory_rogo = strcat(pathname.fourier,'rogowski/');
+directory_rogo = strcat(pathname.fourier,'/rogowski/');
 
 % shot = convert_shot_number(PCB);
 shot = PCB.idx;
@@ -51,8 +51,12 @@ end
 data = readmatrix(path,"FileType","text");
 step = aquisition_rate * time_step;
 x = t_start * aquisition_rate : step : t_end * aquisition_rate;
-I_TF = data(x,1+2)*calibration;
 
+if PCB.date >= 240400
+    I_TF = data(x,2+2)*calibration;
+else
+    I_TF = data(x,1+2)*calibration; 
+end
 end
 
 function [date_str,shot_str,data_dir] = directory_generation_Rogowski(date,shot,directory_rogo)

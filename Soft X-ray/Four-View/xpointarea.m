@@ -1,7 +1,5 @@
 function [Ep] = xpointarea(EE1, EE2, EE3, EE4, xPointList, t, data2D, Ep_previous)
 
-
-
 t_idx = find(data2D.trange==t);
 z = xPointList.z(t_idx);
 r = xPointList.r(t_idx);

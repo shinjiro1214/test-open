@@ -1,5 +1,7 @@
 
-transmission_n = 10;
+ReconMethod = 2;
+
+transmission_n = 4;
 % Parameters
 x_min = 10;
 x_max = 300;
@@ -41,6 +43,11 @@ threshold = 25;
 I_assumption = I_assumptionA.*(1+exp((1*(x-threshold)))).^(-1)+ I_assumptionB.*(1+exp(-(1*(x-threshold)))).^(-1);
 I_assumption = I_assumption*1e-2;
 
+n = 10;%　n％のノイズを加える
+Iwgn=awgn(I_assumption,10*log10(100/n),'measured');
+%Iwgn = I; % 0%
+Iwgn(Iwgn<0)=0;
+
 % Plot the graph
 figure;
 plot(x, I_assumption);
@@ -63,10 +70,10 @@ if ~isfile(transmissionfile)
 end
 load(transmissionfile, 'transmission_matrix','means', 'U','s','v','M','K');
 
-Ep = transmission_matrix*I_assumption.';
+Ep = transmission_matrix*Iwgn.';
 
 %I = transmission_matrix\Ep;
-I = get_distribution(M,K,U,s,v,Ep, transmission_matrix, means);
+I = get_distribution(M,K,U,s,v,Ep, transmission_matrix, ReconMethod);
 
 % figure; % 新しい図を作成
 plot(means, I, 'o-'); % 点と線でプロット
@@ -78,3 +85,14 @@ grid on; % グリッドを表示
 set(gca, 'XScale', 'log');
 set(gca, 'YScale', 'log');
 xlim([x_min x_max]);
+legend('理想スペクトル', '再構成スペクトル');
+
+I_new = interp1(x, I_assumption, means, 'linear');
+
+differences = I_new - I;
+
+
+% 平均二乗誤差 (MSE)
+mse = mean(differences.^2, 'all');
+disp(mse)
+

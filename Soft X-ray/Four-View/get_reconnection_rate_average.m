@@ -62,14 +62,14 @@ startlist = T.SXRStart(IDXlist);
 intervallist = T.SXRInterval(IDXlist);
 
 
-PCB.trange=400:600;%【input】計算時間範囲
+PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=50; %【input】rz方向のメッシュ数
 PCB.restart = 0;
 
-figure;hold on
-xlabel('time [us]');ylabel('Merging ratio [%]');
-legendList = cell(1,n_data);
-ax=gca;ax.FontSize=18;
+% figure;hold on
+% xlabel('time [us]');ylabel('Merging ratio [%]');
+% legendList = cell(1,n_data);
+% ax=gca;ax.FontSize=18;
 
 % % エクセルファイルの保存先とファイル名を指定
 % outputFile = 'merging_rate.xlsx';
@@ -79,44 +79,116 @@ ax=gca;ax.FontSize=18;
 % % 最長のmerging_ratioの長さを記録する変数
 % max_length = 0;
 
+% 全ショットのmerging_ratioを格納するための配列
+all_merging_ratios = zeros(n_data, numel(times));
 
 for i = 1:n_data
+    % 各ショットのデータ取得
     shot = IDXlist(i);
-    start = startlist(i);
-    interval = intervallist(i);
-
     PCB.idx = IDXlist(i);
-    PCB.shot=shotlist(i,:);
-    PCB.tfshot=tfshotlist(i,:);
-    if PCB.shot == PCB.tfshot
-        PCB.tfshot = [0,0];
-    end
-    PCB.i_EF=EFlist(i);
+    PCB.shot = shotlist(i,:);
+    PCB.tfshot = tfshotlist(i,:);
+    PCB.i_EF = EFlist(i);
     PCB.date = date;
-    TF=TFlist(i);
-    [grid2D,data2D] = process_PCBdata_280ch(PCB,pathname); %process_PCBdata_200ch.mに行く
-    if isstruct(grid2D)==0 %もしdtacqデータがない場合次のloopへ(データがない場合NaNを返しているため)
-        return
+
+    [grid2D, data2D] = process_PCBdata_280ch(PCB, pathname);
+
+    if isstruct(grid2D) == 0 % データがない場合
+        all_merging_ratios(i, :) = NaN;
+        continue;
     end
-    
-    merging_ratio = get_merging_ratio(data2D,grid2D,times);
-    legendList(i) = cellstr(strcat('shot',num2str(IDXlist(i))));
-    
-    % % 最長のmerging_ratioの長さを更新
-    % max_length = max(max_length, length(merging_ratio));
-    % % merging_ratioのデータを保存用の配列に追加
-    % all_merging_ratios = [all_merging_ratios; merging_ratio];
 
-    % figure;
-    plot(times,merging_ratio,'LineWidth',2);
-    % xlabel('time [us]');ylabel('Merging ratio [%]');
-    % title('Merging ratio');
-    % ax=gca;ax.FontSize=18;
-
+    % merging_ratioを計算
+    
+    merging_ratio = get_merging_ratio(data2D, grid2D, times);
+    all_merging_ratios(i, :) = merging_ratio; % 配列に保存
 end
+
+%平均値と標準誤差の計算
+mean_merging_ratio = mean(all_merging_ratios, 1, 'omitnan');
+std_merging_ratio = std(all_merging_ratios, 0, 1, 'omitnan');
+stderr_merging_ratio = std_merging_ratio ./ sqrt(sum(~isnan(all_merging_ratios), 1));
+
+%%%%%%%%%%%%%%%%%%% 平均値とエラーバー（標準誤差）のプロット%%%%%%%%%%
+figure;
+errorbar(times, mean_merging_ratio, std_merging_ratio,  'k', 'LineWidth', 2);
+xlabel('time [us]');
+ylabel('Merging ratio [%]');
+title('Average Merging Ratio on ', date);
 ylim([0 100]);
-legend(legendList,'Location','northwest');
-sgtitle(date);
+ax = gca; ax.FontSize = 18;
+grid on;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+
+%ここから微分計算
+% 時間微分を計算
+dt = diff(times); % 時間間隔
+diff_merging_ratios = diff(all_merging_ratios, 1, 2) ./ dt; % 各列の差分を時間で割る
+
+% 平均値と標準誤差の計算（時間微分データに対して）
+mean_diff_merging_ratio = mean(diff_merging_ratios, 1, 'omitnan');
+std_diff_merging_ratio = std(diff_merging_ratios, 0, 1, 'omitnan');
+stderr_diff_merging_ratio = std_diff_merging_ratio ./ sqrt(sum(~isnan(diff_merging_ratios), 1));
+
+% 時間軸調整（diffにより1つ短くなるため）
+mid_times = times(1:end-1) + dt / 2; % 時間の中央値を使用
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%平均値とエラーバー（時間微分）のプロット%%%%%%%%%%%%%%%%%%%%%%%%%
+figure;
+errorbar(mid_times, mean_diff_merging_ratio, stderr_diff_merging_ratio, 'k', 'LineWidth', 2);
+xlabel('time [us]');
+ylabel('Time Derivative of Merging Ratio [%/us]');
+title('Time Derivative of Average Merging Ratio on ', date);
+ylim([0 20]);
+ax = gca; ax.FontSize = 18;
+grid on;
+
+
+%ここから微分/合体率計算
+diff_div_merge = diff_merging_ratios ./ all_merging_ratios(:, 1:end-1);
+% disp(diff_div_merge)
+mean_diff_div_merge = mean(diff_div_merge,'omitnan');
+std_diff_div_merge = std(diff_div_merge, 0, 1, 'omitnan');
+stderr_diff_div_merge = std_diff_div_merge ./ sqrt(sum(~isnan(diff_div_merge), 1));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%平均値とエラーバーのプロット%%%%%%%%%%%%%%%%%%%%%%%%%
+figure;
+errorbar(mid_times, mean_diff_div_merge, stderr_diff_div_merge, 'k', 'LineWidth', 2);
+xlabel('time [us]');
+ylabel('Time Derivative of Merging Ratio / Merging Ratio [1/us]');
+title('Time Derivative of Average Merging Ratio / Merging Ratio on ', date);
+ylim([0 1]);
+ax = gca; ax.FontSize = 18;
+grid on;
+
+
+
+% 
+% secdt = diff(mid_times); % 時間間隔
+% secdiff_merging_ratios = diff(diff_merging_ratios, 1, 2) ./ secdt; % 各列の差分を時間で割る
+% 
+% % 平均値と標準誤差の計算（時間微分データに対して）
+% mean_secdiff_merging_ratio = mean(secdiff_merging_ratios, 1, 'omitnan');
+% std_secdiff_merging_ratio = std(secdiff_merging_ratios, 0, 1, 'omitnan');
+% stderr_secdiff_merging_ratio = std_secdiff_merging_ratio ./ sqrt(sum(~isnan(secdiff_merging_ratios), 1));
+% 
+% % 時間軸調整（diffにより1つ短くなるため）
+% secmid_times = mid_times(1:end-1) + secdt / 2; % 時間の中央値を使用
+% 
+% % 平均値とエラーバー（時間微分）のプロット
+% figure;
+% errorbar(secmid_times, mean_secdiff_merging_ratio, stderr_secdiff_merging_ratio, 'k', 'LineWidth', 2);
+% xlabel('time [us]');
+% ylabel('Time 2nd Derivative of Merging Ratio [%/us/us]');
+% title('Time Derivative of Average Merging Ratio on ', date);
+% ylim([-5 5]);
+% ax = gca; ax.FontSize = 18;
+% grid on;
+% 
+
+
+
+
 
 % % Initialize padded array with NaN and set proper dimensions
 % padded_merging_ratios = NaN(n_data, max_length);

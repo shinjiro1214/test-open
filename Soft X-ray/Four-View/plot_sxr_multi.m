@@ -1,4 +1,4 @@
-function [] = plot_sxr_multi(PCBdata,SXR)
+function [] = plot_sxr_multi(PCBdata,SXR,PCB)
 % grid2D = PCBdata.grid2D;
 % data2D = PCBdata.data2D;
 date = SXR.date;
@@ -47,6 +47,8 @@ if exist(matrixFolder,'dir') == 0
     doCalculation = true;
     mkdir(matrixFolder);
 elseif length(dir(matrixFolder))-2 ~= 8 %フォルダが存在しても全結果がない場合は計算する
+    doCalculation = true;
+elseif SXR.Reset == 1
     doCalculation = true;
 else
     doCalculation = false; 
@@ -99,7 +101,7 @@ end
 for t = times
     number = (t-start)/interval+1;
     matrixPath = strcat(matrixFolder,'/',num2str(number),'.mat');
-    if ~exist(matrixPath,'file')%doCalculation
+    if any(~exist(matrixPath,'file')) || any(SXR.Reset == 1)%doCalculation
 %         ベクトル形式の画像データの読み込み
         [VectorImage1,VectorImage2, VectorImage3, VectorImage4] = get_sxr_image(date,number,newProjectionNumber,rawImage);
         
@@ -159,13 +161,13 @@ for t = times
     
     if ReconMethod ~= 3
         SXRdata.EE = EE;
-        plot_save_sxr(PCBdata,SXR,SXRdata);
+        plot_save_sxr(PCBdata,SXR,SXRdata,PCB);
     else    
         cGANPath = strcat(dirPath,'/cGAN_large/',num2str(date),'/shot',num2str(shot),'/',num2str(number),'.mat');
         load(cGANPath,'EE1','EE2','EE3','EE4');
         EE = cat(3,EE1,EE2,EE3,EE4);
         SXRdata.EE = EE;
-        plot_save_sxr(PCBdata,SXR,SXRdata);
+        plot_save_sxr(PCBdata,SXR,SXRdata,PCB);
     end
 
 

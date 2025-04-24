@@ -4,21 +4,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%
 % clear
 % close all
-clearvars -except date IDXlist doSave doFilter doNLR
+clearvars -except date IDXlist doSave doFilter doNLR ReconMethod
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
-%%%%%ここが各PCのパス
-%【※コードを使用する前に】環境変数を設定しておくか、matlab内のコマンドからsetenv('パス名','アドレス')で指定してから動かす
-% ~/Documents/MATLAB にてstartup.mを作って、その中でsetenv('パス名','アドレス')していくと自動になる。
-pathname.NIFS=getenv('NIFS_path');%192.168.1.111
-pathname.fourier=getenv('fourier_path');%fourierのmd0（データックのショットが入ってる）までのpath
-pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所;
-pathname.pre_processed_directory_path = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
+addpath '/Users/shohgookazaki/Documents/matlab/common';
+run define_path.m
 
 PCB.restart = 0; % 今だけ
 
 %%%%実験オペレーションの取得
-prompt = {'Date:','Shot number:','a039(not necessary):','doSave:','doFilter:','ReconMethod(0:TP,1:MFI,2:MEM,3:cGAN):', 'buffer'};
+prompt = {'Date:','Shot number:','a039(not necessary):','doSave:','doFilter:','ReconMethod(0:TP,1:MFI,2:MEM,3:cGAN):', 'Reset'};
 definput = {'','','','','','',''};
 if exist('date','var')
     definput{1} = num2str(date);
@@ -38,6 +33,9 @@ end
 if exist('ReconMethod','var')
     definput{6} = num2str(ReconMethod);
 end
+if exist('Reset','var')
+    definput{7} = num2str(Reset);
+end
 dlgtitle = 'Input';
 dims = [1 35];
 answer = inputdlg(prompt,dlgtitle,dims,definput);
@@ -50,11 +48,12 @@ a039 = str2num(cell2mat(answer(3)));
 doSave = logical(str2num(cell2mat(answer(4))));
 doFilter = logical(str2num(cell2mat(answer(5))));
 ReconMethod = str2num(cell2mat(answer(6)));
-
+Reset = logical(str2num(cell2mat(answer(7))));
 
 SXR.doSave = doSave;
 SXR.doFilter = doFilter;
 SXR.ReconMethod = ReconMethod;
+SXR.Reset = Reset;
 
 %-----------スプレッドシートからデータ抜き取り--------------------%
 DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシートのID
@@ -123,5 +122,5 @@ for i=1:n_data
     SXR.date = date;
     SXR.shot = IDXlist(i);
     SXR.SXRfilename = strcat(getenv('SXR_IMAGE_DIR'),'/',num2str(date),'/shot',num2str(SXR.shot,'%03i'),'.tif');
-    plot_sxr_multi(PCBdata,SXR);
+    plot_sxr_multi(PCBdata,SXR,PCB);
 end

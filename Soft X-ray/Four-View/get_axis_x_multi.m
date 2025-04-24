@@ -1,10 +1,20 @@
-function [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D)
+function [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D,PCB)
+if PCB.tfshot(1) == 0
+    spheromak = 1;
+else
+    spheromak = 0;
+end
 
 trange = data2D.trange;
 % timeIndex = trange==time;
 psi = data2D.psi;
 % psi = psi(:,:,timeIndex);
-Bt = data2D.Bt;
+
+if spheromak == 1
+    Bt = data2D.Bt;
+else
+    Bt = data2D.Bt_th;
+end
 % Bt = Bt(:,:,timeIndex);
 rq = grid2D.rq;
 zq = grid2D.zq;

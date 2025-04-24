@@ -1,4 +1,4 @@
-function plot_save_sxr(PCBdata,SXR,SXRdata)
+function plot_save_sxr(PCBdata,SXR,SXRdata,PCB)
 
 grid2D = PCBdata.grid2D;
 data2D = PCBdata.data2D;
@@ -80,7 +80,8 @@ for i = 1:4
     end
 end
 
-[magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D); %時間ごとの磁気軸、X点を検索
+
+[magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D,PCB); %時間ごとの磁気軸、X点を検索
 
 positionList = [2,4,1,3];
 nameList = {'1um Al', '2.5um Al', '2um Mylar', '1um Mylar'};
@@ -97,8 +98,20 @@ nameList = {'1um Al', '2.5um Al', '2um Mylar', '1um Mylar'};
 
 % cLimList = {[0 1],[0 2],[0 0.3],[0 0.15]};
 
-%cLimList = {[0 6],[0 10],[0 10], [0 10]}; %241110
-cLimList = {[0 2],[0 2],[0 2], [0 2]}; 
+if PCB.date == 241110
+    cLimList = {[0 10],[0 5],[0 10], [0 5]}; %241110
+elseif PCB.date == 240111
+    cLimList = {[0 2],[0 2],[0 2], [0 2]}; % 240111
+elseif PCB.date == 241230
+    cLimList = {[0 0.5],[0 0.5],[0 0.5],[0 5]}; %241230
+elseif PCB.date == 250125
+    cLimList = {[0 3], [0 3], [0 3],[0 5]};
+else
+    cLimList = {[0 10],[0 5],[0 5],[0 5]};
+end
+
+
+
 
 % cLimList = {[0 1],[0 0.5],[0 0.3],[0 0.15]};
 % cLimList = {[0 1.5],[0 0.5],[0 1],[0 1.5]};
@@ -112,9 +125,9 @@ EE(negativeEE) = zeros(size(negativeEE));
 negativeEEq = find(EE_q<0);
 EE_q(negativeEEq) = zeros(size(negativeEEq));
 
-for i = 1%1:4
+for i = 1:4
     p = positionList(i);
-    %subplot(2,2,p);
+    subplot(2,2,p);
     cRange = cell2mat(cLimList(i));
 
     if i <= 2
@@ -147,15 +160,18 @@ for i = 1%1:4
     % [~,hp]=contourf(psi_mesh_z,psi_mesh_r,psi,contour_layer,'-k','Fill','off');
     hp.LineWidth = 1.5;
     % plot(magAxisList.z(:,t_idx),magAxisList.r(:,t_idx),'wo','LineWidth',3);
-    % plot(xPointList.z(t_idx),xPointList.r(t_idx),'wx','LineWidth',3);
+    plot(xPointList.z(t_idx),xPointList.r(t_idx),'wx','LineWidth',3);
     hold off;
     % xlim([-0.05,0.05]);ylim([0.18,0.32]);
     % xlim([-0.02,0.02]);ylim([0.23,0.29]);
     % % xlim([-0.03,0.03]);ylim([0.21,0.3]);
-    %title(string(nameList(i)));
+    if PCB.date == 241110 ||PCB.date == 250205 || PCB.date ==250206
+        ylim([0.1 0.32]);
+    end
+    title(string(nameList(i)));
 end
 
-%sgtitle(strcat(num2str(t),'us'));
+sgtitle(strcat('shot',num2str(shot),',',num2str(t),'us'));
 drawnow;
 
 % subplot(2,2,1);

@@ -3,8 +3,8 @@ e = 1.6*10^(-19); %C
 e0 = 8.85e-12; %F/m
 mi = 6.64e-26; %kg
 mr = me*mi/(me+mi);
-TA_eV = 200; %[eV]
-TB_eV = 1500;
+TA_eV = 25; %[eV]
+TB_eV = 0;
 % TA_K = TA_eV * 1.16045e4; %[K]
 ne = 1*1e19; %m^-3
 kB = 1.38e-23; %[J/K]
@@ -64,9 +64,9 @@ figure;
 % hold on;
 % loglog(energy,emissivityB);
 % hold on;
-loglog(energy, emissivityS);
-xlim([10 300]);
-ylim([1e-8 1e-5]);
+loglog(energy, emissivityA);
+%xlim([10 300]);
+%ylim([1e-8 1e-5]);
 % A = log10(E_th_J/(Z^2*Ry));
 % B = e_brem*e/(Z^2*Ry);
 % gff = log(me*v_th^2./(h*w_brem));

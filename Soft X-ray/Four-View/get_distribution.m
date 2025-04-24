@@ -202,7 +202,9 @@ elseif ReconMethod == 2
                 disp('収束しそうにないから初期値変えた');
                 iterc = 10;
             elseif iterc >12
-                error('収束しなさそうだよ');
+                disp('収束しなさそうだよ');
+                f = -10*ones(K,1);
+                break;
             end
         end
         toc

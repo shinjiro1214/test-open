@@ -1,21 +1,17 @@
- addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment';
- addpath '/Users/shohgookazaki/Documents/MATLAB/inputsdlg_v2.3.2'
 
+clearvars -except saved_answer
+
+addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment';
+addpath '/Users/shohgookazaki/Documents/MATLAB/inputsdlg_v2.3.2'
+addpath '/Users/shohgookazaki/Documents/matlab/common';
+
+run define_path.m
 %%%%%%%%%%%%%%%%%%%%%%%%
 %200ch用新規pcbプローブのみでの磁気面（Bz）
-%dtacqのshot番号を直接指定する場合
+%dtacqのshot番号を直接指定る場合
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%ここが各PCのパス
-%【※コードを使用する前に】環境変数を設定しておくか、matlab内のコマンドからsetenv('パス名','アドレス')で指定してから動かす
-pathname.ts3u=getenv('ts3u_path');%old-koalaのts-3uまでのパス（mrdなど）
-pathname.fourier=getenv('fourier_path');%fourierのmd0（データックのショットが入ってる）までのpath
-pathname.NIFS=getenv('NIFS_path');%resultsまでのpath（ドップラー、SXR）
-pathname.save=getenv('savedata_path');%outputデータ保存先
-pathname.rawdata38=getenv('rawdata038_path');%dtacq a038のrawdataの保管場所
-pathname.woTFdata=getenv('woTFdata_path');%rawdata（TFoffset引いた）の保管場所
-pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所
-pathname.pre_processed_directory_path=getenv('pre_processed_directory_path');
+
 
 %エラー回避
 doCheck = 0;
@@ -28,9 +24,16 @@ name = 'Input';
 prompt = {'Date:', 'Shot number:', 'a039(not necessary)', 'doCheck:', 'Restart:', 'Data type:'};
 formats = struct('type', {}, 'style', {}, 'items', {}, 'format', {}, 'limits', {}, 'size', {});
 
+if exist('saved_answer', 'var')
+    defaultanswer = saved_answer;
+else
+    defaultanswer = {[], '', [], 1, 1, 1, 1}; % 適切なデフォルト値をセット
+end
+
 formats(1,1).type = 'edit';
 formats(1,1).format = 'integer';
 formats(1,1).size = [100 20];
+
 
 formats(2,1).type = 'edit';
 formats(2,1).format = 'text';
@@ -54,24 +57,35 @@ formats(5,1).size = [100 20];
 
 formats(6,1).type = 'list';
 formats(6,1).style = 'popupmenu';
-formats(6,1).items = {'psi', 'Bz', 'Bt', 'Jt', 'Et', 'Br', 'Bl'};
-formats(6,1).format = 'integer';  % Change to integer
+formats(6,1).items = {'psi', 'Bz', 'Bt', 'Br','Jt', 'Jz','Jr','Et', 'lBl','dBzdt','dBtdt','dBrdt','dBdt_magnitude','B_parallel','dB_parallel_dt', 'curvature', 'Bt_th','Lamor','JxBr','JxBt','JxBz','absJxB','Vcurvature','VdeltaB'};
+formats(6,1).format = 'integer';
 formats(6,1).size = [100 20];
 
 [answer, canceled] = inputsdlg(prompt, name, formats);
+
+
 
 if isempty(answer)
     return
 end
 
-date = answer{1};  % Already an integer
-IDXlist_str = answer{2};
-IDXlist = str2num(IDXlist_str);  % Already an integer
-a039 = answer{3};  % Already an integer
+if ~canceled
+    % インデックスから文字列を取得
+    date = answer{1};  % Already an integer
+    IDXlist_str = answer{2};
+    IDXlist = str2num(IDXlist_str);  % Already an integer
+    a039 = answer{3};  % Already an integer
+    doCheck = answer{4}-1;  % Check if 'true' was selected (index 1)
+    PCB.restart = answer{5}-1;  % Check if 'true' was selected (index 1)
+    dataType = formats(6,1).items{answer{6}};
+    
+    saved_answer = answer;
+end
 
-doCheck = answer{4}-1;  % Check if 'true' was selected (index 1)
-PCB.restart = answer{5}-1;  % Check if 'true' was selected (index 1)
-dataType = answer{6};  % Already an integer corresponding to the selected item
+% PCB.xpointdata = xpointdata;
+
+FIG.start = 460;
+FIG.end = 500;
 
 DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシートのID
 T=getTS6log(DOCID);
@@ -103,10 +117,13 @@ end
 
 % trange=400:600;%【input】計算時間範囲
 % n=50; %【input】rz方向のメッシュ数
-PCB.trange=400:800;%【input】計算時間範囲
+PCB.trange=400:600;%【input】計算時間範囲
 PCB.n=40; %【input】rz方向のメッシュ数
-PCB.start = 40; %plot開始時間-400
+%PCB.start = 80;
+PCB.start = 55; %plot開始時間-400
 
+all_data = zeros(n_data,numel(PCB.trange));
+all_merging_ratios = zeros(n_data, numel(PCB.trange));
 
 for i=1:n_data
     % dtacq_num=dtacqlist;
@@ -125,8 +142,14 @@ for i=1:n_data
     else
         plot_psi(PCB, pathname);
     end
-end
+    [B_r,B_t,B_rt,b] = get_guide_field_ratio2(PCB,pathname);
+    disp(B_r);
+    disp(B_rt);
+    disp(b)
 
+    % disp(B_t) 
+    % [I_TF,x,aquisition_rate] = get_TF_current(PCB,pathname);
+end
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%

@@ -21,6 +21,7 @@ calibrationImage = imadjust(calibrationImage);% imagesc(CalibrationImage);title(
 %     radiusRange = [65,75];
 % end
 [centers,radii] = imfindcircles(calibrationImage,radiusRange,'Sensitivity',0.995,"Method","twostage");
+
 % 検出した円をnumber個だけ描画します．このとき，numberは32個の円が全て含まれる程度に大きく設定します．
 % numberに許される最大値はnumel(radii)です．優先度の低い円を考慮から外すためにnumberをある程度小さくする必要があります．
 % こちらを整理前のcentersとします．
@@ -87,3 +88,4 @@ for i = 1:4
 end
 centerPositions = centersTimeRaps(:,:,1:2);
 radii = repmat(max(centersTimeRaps(:,:,3),[],'all'),[32,1]);
+%% 

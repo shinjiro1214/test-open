@@ -15,62 +15,195 @@ if isstruct(grid2D)==0 %もしdtacqデータがない場合次のloopへ(デー�
     return
 end
 
-[magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D); %時間ごとの磁気軸、X点を検索
+[magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D, PCB); %時間ごとの磁気軸、X点を検索
 
 % プロット部分
-figure('Position', [0 0 1500 1500],'visible','on');
+figure('Position', [0 0 1500 1500],'visible','off');
 
-dt = 4;
+dt = 3;
 
 for m=1:16 %図示する時間
     i=start+m.*dt; %end
     t=trange(i);
     subplot(4,4,m)
     switch PCB.dataType
-        case 1
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),40,'LineStyle','none');
+        case 'psi'
+            a = zeros(size(data2D.psi(:,:,i)));
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),a,100,'LineStyle','none');
             clim([-0.5e-2,0.5e-2]);
             dataTypeName = 'psi';
-            colorLabel = '\psi (Wb)';
-        case 2
+            colorLabel = 'Zpsi (Wb)';
+        case 'Bz'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none');
             clim([-0.1,0.1]);
             dataTypeName = 'Bz';
             colorLabel = 'B_z (T)';
-        case 3
+        case 'Bt'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none');
-            %clim([0.05,0.4]);%ST
-            clim([-0.05,0.05]);%Spheromak
+            clim([0.05,0.3]);%ST
+            % clim([-0.05,0.05]);%Spheromak
             dataTypeName = 'Bt';
             colorLabel = 'B_t (T)';
-        case 4
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Jt(:,:,i),30,'LineStyle','none');
-            clim([-0.3e6,0.3e6]);
+            % disp(max(max(data2D.Bt(:,:,i))))
+        case 'Jt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),30,'LineStyle','none');
+            clim([-1e6,1e6]);
             dataTypeName = 'Jt';
             colorLabel = 'J_t (A/m^2)';
-        case 5
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Et(:,:,i),100,'LineStyle','none');
-        clim([-8e-4,8e-4]);
+        case 'Jz'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jz(:,:,i),30,'LineStyle','none');
+            clim([-1e6,1e6]);
+            dataTypeName = 'Jz';
+            colorLabel = 'J_z (A/m^2)';
+        case 'Jr'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jr(:,:,i),30,'LineStyle','none');
+            clim([-1e6,1e6]);
+            dataTypeName = 'Jr';
+            colorLabel = 'J_r (A/m^2)';
+        case 'Et'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),100,'LineStyle','none');
+            % clim([-8e-4,8e-4]);
+            clim([-8e2 8e2]);
             dataTypeName = 'Et';
             colorLabel = 'E_t (V/m)';
-        case  6
+        case  'Br'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');
             clim([-0.07,0.07]);
             dataTypeName = 'Br';
             colorLabel = 'B_r (T)';
-        case  7
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bl(:,:,i),20,'LineStyle','none'); %計算が合ってるかはわからない
+        case  'lBl'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bl(:,:,i),20,'LineStyle','none'); 
             clim([0,0.1]);
             dataTypeName = 'lBl';
+            % disp(min(min(data2D.Bl(:,:,i))))
             colorLabel = 'B_l (T)';
+        case  'dBzdt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dBzdt(:,:,i),20,'LineStyle','none'); 
+            clim([0,0.01]);
+            dataTypeName = 'dBzdt';
+            colorLabel = 'dBzdt (T/s)';
+        case  'dBtdt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dBtdt(:,:,i),20,'LineStyle','none'); 
+            clim([0,0.01]);
+            dataTypeName = 'dBtdt';
+            colorLabel = 'dBtdt (T/s)';
+        case  'dBrdt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dBrdt(:,:,i),20,'LineStyle','none'); 
+            clim([0,0.01]);
+            dataTypeName = 'dBrdt';
+            colorLabel = 'dBrdt (T/s)';
+        case  'dBdt_magnitude'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dBdt_magnitude(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e4]);
+            dataTypeName = 'dBdt magnitude';
+            colorLabel = 'dBdt magnitude (T/s)';
+            disp(max(max(data2D.dBdt_magnitude(:,:,i))))
+        case  'B parallel'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.B_parallel(:,:,i),20,'LineStyle','none'); 
+            clim([0,0.01]);
+            dataTypeName = 'B parallel';
+            colorLabel = 'B parallel(T)';
+        case   'dB parallel dt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dB_parallel_dt(:,:,i),20,'LineStyle','none'); 
+            clim([0,0.01]);
+            dataTypeName = 'dB parallel dt';
+            colorLabel = 'dB parallel dt(T/s)';
+        case  'curvature'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.curvature(:,:,i),20,'LineStyle','none'); 
+            clim([0,50]);
+            dataTypeName = 'curvature';
+            colorLabel = 'curvature　(1/m)';
+        case  'Bt_th'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),20,'LineStyle','none'); 
+            clim([-0.2,0.2]);
+            dataTypeName = 'Bt_th';
+            colorLabel = 'Bt_th　(T)';
+        case 'Lamor'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Lamor(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.Lamor(:,:,i))))
+            dataTypeName = 'Lamor radius';
+            colorLabel = 'Lamor Radius(m)';
+        case'JxBr'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBr(:,:,i),20,'LineStyle','none'); 
+            clim([-2e5,2e5]);
+            disp(max(max(data2D.JxBr(:,:,i))))
+            dataTypeName = 'JxBr';
+            colorLabel = 'JxBr(N/m^3)';
+        case'JxBt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBt(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.JxBt(:,:,i))))
+            dataTypeName = 'JxBt';
+            colorLabel = 'JxBt(N/m^3)';
+        case'JxBz'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBz(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.JxBz(:,:,i))))
+            dataTypeName = 'JxBz';
+            colorLabel = 'JxBz(N/m^3)';
+        case'absJxB'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.absJxB(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.absJxB(:,:,i))))
+            dataTypeName = 'absJxB';
+            colorLabel = 'absJxB(N/m^3)';
+        case'Vcurvature'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Vcurvature(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.Vcurvature(:,:,i))))
+            dataTypeName = 'Vcurvature';
+            colorLabel = 'Vcurvature(m/s*C/W)';
+        case'VdeltaB'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.VdeltaB(:,:,i),20,'LineStyle','none'); 
+            clim([0,1e-2]);
+            disp(max(max(data2D.VdeltaB(:,:,i))))
+            dataTypeName = 'VdeltaB';
+            colorLabel = 'VdeltaB(m/s*C/W)';
+            
+        
     end
-    colormap(jet)
+    colormap('whitejet')
     axis image
     axis tight manual
     hold on
     contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),20,'black')
     plot(magAxisList.z(:,i),magAxisList.r(:,i),'ko');
     plot(xPointList.z(i),xPointList.r(i),'kx');
+    hold on
+    
+    switch PCB.dataType
+    case 'lBl'
+        % ベクトルばをプロットするけど、まず間引きする
+        step = 3;  % 例えば 2 とか 3 にすれば間隔が広くなる
+        % 各点に対して色を決定
+        color = zeros(size(data2D.Bt(:,:,i))); % 色の初期化
+
+        % Btが負のときは緑、それ以外は赤
+        color(data2D.Bt(:,:,i) < 0) = 1; % Bt < 0 の部分を 1 (緑)
+        color(data2D.Bt(:,:,i) >= 0) = 2; % Bt >= 0 の部分を 2 (赤)
+
+        % 矢印の始点
+        zq_sub = grid2D.zq(1:step:end, 1:step:end);
+        rq_sub = grid2D.rq(1:step:end, 1:step:end);
+
+        % 各色で矢印を描画
+        for idx = 1:numel(zq_sub)
+            % 2D の座標 (zq_sub, rq_sub) をインデックスに変換
+            [~, z_idx] = min(abs(grid2D.zq(1,:) - zq_sub(idx)));
+            [~, r_idx] = min(abs(grid2D.rq(:,1) - rq_sub(idx)));
+            
+            if color(r_idx, z_idx) == 1
+                % Bt < 0 の場合、緑色で矢印
+                quiver(zq_sub(idx), rq_sub(idx), data2D.Bz(r_idx, z_idx, i), ...
+                       data2D.Br(r_idx, z_idx, i), 4, 'Color', 'r');
+            else
+                % Bt >= 0 の場合、赤色で矢印
+                quiver(zq_sub(idx), rq_sub(idx), data2D.Bz(r_idx, z_idx, i), ...
+                       data2D.Br(r_idx, z_idx, i), 4, 'Color', 'g');
+            end
+        end
+    end
     hold off
     title(string(t)+' us')
 
@@ -81,11 +214,11 @@ end
 sgtitle(strcat(dataTypeName, ' diagram of shot', num2str(shot), ', on', num2str(date), ':', num2str(IDXlist(1))));
 
 pathname_fig = getenv('savedata_path');
-foldername_fig = strcat(pathname_fig,'/',num2str(date));
+foldername_fig = strcat(pathname_fig,'/',num2str(date),'/',dataTypeName);
 if exist(foldername_fig,'dir') == 0
     mkdir(foldername_fig);
 end
-savepath = fullfile(foldername_fig, strcat('shot', num2str(IDXlist(1)),'(',dataTypeName,')','.png'));
+savepath = fullfile(foldername_fig, strcat(dataTypeName, '(','shot',num2str(IDXlist(1)),')','.png'));
 saveas(gcf,savepath);
 
 end

@@ -199,7 +199,8 @@ end
 
 imageVectors1 = squeeze(imageVectors(1,:,:));
 imageVectors2 = squeeze(imageVectors(2,:,:));
-imageVectors3 = squeeze(imageVectors(3,:,:));
+imageVectors3 = squeeze(imageVectors(3,:, ...
+    :));
 imageVectors4 = squeeze(imageVectors(4,:,:));
 imageVector1 = imageVectors1(number,:);
 imageVector2 = imageVectors2(number,:);
