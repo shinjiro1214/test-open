@@ -15,7 +15,11 @@ end
 [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D); %時間ごとの磁気軸、X点を検索
 
 % プロット部分
-figure('Position', [0 0 1500 1500],'visible','on');
+f1 = figure('Position', [0 0 1500 1500],'visible','on');
+
+if PCB.type==4
+    f2 = figure('Position', [0 0 1500 1500],'visible','on');
+end
 
 % figure('Position', [0 0 1500 1500],'visible','on');
 % start=30;
@@ -29,31 +33,43 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
  for m=1:16 %図示する時間
      i=start+(m-1)*dt; %start+400μsからdtごとに取得
      t=trange(i+1); %startが60なら460μsのデータを取る
-     subplot(4,4,m);
+     figure(f1);subplot(4,4,m);
 
      switch(PCB.type)
-        case 0
+        case 0 %psi_line
             contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),10,'black','LineWidth',2);
-        case 1
+        case 1 %psi
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),40,'LineStyle','none');clim([-5e-3,5e-3])%psi
-        case 2
+        case 2 %Bz
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none');clim([-0.1,0.1])%Bz
-        case 3
+        case 3 %Bt
             % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),40,'LineStyle','none');clim([0,0.3])%Bt
             % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none')
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none')
-        case 4
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');clim([-0.1,0.1])%Br
-        case 5
+        case 4 %Br
+            figure(f1);contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');clim([-0.1,0.1]);
+            range_r = grid2D.rq(:,1)>=min(magAxisList.r(:,i))&grid2D.rq(:,1)<=max(magAxisList.r(:,i));
+            range_z = grid2D.zq(1,:)>=min(magAxisList.z(:,i))&grid2D.zq(1,:)<=max(magAxisList.z(:,i));
+            Br_tmp = data2D.Br(:,:,i);zq = grid2D.zq(range_r,range_z);
+            if sum(range_r) == 1
+                Br_mean = Br_tmp(range_r,range_z);
+            else
+                Br_mean = mean(Br_tmp(range_r,range_z));
+            end
+            % Br1 = max(mean(Br_tmp(range)));
+            % Br2 = abs(min(mean(Br_tmp(range))));
+            figure(f2);subplot(4,4,m);plot(zq(1,:),Br_mean);figure(f1);
+            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');clim([-0.1,0.1])%Br
+        case 5 %Et
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Et(:,:,i),20,'LineStyle','none');clim([-500,400])%Et
             % 時刻iにおけるx点の[r,z]座標（インデックス）を取得
             idxR = knnsearch(grid2D.rq(:,1),xPointList.r(i));
             idxZ = knnsearch(grid2D.zq(1,:).',xPointList.z(i));
             % ±3程度の範囲でEtの平均を計算
             Et_t(m) = mean(data2D.Et(max(1,idxR-1):min(idxR+1,numel(grid2D.rq(:,1))),max(1,idxZ-1):min(numel(grid2D.zq(1,:)),idxZ+1),i),'all');
-        case 6
+        case 6 %Jt
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Jt(:,:,i),30,'LineStyle','none');clim([-0.8*1e+6,0.8*1e+6]);%clim([-0.8*1e+6,0]) %jt%カラーバーの軸の範囲
-        case 7
+        case 7 %GFR
             Bp = sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2);
             % GFR = data2D.Bt_th(:,:,i)./Bp;
             % contourf(grid2D.zq(1,:),grid2D.rq(:,1),GFR,30,'LineStyle','none');clim([0,20]);%GFR
@@ -66,30 +82,63 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
             [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
             Bp_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),Bp,zq,rq);
             Bt_th_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),zq,rq);
-            Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            % Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            % Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
             GFR_q = abs(Bt_th_q./Bp_q);
-            % contourf(zq(1,:),rq(:,1),GFR_q,50,'LineStyle','none');clim([0,50]);%GFR
+            contourf(zq(1,:),rq(:,1),GFR_q,50,'LineStyle','none');clim([0,50]);%GFR
             % disp(max(GFR_q,[],"all"))
             idxRq = knnsearch(rq(:,1),xPointList.r(i));
             idxZq = knnsearch(zq(1,:).',xPointList.z(i));
-            E_eff_tmp = Et_q.*GFR_q;
-            E_eff(m) = min(E_eff_tmp(max(1,idxRq-10):min(200,idxRq+10),max(1,idxZq-10):min(200,idxZq+10)),[],"all");
-            contourf(zq(1,:),rq(:,1),-1*E_eff_tmp,50,'LineStyle','none');clim([1e3,Inf]);%GFR
-            % Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
-            % eta_q = Et_q./Jt_q;
-            % contourf(zq(1,:),rq(:,1),eta_q,linspace(-1e-2,1e-2,50),'LineStyle','none');clim([-1e-2,1e-2]);%resistivity
-            % maxGFRq = max(GFR_q(max(1,idxRq-3):min(idxRq+3,numel(rq(:,1))),max(1,idxZq-3):min(numel(zq(1,:)),idxZq+3)),[],'all');
-            % disp(maxGFRq);
-        case 8
+            % E_eff_tmp = Et_q.*GFR_q;
+            % E_eff(m) = min(E_eff_tmp(max(1,idxRq-10):min(200,idxRq+10),max(1,idxZq-10):min(200,idxZq+10)),[],"all");
+            % % contourf(zq(1,:),rq(:,1),-1*E_eff_tmp,50,'LineStyle','none');clim([1e3,Inf]);%Epara
+            % contourf(zq(1,:),rq(:,1),Et_q.*Jt_q.*Bt_th_q./Bp_q,50,'LineStyle','none');%clim([1e3,Inf]);%Power
+            % % Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
+            % % eta_q = Et_q./Jt_q;
+            % % contourf(zq(1,:),rq(:,1),eta_q,linspace(-1e-2,1e-2,50),'LineStyle','none');clim([-1e-2,1e-2]);%resistivity
+            maxGFRq = max(GFR_q(max(1,idxRq-3):min(idxRq+3,numel(rq(:,1))),max(1,idxZq-3):min(numel(zq(1,:)),idxZq+3)),[],'all');
+            disp(maxGFRq);
+        case 8 %Bp
             Bp = sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2);
             % contourf(grid2D.zq(1,:),grid2D.rq(:,1),Bp,30,'LineStyle','none');clim([0 0.1]);%Bp
             [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
             Bp_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),Bp,zq,rq);
-            contourf(zq(1,:),rq(:,1),Bp_q,50,'LineStyle','none');clim([0,0.01]);%GFR
-            disp(min(Bp_q,[],"all"));
-        case 9
+            contourf(zq(1,:),rq(:,1),Bp_q,50,'LineStyle','none');clim([0,0.01]);%Bp
+            % disp(min(Bp_q,[],"all"));
+        case 9 %B
             B = sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2+data2D.Bt_th(:,:,i).^2);
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),B,30,'LineStyle','none');clim([0 1]);%Bp  
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),B,30,'LineStyle','none');clim([0 1]);%B
+        case 10 %Eeff
+            Bp = sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2);
+            [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
+            Bp_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),Bp,zq,rq);
+            Bt_th_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),zq,rq);
+            Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            GFR_q = abs(Bt_th_q./Bp_q);
+            idxRq = knnsearch(rq(:,1),xPointList.r(i));
+            idxZq = knnsearch(zq(1,:).',xPointList.z(i));
+            E_eff_tmp = Et_q.*GFR_q;
+            E_eff(m) = min(E_eff_tmp(max(1,idxRq-10):min(200,idxRq+10),max(1,idxZq-10):min(200,idxZq+10)),[],"all");
+            contourf(zq(1,:),rq(:,1),-1*E_eff_tmp,50,'LineStyle','none');clim([1e3,Inf]);%Eeff
+        case 11 %Energy increment in strong guide field
+            Bp = sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2);
+            [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
+            Bp_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),Bp,zq,rq);
+            Bt_th_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),zq,rq);
+            Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
+            contourf(zq(1,:),rq(:,1),Et_q.*Jt_q.*Bt_th_q./Bp_q,50,'LineStyle','none');%clim([1e3,Inf]);%Power
+        case 12 %Energy gain
+            [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
+            Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
+            contourf(zq(1,:),rq(:,1),Et_q.*Jt_q,50,'LineStyle','none');%clim([1e3,Inf]);%Power
+        case 13 %resistivity
+            [zq,rq] = meshgrid(linspace(-0.1,0.1,200),linspace(0.2,0.32,200));
+            Et_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),zq,rq);
+            Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
+            eta_q = Et_q./Jt_q;
+            contourf(zq(1,:),rq(:,1),eta_q,linspace(-1e-2,1e-2,50),'LineStyle','none');clim([-1e-2,1e-2]);%resistivity
      end
      mergingRatio(m) = xPointList.psi(i)/min(magAxisList.psi(:,i));
 
@@ -156,7 +205,7 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
      ax = gca;
      ax.FontSize = 18;
      xlabel('time [us]');ylabel('Reconnection electric field [V/m]');
- elseif PCB.type == 7
+ elseif PCB.type == 10
      figure;plot(times,E_eff,'LineWidth',3);
     xlabel('time [us]');
     %  figure;plot(mergingRatio,E_eff,'LineWidth',3);

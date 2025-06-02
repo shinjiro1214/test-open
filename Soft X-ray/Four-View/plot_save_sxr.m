@@ -111,6 +111,11 @@ negativeEE = find(EE<0);
 EE(negativeEE) = zeros(size(negativeEE));
 negativeEEq = find(EE_q<0);
 EE_q(negativeEEq) = zeros(size(negativeEEq));
+for i = 2:4
+    if i ~= 1
+        EE_q(:,:,i) = EE_q(:,:,i)./EE_q(:,:,1);
+    end
+end
 
 for i = 1:4
     p = positionList(i);
@@ -129,16 +134,16 @@ for i = 1:4
     % [~,h] = contourf(SXR_mesh_z,SXR_mesh_r,EE_plot,20);
 
     % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
-    % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
+    [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
 
 
-    if i == 1
-        [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
-        % [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q(:,:,i),20);
-    else
-        [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
-        % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
-    end
+    % if i == 1
+    %     [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
+    %     % [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q(:,:,i),20);
+    % else
+    %     [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
+    %     % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
+    % end
 % 
     colormap('turbo');
     h.LineStyle = 'none';

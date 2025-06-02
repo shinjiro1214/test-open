@@ -218,7 +218,7 @@ calibrationData = [number.',timing.',centerX,centerY,radii];
 calibrationTable = array2table(calibrationData,'VariableNames',{'number','timing','center_X','center_Y','radii'});
 % writematrix(calibrationData,saveFile,'Sheet',num2str(date));
 writetable(calibrationTable,saveFile,'Sheet',num2str(date));
-disp('Saved succesfully!');
+fprintf('Saved succesfully!');
 
 end
 

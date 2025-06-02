@@ -59,6 +59,8 @@ PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=40; %【input】rz方向のメッシュ数
 PCB.start = 20; %plot開始時間-400
 
+PCB.doOverwrite = false;
+
 % doCheck = false;
 % doCheck = true;
 % if ~doCheck
@@ -68,12 +70,16 @@ PCB.start = 20; %plot開始時間-400
 magDataDir = pathname.MAGDATA;
 magDataFile = strcat(magDataDir,'/',num2str(date),'.mat');
 if exist(magDataFile,'file')
-    load(magDataFile,'idxList','BrList','BtList','bList');
+    load(magDataFile,'idxList','BrList','BtList','bList','BtList_th','bList_th','EtList','tList');
 else
     idxList = zeros(numel(IDXlist),1);
     BrList = zeros(numel(IDXlist),1);
     BtList = zeros(numel(IDXlist),1);
     bList = zeros(numel(IDXlist),1);
+    BtList_th = zeros(numel(IDXlist),1);
+    bList_th = zeros(numel(IDXlist),1);
+    EtList = zeros(numel(IDXlist),1);
+    tList = zeros(numel(IDXlist),1);
 end
 
 directory_rogo = strcat(pathname.fourier,'rogowski/');
@@ -107,13 +113,22 @@ for i=1:n_data
     % filename = strcat(current_folder,num2str(date_rgw),sprintf('%03d',PCB.idx),'.rgw');
     
     if isfile(filename) && ~any(PCB.tfshot==0)
-        [B_r,B_t,b] = get_guide_field_ratio(PCB,pathname);
+        % [B_r,B_t,b] = get_guide_field_ratio(PCB,pathname);
+        % idxList(i) = PCB.idx;
+        % BrList(i) = B_r;
+        % BtList(i) = B_t;
+        % bList(i) = b;       
+        magData = get_guide_field_ratio3(PCB,pathname);
         idxList(i) = PCB.idx;
-        BrList(i) = B_r;
-        BtList(i) = B_t;
-        bList(i) = b;
+        BrList(i) = magData.Br;
+        BtList(i) = magData.Bt;
+        bList(i) = magData.GFR;
+        BtList_th(i) = magData.Bt_th;
+        bList_th(i) = magData.GFR_th;
+        EtList(i) = magData.Et;
+        tList(i) = magData.t;
     end
 
 end
 
-save(magDataFile,'idxList','BrList','BtList','bList');
+save(magDataFile,'idxList','BrList','BtList','bList','BtList_th','bList_th','EtList','tList');

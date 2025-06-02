@@ -51,18 +51,26 @@ data = readmatrix(path,"FileType","text");
 step = aquisition_rate * time_step;
 x = t_start * aquisition_rate : step : t_end * aquisition_rate;
 % I_TF = data(x,1+2)*calibration;
-ch_plot= [2,9:16]+2;
+if PCB.date < 240500
+    ch_plot = [1,3,4,7,8]+2;
+    legend_plot = {'TF','SEP2','SEP1','FCPF1','FCPF2'};
+else
+    ch_plot= [2,9:16]+2;
+    legend_plot = {'external TF','FCPF1','FCPF2','FCTF1','FCTF2','FCPF1 in vessel','FCPF2 in vessel','FCTF1 in vessel','FCTF2 in vessel'};
+end
+
 V_plot= data(x,ch_plot).';
-legend_plot = {'external TF','FCPF1','FCPF2','FCTF1','FCTF2','FCPF1 in vessel','FCPF2 in vessel','FCTF1 in vessel','FCTF2 in vessel'};
 rgwData.ch = ch_plot;
 rgwData.t = x;
 rgwData.legend = legend_plot;
-rgwData.V = V_plot;
+rgwData.V_plot = V_plot;
+rgwData.V_all = data(x,:).';
 
 figure;hold on;
 for i = 1:numel(legend_plot)
     plot(x,V_plot(i,:));
 end
+ylim([-0.5 0.5]);
 legend(legend_plot);
 
 end

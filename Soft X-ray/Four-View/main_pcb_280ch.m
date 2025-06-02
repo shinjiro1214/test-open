@@ -79,8 +79,8 @@ dtacqlist=39.*ones(n_data,1);
 
 PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=40; %【input】rz方向のメッシュ数
-PCB.start = 63; %plot開始時間-400
-PCB.dt = 1;
+PCB.start = 55; %plot開始時間-400
+PCB.dt = 2;
 
 % doCheck = false;
 % doCheck = true;
@@ -105,10 +105,18 @@ for i=1:n_data
         check_signal(PCB,pathname);
     else
         plot_psi280ch(PCB,pathname);
-        % get_rgw_data(PCB,pathname);
+        % rgwData = get_rgw_data(PCB,pathname);
+        % figure;hold on;
+        % for j = 1:size(rgwData.V_all,1)
+        %     plot(rgwData.t,rgwData.V_all(j,:));
+        % end
+        % xlim([3900 5000]);ylim([-0.5 0.5]);
         % [B_r,B_t,b] = get_guide_field_ratio(PCB,pathname);
         % [B_r,B_t,b] = get_guide_field_ratio2(PCB,pathname);
         % disp(['B_r=',num2str(B_r),', B_t=',num2str(B_t),', b=',num2str(b)]);
+        % data = get_guide_field_ratio3(PCB,pathname);
+        % disp(['B_r=',num2str(data.Br),', B_t=',num2str(data.Bt),', b=',num2str(data.GFR)]);
+        % disp(['B_t_th=',num2str(data.Bt_th),', b_th=',num2str(data.GFR_th)]);
         % get_B_reconnection(PCB,pathname);
         % [grid2D,data2D] = process_PCBdata_200ch(PCB,pathname);
         % [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D);
@@ -186,7 +194,7 @@ function answer = customDialog(default)
     dataTypeList = uicontrol('Parent', d, ...
                              'Style', 'popupmenu', ...
                              'Position', [130, 210, 200, 25], ...
-                             'String', {'psi', 'Bz', 'Bt', 'Br', 'Et', 'Jt', 'GFR', 'Bp', 'B'}, ...
+                             'String', {'psi', 'Bz', 'Bt', 'Br', 'Et', 'Jt', 'GFR', 'Bp', 'B', 'Eeff', 'Energy increment', 'Energy gain', 'Resistivity'}, ...
                              'Value', defaultDataType);
 
     % 'check'ラジオボタン

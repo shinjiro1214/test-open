@@ -24,7 +24,7 @@ figure;hold on;set(gca,'YScale','log');set(gca,'XScale','log');
 for i = 1:size(v_e,1)
     t = ones(1,size(v_e,2)).*1e-10;
     for j = 2:size(v_e,2)
-        t_ei = 4*pi()*e0^2*me*mr*v_e(i,j-1)^3/(ne*Z^2*e^4*log(Lambda)); %衝突時間(s) (https://fusion.k.u-tokyo.ac.jp/~takase/plasma_3.pdf)
+        t_ei = 4*pi()*e0^2*mr^2*v_e(i,j-1)^3/(ne*Z^2*e^4*log(Lambda)); %衝突時間(s) (https://fusion.k.u-tokyo.ac.jp/~takase/plasma_3.pdf)
         v_e(i,j) = v_e(i,j-1) + e*Et/me*t_ei;
         t(j) = t(j-1)+t_ei;
         if rand*exp(1) > 1

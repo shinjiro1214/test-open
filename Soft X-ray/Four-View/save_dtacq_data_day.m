@@ -62,6 +62,9 @@ for i=1:n_data
     idx = IDXlist(i);
     shot=shotlist(i,:);
     tfshot=tfshotlist(i,:);
+    if any(isnan(shot))
+        continue
+    end
     if shot == tfshot
         tfshot = [0,0];
     end

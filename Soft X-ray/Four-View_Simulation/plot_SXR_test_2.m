@@ -1,6 +1,7 @@
 % function plot_SXR_test()
-
-NL = false;
+close all
+% NL = false;
+NL = true;
 
 % Definition of reconstruction condition
 N_projection_new = 30; %square root of the projection number
@@ -70,10 +71,20 @@ z_range = find(-0.17<=z_space_SXR & z_space_SXR<=0.17);
 
 z_space_SXR = z_space_SXR(z_range);
 
+EE_original = flipud(EE_original);
+EE0 = EE_original(r_range,z_range);
 EE1 = EE1(r_range,z_range);
 
-figure;
-subplot(1,2,1)
+figure('Position',[1 358 1470 420]);
+subplot(1,3,1)
+[SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
+[~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE0,20);
+h1.LineStyle = 'none';
+c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
+title('オリジナル');
+axis image
+
+subplot(1,3,2)
 [SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
 [~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE1,20);
 h1.LineStyle = 'none';
@@ -83,7 +94,7 @@ axis image
 
 EE_new1 = EE_new1(r_range,z_range);
 
-subplot(1,2,2);
+subplot(1,3,3);
 [SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
 [~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE_new1,20);
 h1.LineStyle = 'none';

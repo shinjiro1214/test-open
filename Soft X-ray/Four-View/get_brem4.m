@@ -18,7 +18,7 @@ e = 1.6*10^(-19); %C
 e0 = 8.85e-12; %F/m
 mi = 6.64e-26; %kg
 mr = me*mi/(me+mi);
-Te = 20; %eV
+Te = 10; %eV
 % Te = 200; %eV
 % Te = 1000; %eV
 ne = 1*1e19; %m^-3
@@ -33,7 +33,7 @@ c = 3e8;
 
 mu = 0;
 % mu = 3e6;
-sigma = sqrt(kBT/me);
+sigma = sqrt(3*kBT/me);
 v_0 = normrnd(mu,sigma,1,1e4);
 
 v_0 = abs(v_0);

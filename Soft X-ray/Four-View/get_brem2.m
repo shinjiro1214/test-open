@@ -17,9 +17,10 @@ e0 = 8.85e-12; %F/m
 mi = 6.64e-26; %kg
 mr = me*mi/(me+mi);
 % Te = 20; %eV
-Te = 20; %eV
+Te = 10; %eV
 % Te = 200; %eV
-ne = 1*1e19; %m^-3
+% ne = 4*1e19; %m^-3
+ne = 2*1e20; %m^-3
 kBT = Te*e; %eV→J（kBはJ/K）
 lambdaD = sqrt(e0*kBT/(ne*e^2)); %m
 Lambda = 4*pi()*lambdaD^3*ne/3; %無次元数
@@ -35,7 +36,7 @@ sigma = sqrt(kBT/me);
 v_0 = normrnd(mu,sigma,1,1e4);
 
 v_0 = abs(v_0);
-t_ei = 4*pi()*e0^2*me*mr*abs(v_0).^3./(ne*Z^2*e^4*log(Lambda));
+t_ei = 4*pi()*e0^2*mr^2*abs(v_0).^3./(ne*Z^2*e^4*log(Lambda));
 
 Ep = Et.*Bp.*Bt./(Bp.^2+Bt^2);
 t_ra = sqrt(2*me*R./(e.*Ep));

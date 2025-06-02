@@ -15,11 +15,11 @@ imageFile = imadjust(imageFile);
 % numberに許される最大値はnumel(radii)で，TIF画像によりますがおよそ200程度ぽいです．優先度の低い円を考慮から外すためにnumberをある程度小さくする必要があります．
 % こちらを整理前のcentersとします．numberを調整したので検出に漏れはありませんがダブりがあります．
 
-% figure;hold on;
 number = 60;
-% imagesc(imageFile);viscircles(centers(1:number,:),radii(1:number,:));
-% plot(centers(1:number,1),centers(1:number,2),'*','Color','red');
-% hold off;
+figure;hold on;
+imagesc(imageFile);viscircles(centers(1:number,:),radii(1:number,:));
+plot(centers(1:number,1),centers(1:number,2),'*','Color','red');
+hold off;
 
 % ダブりで検出した円を整理します．
 % 中心が近く同じ円を指すと判断されるものをgroupnumberでまとめます
@@ -62,12 +62,12 @@ for i = 1:groupnumber-1
 end
 radii = circleInformation(:,3);circleInformation = circleInformation(:,1:2);
 
-% % 整理後のcentersです．ただし時系列には整列されていません．
-% figure;hold on;
-% imagesc(imageFile);
-% viscircles(circleInformation,radii);
-% plot(circleInformation(:,1),circleInformation(:,2),'*','Color','red');
-% hold off;
+% 整理後のcentersです．ただし時系列には整列されていません．
+figure;hold on;
+imagesc(imageFile);
+viscircles(circleInformation,radii);
+plot(circleInformation(:,1),circleInformation(:,2),'*','Color','red');
+hold off;
 
 % centersを時系列に整理します．
 % まず横軸x座標を基準に並び替えます
