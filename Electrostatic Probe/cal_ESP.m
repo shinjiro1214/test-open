@@ -30,7 +30,9 @@ ESPdata2D.phi_grid = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
 ESPdata2D.Ez_grid = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
 ESPdata2D.Er_grid = zeros(numel(ESP.trange),ESP.mesh,ESP.mesh);
 for i = 1:numel(ESP.trange)
-    ESPdata2D.phi_grid(i,:,:) = griddata(z_probe,r_probe,squeeze(phi(i,:,:))',ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r);
-    ESPdata2D.Ez_grid(i,:,2:end) = -diff(squeeze(ESPdata2D.phi_grid(i,:,:)),1,2)/(z(2)-z(1));
-    ESPdata2D.Er_grid(i,2:end,:) = -diff(squeeze(ESPdata2D.phi_grid(i,:,:)),1,1)/(r(2)-r(1));
+    phi_fine = griddata(z_probe,r_probe,squeeze(phi(i,:,:))',ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r);
+    ESPdata2D.phi_grid(i,:,:) = smoothdata(smoothdata(phi_fine),2);
+    % ESPdata2D.phi_grid(i,:,:) = griddata(z_probe,r_probe,squeeze(phi(i,:,:))',ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r);
+    ESPdata2D.Ez_grid(i,:,2:end) = smoothdata(-diff(squeeze(ESPdata2D.phi_grid(i,:,:)),1,2)/(z(2)-z(1)),2);
+    ESPdata2D.Er_grid(i,2:end,:) = smoothdata(-diff(squeeze(ESPdata2D.phi_grid(i,:,:)),1,1)/(r(2)-r(1)));
 end

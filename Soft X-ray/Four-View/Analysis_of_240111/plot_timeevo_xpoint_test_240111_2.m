@@ -6,7 +6,7 @@ idx_30 = [13:15,22:24];
 idx_25 = 16:21;
 
 timeList = sort([460:5:495,458:5:493]);
-k = 1;
+k = 2;
 
 % TF2.5kV
 maxList = zeros(6,4,16);
@@ -17,12 +17,12 @@ for n = idx_25
     maxList(i,:,timeIdx) = xpointList(n).max;
     meanList(i,:,timeIdx) = xpointList(n).mean;
     % % k = 2;
-    % for j = 1:4
-    %     if j ~= k
-    %         maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
-    %         meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
-    %     end
-    % end
+    for j = 1:4
+        if j ~= k
+            maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
+            meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
+        end
+    end
     i = i+1;
 end
 maxList(maxList==0)=nan;meanList(meanList==0)=nan;
@@ -43,12 +43,12 @@ for n = idx_30
     maxList(i,:,timeIdx) = xpointList(n).max;
     meanList(i,:,timeIdx) = xpointList(n).mean;
     % % k = 2;
-    % for j = 1:4
-    %     if j ~= k
-    %         maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
-    %         meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
-    %     end
-    % end
+    for j = 1:4
+        if j ~= k
+            maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
+            meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
+        end
+    end
     i = i+1;
 end
 maxList(maxList==0)=nan;meanList(meanList==0)=nan;
@@ -69,12 +69,12 @@ for n = idx_35
     maxList(i,:,timeIdx) = xpointList(n).max;
     meanList(i,:,timeIdx) = xpointList(n).mean;
     % % k = 2;
-    % for j = 1:4
-    %     if j ~= k
-    %         maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
-    %         meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
-    %     end
-    % end
+    for j = 1:4
+        if j ~= k
+            maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
+            meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
+        end
+    end
     i = i+1;
 end
 maxList(maxList==0)=nan;meanList(meanList==0)=nan;
@@ -95,12 +95,12 @@ for n = idx_40
     maxList(i,:,timeIdx) = xpointList(n).max;
     meanList(i,:,timeIdx) = xpointList(n).mean;
     % % k = 2;
-    % for j = 1:4
-    %     if j ~= k
-    %         maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
-    %         meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
-    %     end
-    % end
+    for j = 1:4
+        if j ~= k
+            maxList(i,j,timeIdx) = maxList(i,j,timeIdx)./maxList(i,k,timeIdx);
+            meanList(i,j,timeIdx) = meanList(i,j,timeIdx)./meanList(i,k,timeIdx);
+        end
+    end
     i = i+1;
 end
 maxList(maxList==0)=nan;meanList(meanList==0)=nan;

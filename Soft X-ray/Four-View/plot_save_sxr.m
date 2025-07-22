@@ -111,11 +111,11 @@ negativeEE = find(EE<0);
 EE(negativeEE) = zeros(size(negativeEE));
 negativeEEq = find(EE_q<0);
 EE_q(negativeEEq) = zeros(size(negativeEEq));
-for i = 2:4
-    if i ~= 1
-        EE_q(:,:,i) = EE_q(:,:,i)./EE_q(:,:,1);
-    end
-end
+% for i = 2:4
+%     if i ~= 1
+%         EE_q(:,:,i) = EE_q(:,:,i)./EE_q(:,:,1);
+%     end
+% end
 
 for i = 1:4
     p = positionList(i);

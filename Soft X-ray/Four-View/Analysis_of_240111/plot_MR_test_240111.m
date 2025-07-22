@@ -7,9 +7,9 @@ j = 1;
 figure;hold on;
 for i = shotList
     load([dirPath,num2str(i,'%03i'),'.mat'],'data2D','grid2D');
-    % Br_t_tmp = get_Br_time(grid2D,data2D,trange);
-    % Br_t(j,:) = Br_t_tmp - Br_t_tmp(1);
-    Br_t(j,:) = get_Br_time(grid2D,data2D,trange);
+    Br_t_tmp = get_Br_time(grid2D,data2D,trange);
+    Br_t(j,:) = Br_t_tmp - Br_t_tmp(1);
+    % Br_t(j,:) = get_Br_time(grid2D,data2D,trange);
     plot(t,Br_t(j,:));
     j = j+1;
 end

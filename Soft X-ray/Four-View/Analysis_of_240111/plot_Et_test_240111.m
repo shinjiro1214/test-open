@@ -1,4 +1,4 @@
-
+addpath('/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View');
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
 t = 441:480;
@@ -36,6 +36,20 @@ legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'});
 xlabel('Time [us]');
 ax=gca;ax.FontSize=18;
 ylabel('Reconnection electric field [V/t]');
+
+% TF = 2.5:0.5:4;
+% 4.5583    5.2295    6.4095    7.6048 GFR
+% 0.1367    0.1569    0.1923    0.2281 Bt
+Bt = 1e3 * [0.1367    0.1569    0.1923    0.2281];
+% TF = [270 330 390 450]/10;
+t_idx = find(t==468);
+Et_M = [EtM25(t_idx) EtM30(t_idx) EtM35(t_idx) EtM40(t_idx)];
+Et_D = [EtD25(t_idx) EtD30(t_idx) EtD35(t_idx) EtD40(t_idx)];
+figure;errorbar(Bt,Et_M,Et_D,'LineWidth',3);
+xlabel('Toroidal magnetic field [mT]');ylabel('Reconnection electric field [V/m]');
+ax=gca;ax.FontSize=18;
+xlim([130 230]);
+% xlim([2.3 4.2]);
 
 
 function Et_t = get_Et_time(grid2D,data2D,trange)

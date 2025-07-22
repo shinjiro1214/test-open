@@ -60,22 +60,24 @@ for i = 1:7
     timeIndex = time-401;
     figure(f1);
     contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),20,'black');
-    plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
+    % plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
     % xlim([-0.078,0.078]);ylim([0.125,0.302]);
     % xlim([-0.05,0.05]);ylim([0.22,0.3]);
     axis equal
-    xlim([-0.04,0.04]);ylim([0.2,0.32]);
+    xlim([-0.04,0.04]);ylim([0.15,0.32]);
     hold off
     title(string(time)+' us')
+    ax=gca;ax.FontSize=18;
     figure(f2);
     contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),20,'black');
-    plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
+    % plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
     % xlim([-0.078,0.078]);ylim([0.125,0.302]);
     % xlim([-0.05,0.05]);ylim([0.22,0.3]);
     axis equal
-    xlim([-0.04,0.04]);ylim([0.2,0.32]);
+    xlim([-0.04,0.04]);ylim([0.15,0.32]);
     hold off
     title(string(time)+' us')
+    ax=gca;ax.FontSize=18;
 end
 
 figure(f1);title(t1,'Te [eV]');

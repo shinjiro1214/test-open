@@ -108,6 +108,9 @@ for i = 1:3
     contour_layer = linspace(psi_min,psi_max,20);
 
     load(matrixPathArray(i),'EE1','EE2','EE4');
+    % if i == 2
+    %     load([pathFirstHalf,'28/3.mat'],'EE2');
+    % end
     % load(matrixPathArray(i),'EE2');
     % load(matrixPathArray(i),'EE3');
 
@@ -162,8 +165,10 @@ for i = 1:3
     
         hold off;
         % xlim([-0.02,0.02]);ylim([0.23,0.29]);
-        xlim([-0.04,0.04]);ylim([0.2,0.32]);
-        % xlim([-0.1,0.1]);ylim([0.12,0.32]);
+
+        % xlim([-0.04,0.04]);ylim([0.2,0.32]);
+
+        xlim([-0.1,0.1]);ylim([0.12,0.32]);
         if i == 1
             title(string(nameList(j)));
         end

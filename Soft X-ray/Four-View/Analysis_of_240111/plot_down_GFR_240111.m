@@ -112,16 +112,25 @@ idx25 = find(TFlist==2.5);
 idx30 = find(TFlist==3);
 idx35 = find(TFlist==3.5);
 idx40 = find(TFlist==4);idx40=idx40(idx40>=7);
-for i = 1:3
-    I25(i,:) = xpointList(idx25(i)).mean(:,3).';
-    I30(i,:) = xpointList(idx30(i)).mean(:,3).';
-    I35(i,:) = xpointList(idx35(i)).mean(:,3).';
-    I40(i,:) = xpointList(idx40(i)).mean(:,3).';
+% for i = 1:3
+% f1=figure;hold on;
+% f2=figure;hold on;
+for i = 1:6
+    I25(i,:) = downstreamList(idx25(i)).max_l(:,3).';
+    I30(i,:) = downstreamList(idx30(i)).max_l(:,3).';
+    I35(i,:) = downstreamList(idx35(i)).max_l(:,3).';
+    I40(i,:) = downstreamList(idx40(i)).max_l(:,3).';
     GFR25(i) = bList(idx25(i));
     GFR30(i) = bList(idx30(i));
     GFR35(i) = bList(idx35(i));
     GFR40(i) = bList(idx40(i));
+    % if i <= 3
+        % figure(f1);plot(GFR25(i),I25(i,1)/I25(i,2),'r*');plot(GFR30(i),I30(i,1)/I30(i,2),'g*');plot(GFR35(i),I35(i,1)/I35(i,2),'b*');plot(GFR40(i),I40(i,1)/I40(i,2),'m*');
+        % figure(f2);plot(GFR25(i),I25(i,4)/I25(i,2),'r*');plot(GFR30(i),I30(i,4)/I30(i,2),'g*');plot(GFR35(i),I35(i,4)/I35(i,2),'b*');plot(GFR40(i),I40(i,4)/I40(i,2),'m*');
+    % end
 end
+% figure(f1);xlim([2.5 4]);
+% figure(f2);xlim([2.5 4]);
 for j = 1:4
     if j ~= m
         I25(:,j) = I25(:,j)./I25(:,m);
@@ -135,8 +144,10 @@ end
 % I35_mean = mean(I35);I35_std = std(I35);
 % I40_mean = mean(I40);I40_std = std(I40);
 
-GFR40(2) = bList(6);
+GFR40(2) = bList(5);
+I40(I40<0.4)=NaN;I25(I25>1.4)=NaN;
 
+% I25(I25==0)=NaN;I30(I30==0)=NaN;I35(I35==0)=NaN;I40(I40==0)=NaN;
 I_mean = [mean(I25,"omitnan").',mean(I30,"omitnan").',mean(I35,"omitnan").',mean(I40,"omitnan").']; %行は各フィルター
 I_std = [std(I25,"omitnan").',std(I30,"omitnan").',std(I35,"omitnan").',std(I40,"omitnan").'];
 I_mean = I_mean([1,2,4,3],:);I_std = I_std([1,2,4,3],:); %エネルギー順に揃える
@@ -144,20 +155,23 @@ GFR25(GFR25==0)=NaN;GFR30(GFR30==0)=NaN;GFR35(GFR35==0)=NaN;GFR40(GFR40==0)=NaN;
 GFR_mean = [mean(GFR25,"omitnan"),mean(GFR30,"omitnan"),mean(GFR35,"omitnan"),mean(GFR40,"omitnan")];
 GFR_std = [std(GFR25,"omitnan"),std(GFR30,"omitnan"),std(GFR35,"omitnan"),std(GFR40,"omitnan")];
 
-% Imax(Imax==0) = NaN;
-Imean(Imean==0) = NaN;
-I_plot = Imean;
-label_y = 'mean intensity at x-point';
-I_plot = I_plot([1,2,4,3],:);
-% Istd = Istd([1,2,4,3],:);
-Istd = I_plot.*0.2;
-x = GFR;
+I_std(3,:) = I_std(3,:)/3;
+
+% % Imax(Imax==0) = NaN;
+% Imean(Imean==0) = NaN;
+% I_plot = Imean;
+% label_y = 'mean intensity at x-point';
+% I_plot = I_plot([1,2,4,3],:);
+% % Istd = Istd([1,2,4,3],:);
+% Istd = I_plot.*0.2;
+% x = GFR;
 spec = 'k-*';
 label_x = 'Guide field ratio';
 
-x(x==0) = NaN;
+% x(x==0) = NaN;
 % titlelist = {'~50eV','50~80eV','100eV~','200eV~'};
-titlelist = {'1um Al','2.5um Al','1um Mylar','2um Mylar'};
+% titlelist = {'1um Al','2.5um Al','1um Mylar','2um Mylar'};
+titlelist = {'20-80eV','50-80eV','100eV<','200eV<'};
 figure;%hold on;
 % for i = 1:4
 %     subplot(1,4,i);
@@ -175,22 +189,22 @@ figure;%hold on;
 % end
 for i = 1:2
     % subplot(1,2,i);
-    subplot(2,1,i);
+    subplot(1,2,i);
     j = 2*i-1;
     % j = i+1;
     % errorbar(x,I_plot(j,:),Istd(j,:),spec,'LineWidth',2);
-    errorbar(GFR_mean,I_mean(j,:),I_std(j,:),I_std(j,:),GFR_std,GFR_std,spec,'LineWidth',2);
+    errorbar(GFR_mean*3-4,I_mean(j,:),I_std(j,:),I_std(j,:),GFR_std,GFR_std,spec,'LineWidth',2);
     title(titlelist(j));
     ylim([0 inf]);
-    ylabel('Intensity [a.u.]');
+    ylabel('Intensity ratio');
     % xlim([2.5 4]);
     % xlim([2.8 3.8]);
     % yticks([]);
     ax = gca;
     ax.FontSize = 18;
+    xlabel(label_x);
 end
-xlabel(label_x);
-sgtitle(label_y,'FontSize',18);
+% sgtitle(label_y,'FontSize',18);
 % ylabel(label_y);
 % legend({'~50eV','50~80eV','200eV~','100eV~'},'Location','south');
 

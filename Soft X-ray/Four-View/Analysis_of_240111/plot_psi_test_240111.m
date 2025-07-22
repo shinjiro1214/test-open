@@ -1,6 +1,7 @@
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
-t = 460:500;
+% t = 460:500;
+t = 460:475;
 psi_t = zeros(numel(shotList),numel(t));
 trange = t-399;
 j = 1;
@@ -34,7 +35,7 @@ errorbar(t,PsiM40,PsiD40);
 legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'});
 xlabel('Time [us]');
 ax=gca;ax.FontSize=18;
-ylabel('Pribate flux [wb]');
+ylabel('Private flux [wb]');
 
 
 function psi_t = get_psi_time(grid2D,data2D,trange)

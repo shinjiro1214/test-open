@@ -71,6 +71,7 @@ if exist(filename,"file")==0
     save_dtacq_data(dtacq_num, shot, tfshot,rawdataPath)
     % return
 end
+disp('loading data');
 load(filename,'rawdata');%1000×192
 
 %正しくデータ取得できていない場合はreturn
@@ -84,6 +85,20 @@ sheets = str2double(sheets);
 sheet_date=max(sheets(sheets<=date));
 
 C = readmatrix('coeff200ch.xlsx','Sheet',num2str(sheet_date));
+% ok = logical(C(:,14));
+% P=C(:,13);
+% coeff=C(:,12);
+% zpos=C(:,9);
+% rpos=C(:,10);
+% probe_num=C(:,5);
+% probe_ch=C(:,6);
+% ch=C(:,7);
+% d2p=C(:,15);
+% d2bz=C(:,16);
+% d2bt=C(:,17);
+
+% coeffからの一部切り出しversion
+C = C(1:192,:);
 ok = logical(C(:,14));
 P=C(:,13);
 coeff=C(:,12);

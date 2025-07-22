@@ -135,6 +135,7 @@ mrRange = mergingRatio_tmp(idx2)-mergingRatio_tmp(idx1);
 t_data = (t_tmp(idx1)*(mergingRatio_tmp(idx2)-0.5) + t_tmp(idx2)*(0.5-mergingRatio_tmp(idx1)))/mrRange;
 B_r_tmp = B_reconnection(timeRange);
 B_r = (B_r_tmp(idx1)*(mergingRatio_tmp(idx2)-0.5) + B_r_tmp(idx2)*(0.5-mergingRatio_tmp(idx1)))/mrRange;
+% B_r = B_reconnection(trange==464);
 B_t_tmp = B_guide(timeRange);
 B_t_th_tmp = B_guide_th(timeRange);
 B_t = (B_t_tmp(idx1)*(mergingRatio_tmp(idx2)-0.5) + B_t_tmp(idx2)*(0.5-mergingRatio_tmp(idx1)))/mrRange;

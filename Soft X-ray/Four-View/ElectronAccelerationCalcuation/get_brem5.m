@@ -1,10 +1,10 @@
-Te = 100; %[eV]
+Te = 10; %[eV]
 % Te =300; %[eV]
 % ne = [3e20, 5e19]; %[m^-3]
 ne = [1e20, 5e19]; %[m^-3]
 % ne = [3e19, 5e18]; %[m^-3]
 % Et = [270, 330]; %[V/m]
-Et = [300, 330]; %[V/m]
+Et = [300, 400]; %[V/m]
 
 % R = ones(1,3)*0.01;
 
@@ -30,7 +30,7 @@ Et = [300, 330]; %[V/m]
 for i = 1:numel(ne)
     spectrum = get_spectrum(Te,ne(i),Et(i));
     intensity = get_intensity(spectrum);
-    % intensity = intensity/intensity(1);
+    intensity = intensity/intensity(2);
 
     % figure(f1);
     % loglog(spectrum(1,:),spectrum(3,:),'LineWidth',2);hold on;
@@ -39,7 +39,7 @@ for i = 1:numel(ne)
     % ylabel('Intensity [a.u.]');xlabel('Photon energy [eV]');
     % ax = gca;ax.FontSize = 18;
     % figure(f2);
-    % semilogy(intensity);hold on;
+    % semilogy(intensity(1:3));hold on;
 end
 
 % マイラーフィルターは2eVに有限の透過率を持つ
@@ -107,13 +107,15 @@ function spectrum = get_spectrum(Te,ne,Et)
 
     dW0 = log(me*ve0.'.^2./(h*2*pi()*f_brem))./ve0.';
     dW1 = log(me*ve1.'.^2./(h*2*pi()*f_brem))./ve1.';
+    dW0(dW0<0) = 0;
+    dW1(dW1<0) = 0;
 
     % 速度プロット用のヒストグラム
     [dP1_plot,ve1_plot] = histcounts(v_e(1,:),'BinWidth',1e5);
     [dP0_plot,ve0_plot] = histcounts(v_0,'BinWidth',1e5);
     figure;
     semilogy(ve0_plot(2:end),dP0_plot,ve1_plot(2:end),dP1_plot,'LineWidth',2);
-    legend({'thermal','Guide field'},'Location','northeast');
+    legend({'before','after'},'Location','northeast');
     xlabel('Electron velocity [m/s]');
     ylabel('Number of particles');
     ax = gca;
@@ -129,7 +131,7 @@ function spectrum = get_spectrum(Te,ne,Et)
     % loglog(Edge0(2:end),E_hist0,Edge1(2:end),E_hist1,'LineWidth',2);
     % % ylim([5 1e4]);xlim([0 500]);
     % ax = gca;ax.FontSize = 18;
-    % legend({'thermal','Guide field'},'Location','northeast');
+    % legend({'before','after'},'Location','northeast');
     % xlabel('Electron energy [eV]');
     % ylabel('Number of particles');
     % title('Electron energy distrbution');

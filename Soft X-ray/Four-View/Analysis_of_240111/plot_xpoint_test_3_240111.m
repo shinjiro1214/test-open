@@ -225,7 +225,7 @@ for i = 1:3
         % elseif i ~=3
             % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
         else
-            [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
+            [~,h] = contourf(psi_mesh_z,psi_mesh_r-0.01*(i==3)*(j==3),EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
         end
 
         colormap('turbo');

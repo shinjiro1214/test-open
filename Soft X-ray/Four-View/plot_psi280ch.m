@@ -13,6 +13,27 @@ if isstruct(grid2D)==0 %もしdtacqデータがない場合次のloopへ(デー�
 end
 
 [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D); %時間ごとの磁気軸、X点を検索
+% figure;hold on;
+% % plot(data2D.trange,magAxisList.z(1,:));
+% % plot(data2D.trange,magAxisList.z(2,:));
+% % xlabel('Time [us]');ylabel('Axis position [m]');
+% Vz1 = (circshift(magAxisList.z(1,:),1)-magAxisList.z(1,:))*1e6;
+% Vz2 = (circshift(magAxisList.z(2,:),1)-magAxisList.z(2,:))*1e6;
+% plot(data2D.trange,Vz1);
+% plot(data2D.trange,Vz2);
+% % zList = grid2D.zq(1,:).';
+% % axisIdxZ1 = knnsearch(zList,magAxisList.z(1,:).');
+% % axisBt1 = data2D.Bt_th(:,axisIdxZ1,data2D.trange==470);
+% % axisIdxZ2 = knnsearch(zList,magAxisList.z(2,:).');
+% xlabel('Time [us]');ylabel('Axis velocity [m/s]');
+% xlim([450 480]);
+
+% Bt_t = squeeze(data2D.Bt_th(:,20,:));
+% Er_t1 = Bt_t.*Vz1;Er_t2 = Bt_t.*Vz2;
+% phir_t1 = cumtrapz(grid2D.rq(:,1),Er_t1);phir_t2 = cumtrapz(grid2D.rq(:,1),Er_t2);
+% figure;hold on;plot(data2D.trange,phir_t1(end,:));plot(data2D.trange,phir_t2(end,:));
+% xlabel('Time [us]');ylabel('potential difference [V]');xlim([450 480]);
+
 
 % プロット部分
 f1 = figure('Position', [0 0 1500 1500],'visible','on');
@@ -44,8 +65,8 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none');clim([-0.1,0.1])%Bz
         case 3 %Bt
             % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),40,'LineStyle','none');clim([0,0.3])%Bt
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none')
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt_th(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none')
+            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),-0.3:0.01:0.3,'LineStyle','none')
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),abs(data2D.Bt_th(:,:,i)),0:1e-2:1,'LineStyle','none')
         case 4 %Br
             figure(f1);contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');clim([-0.1,0.1]);
             range_r = grid2D.rq(:,1)>=min(magAxisList.r(:,i))&grid2D.rq(:,1)<=max(magAxisList.r(:,i));
@@ -139,6 +160,9 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
             Jt_q = griddata(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),zq,rq);
             eta_q = Et_q./Jt_q;
             contourf(zq(1,:),rq(:,1),eta_q,linspace(-1e-2,1e-2,50),'LineStyle','none');clim([-1e-2,1e-2]);%resistivity
+        % case 14 %Vz
+        %     psi_1 = data2D.psi(:,:,i);
+        %     psi_2 = data2D.psi(:,:,i+1);
      end
      mergingRatio(m) = xPointList.psi(i)/min(magAxisList.psi(:,i));
 
@@ -166,7 +190,7 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
      % clim([0,0.3])%Bt
     % clim([-5e-3,5e-3])%psi
     % clim([-500,400])%Et
-%     colorbar('Location','eastoutside')
+    colorbar('Location','eastoutside')
     %カラーバーのラベル付け
 %     c = colorbar;
 %     c.Label.String = 'Jt [A/m^{2}]';
@@ -179,7 +203,8 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
     % contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),[-20e-3:0.2e-3:40e-3],'black','LineWidth',1)
 %     plot(grid2D.zq(1,squeeze(mid(opoint(:,:,i),:,i))),grid2D.rq(opoint(:,:,i),1),"bo")
 %     plot(grid2D.zq(1,squeeze(mid(xpoint(:,:,i),:,i))),grid2D.rq(xpoint(:,:,i),1),"bx")
-     % plot(ok_z,ok_r,"k.",'MarkerSize', 6)%測定位置
+
+    %  plot(ok_z,ok_r,"k.",'MarkerSize', 6)%測定位置
 
     % timeIndex = find(trange==t);
     % [magaxis,xpoint] = get_axis_x(grid2D,data2D,t);
@@ -192,6 +217,7 @@ times = trange(1)+start:dt:trange(1)+start+dt*15;
     if PCB.type == 7 || PCB.type == 8
         xlim([-0.1,0.1]);ylim([0.2,0.32]);
     end
+    xlim([-0.17 0.17]);
     hold off
     title(string(t)+' us')
 %     xlabel('z [m]')

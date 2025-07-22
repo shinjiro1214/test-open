@@ -1,29 +1,29 @@
 % 脱出時間を速度に依存するように変更
 
 clear
-
+close all;
 R = ones(1,3)*0.01;
 
 Bt = 1;
 % Bp = Bt./[1000,100,10];
-% Bp = Bt./[10,100,1000];
+Bp = Bt./[50,75,100];
 % Bp = Bt./[200 500 1000];
 % Bp = Bt./[100 200 500];
-Bp = Bt./[500 1000 2000];
+% Bp = Bt./[500 1000 2000];
 
-Et = 250; %V/m
+Et = 300; %V/m
 me = 9.11e-31; %kg
 e = 1.6*10^(-19); %C
 e0 = 8.85e-12; %F/m
 mi = 6.64e-26; %kg
 mr = me*mi/(me+mi);
 % Te = 20; %eV
-% Te = 20; %eV
-Te = 200; %eV
-ne = 1*1e19; %m^-3
+Te = 10; %eV
+% Te = 200; %eV
+ne = 1*1e20; %m^-3
 kBT = Te*e; %eV→J（kBはJ/K）
 lambdaD = sqrt(e0*kBT/(ne*e^2)); %m
-Lambda = 4*pi()*lambdaD^3*ne/3; %無次元数
+Lambda = 9*4*pi()*lambdaD^3*ne/3; %無次元数
 Z = 1; %暫定的な価数
 h = 6.63e-34; %プランク定数
 % Ry = me*e^4/(2*h^2);
@@ -32,7 +32,7 @@ c = 3e8;
 
 mu = 0;
 % mu = 3e6;
-sigma = sqrt(kBT/me);
+sigma = sqrt(3*kBT/me);
 v_0 = normrnd(mu,sigma,1,1e4);
 
 v_0 = abs(v_0);
@@ -89,6 +89,8 @@ dW0 = log(me*ve0.'.^2./(h*2*pi()*f_brem))./ve0.';
 dW1 = log(me*ve1.'.^2./(h*2*pi()*f_brem))./ve1.';
 dW2 = log(me*ve2.'.^2./(h*2*pi()*f_brem))./ve2.';
 dW3 = log(me*ve3.'.^2./(h*2*pi()*f_brem))./ve3.';
+
+dW0(dW0<0) = 0;dW1(dW1<0) = 0;dW2(dW2<0) = 0;dW3(dW3<0) = 0;
 
 % プロット用のヒストグラム
 [dP1_plot,ve1_plot] = histcounts(v_e(1,:),'BinWidth',1e5);
@@ -183,7 +185,11 @@ intensity_My20 = emissivityMatrix*T_My20_new.';
 GFR = Bt./Bp;
 % GFR = [100, GFR];
 figure;
-subplot(2,2,1);semilogx(GFR,intensity_Al10(2:end),'LineWidth',2);xlabel('Bt/Bp');subtitle('Al10');
-subplot(2,2,2);semilogx(GFR,intensity_Al25(2:end),'LineWidth',2);xlabel('Bt/Bp');subtitle('Al25');
-subplot(2,2,3);semilogx(GFR,intensity_My10(2:end),'LineWidth',2);xlabel('Bt/Bp');subtitle('My10');
-subplot(2,2,4);semilogx(GFR,intensity_My20(2:end),'LineWidth',2);xlabel('Bt/Bp');subtitle('My20');
+subplot(2,2,1);semilogx(GFR,intensity_Al10(2:end),'LineWidth',2);xlabel('Bt/Bp');
+subtitle('1um Al');ax=gca;ax.FontSize=12;
+subplot(2,2,2);semilogx(GFR,intensity_Al25(2:end),'LineWidth',2);xlabel('Bt/Bp');
+subtitle('2.5um Al');ax=gca;ax.FontSize=12;
+subplot(2,2,3);semilogx(GFR,intensity_My10(2:end),'LineWidth',2);xlabel('Bt/Bp');
+subtitle('1um Mylar');ax=gca;ax.FontSize=12;
+subplot(2,2,4);semilogx(GFR,intensity_My20(2:end),'LineWidth',2);xlabel('Bt/Bp');
+subtitle('2um Mylar');ax=gca;ax.FontSize=12;
