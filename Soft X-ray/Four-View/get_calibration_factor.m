@@ -100,12 +100,16 @@ for i=1:8
     imageVectors(4,i,:) = roughImage4(k);
 end
 
+% レンズに入射した一様な光が一様になるように補正
 meanIntensity = mean(imageVectors,'all');
 calibrationFactor = meanIntensity./imageVectors;
+
+% calibrationFactor = ones(size(imageVectors));
+
 % CalibrationSavePath = strcat(CalibrationPath,'/CalibrationFactor.mat');
 % save(CalibrationSavePath,'CalibrationFactor');
 
-% 角度補正（今のままだと上下逆＠231003）
+% 角度補正（今のままだと上下逆＠231003）（MCPの分）
 % imagescとpplotで上下が反転してるせい→どっちが正しい？
 theta1 = -pi*3/4;
 theta2 = -pi*1/4;
@@ -126,7 +130,7 @@ end
 
 calibrationFactor = calibrationFactor.*angleCorrection;
 outlier = calibrationFactor>=3;
-calibrationFactor(outlier) = 3;
+% calibrationFactor(outlier) = 3;
 calibrationSavePath = strcat(calibrationPath,'/calibrationFactor.mat');
 save(calibrationSavePath,'calibrationFactor');
 

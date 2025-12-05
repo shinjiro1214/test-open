@@ -1,5 +1,5 @@
-
-load('/Users/shinjirotakeda/Library/CloudStorage/OneDrive-TheUniversityofTokyo/Documents/data/SXRdata/240111_LF_NLR.mat')
+close all
+load('/Users/shinjirotakeda/Library/CloudStorage/OneDrive-TheUniversityofTokyo/Documents/data/SXRdata/240111_LF_NLR_old2.mat')
 
 idx_40 = [7:9,28:30];
 idx_35 = [10:12,25:27];
@@ -14,6 +14,7 @@ maxList = zeros(6,4,16);
 meanList = zeros(6,4,16);
 i = 1;
 for n = idx_30
+% for n = idx_40
     [~,timeIdx] = ismember(xpointList(n).t,timeList);
     maxList(i,:,timeIdx) = xpointList(n).max;
     meanList(i,:,timeIdx) = xpointList(n).mean;
@@ -134,31 +135,121 @@ EtD25 = std(Et_t(idxTF25,:),'omitmissing');
 % ax=gca;ax.FontSize=18;
 % ylabel('Reconnection electric field [V/t]');
 
-% figure;tiledlayout(3,1);
-figure;tiledlayout(2,2);
-ax1=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
-xlabel('Time [us]');ylabel('-E_\theta [V/m]');
+% % figure;tiledlayout(3,1);
+% % figure;tiledlayout(2,2);
+% figure;tiledlayout(4,1);
+% ax3=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% % xlabel('Time [us]');
+% xticks([]);
+% % ylabel('Intensity ratio [a.u.]');
+% ax4=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% % xlabel('Time [us]');
+% xticks([]);
+% % ylabel('Intensity ratio [a.u.]');
+% ax1=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% % xlabel('Time [us]');
+% xticks([]);
+% ylabel('-E_\theta [V/m]');
+% ax2=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% xlabel('Time [us]');
+% ylabel('n_e [m^{-3}]');
+
+% % sgtitle(['TF = ', num2str(TF), 'kV'],'FontSize',18);
+% hold([ax1 ax2 ax3 ax4],'on');
+% errorbar(ax1,t(t>=465&t<=470),EtM30(t>=464&t<=469),EtD30(t>=464&t<=469),'k-','LineWidth',3);
+% % yticks([-4s00 -200 0]);xticks([460 465 470]);
+% errorbar(ax2,thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);
+% % yyaxis left
+% errorbar(ax3,timeList(4:6),sxrMaxList(1,4:6),sxrMaxList_err(1,4:6),'-k','LineWidth',3);
+% % errorbar(ax3,timeList(4:6),sxrMeanList(1,4:6),sxrMeanList_err(1,4:6),'-k','LineWidth',3);
+% % yyaxis right
+% errorbar(ax4,timeList(4:6),sxrMaxList(3,4:6),sxrMaxList_err(3,4:6),'-k','LineWidth',3);
+% % errorbar(ax4,timeList(4:6),sxrMeanList(3,4:6),sxrMeanList_err(3,4:6),'-k','LineWidth',3);
+% ax1.FontSize=18;
+% ax2.FontSize=18;
+% ax3.FontSize=18;
+% ax4.FontSize=18;
+
+% figure;hold on;
+% RGB = orderedcolors("gem");
+% x_data = [465, 468, 470];
+% % I_plot = I_plot./I_plot(1,:);
+% plot(x_data,I_plot(:,1)/max(I_plot(:,1)),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,2)/max(I_plot(:,2)),'o-','LineWidth',2);
+% errorbar(timeList(4:6),sxrMaxList(1,4:6)/max(sxrMaxList(1,4:6)),sxrMaxList_err(1,4:6),'--','Color',RGB(1,:),'LineWidth',3);
+% errorbar(timeList(4:6),sxrMaxList(3,4:6)/max(sxrMaxList(3,4:6)),sxrMaxList_err(3,4:6),'--','Color',RGB(2,:),'LineWidth',3);
+% % errorbar(timeList(4:6),sxrMeanList(1,4:6)/max(sxrMeanList(1,4:6)),sxrMeanList_err(1,4:6),'--','Color',RGB(1,:),'LineWidth',3);
+% % errorbar(timeList(4:6),sxrMeanList(3,4:6)/max(sxrMeanList(3,4:6)),sxrMeanList_err(3,4:6),'--','Color',RGB(2,:),'LineWidth',3);
+% % plot(I_plot,'o-','LineWidth',2);
+% ylabel('SXR intensity ratio [a.u.]');xlabel('Time [μs]');
+% legend({'Low energy (simulation)','High energy (simulation)','Low energy (experiment)', 'High energy (experiment)'},'Location','southeast')
+% % yticks([]);xticks([]);
+% xlim([464.5 470.5]);ylim([0 inf]);
+% ax = gca;ax.FontSize = 18;
+
+figure;hold on;
+ylim([0 inf]);xlim([464.5 470.5]);
+ylabel('Relative intensity [a.u.]');xlabel('Time [us]');
+errorbar(timeList(4:6),sxrMaxList(1,4:6)./max(sxrMaxList(1,4:6)),sxrMaxList_err(1,4:6)./max(sxrMaxList(1,4:6)),'LineWidth',3);
+errorbar(timeList(4:6),sxrMaxList(3,4:6)./max(sxrMaxList(3,4:6)),sxrMaxList_err(3,4:6)./max(sxrMaxList(3,4:6)),'Color',"#EDB120",'LineWidth',3);
+titleList = {'I_{20-80eV}/I_{50-80eV}','I_{100eV<}/I_{50-80eV}'};legend(titleList);
+ax=gca;ax.FontSize=18;
+
+figure;tiledlayout(2,1);
+% figure;tiledlayout(2,2);
+% figure;tiledlayout(4,1);
 ax2=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
-xlabel('Time [us]');ylabel('n_e [m^{-3}]');
-ax3=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
-xlabel('Time [us]');ylabel('Ratio [a.u.]');
-ax4=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
-xlabel('Time [us]');ylabel('Ratio [a.u.]');
+% ylabel('Intensity ratio [a.u.]');
+ylabel('Relative intensity [a.u.]');
+% ylabel('n_e [m^{-3}]');
+% xlabel('Time [us]');
+xticks([]);
+% ylabel('Intensity ratio [a.u.]');
+ax1=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+ylabel('n_e [m^{-3}]');
+% xlabel('Time [us]');
+% xticks([]);
+% ylabel('Intensity ratio [a.u.]');
+% ax1=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% xlabel('Time [us]');
+% xticks([]);
+% ylabel('-E_\theta [V/m]');
+% ax2=nexttile;ylim([0 inf]);xlim([464.5 470.5]);
+% ylabel('Intensity ratio [a.u.]');
+xlabel('Time [us]');
+% ylabel('n_e [m^{-3}]');
+
 % sgtitle(['TF = ', num2str(TF), 'kV'],'FontSize',18);
-hold([ax1 ax2 ax3 ax4],'on');
-errorbar(ax1,t(t>=465&t<=470),EtM30(t>=464&t<=469),EtD30(t>=464&t<=469),'k-','LineWidth',3);
-% yticks([-4s00 -200 0]);xticks([460 465 470]);
-errorbar(ax2,thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);
+hold([ax1 ax2],'on');
+% errorbar(ax1,t(t>=465&t<=470),EtM30(t>=464&t<=469),EtD30(t>=464&t<=469),'k-','LineWidth',3);
+% yticks([-400 -200 0]);xticks([460 465 470]);
+errorbar(ax1,thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);
 % yyaxis left
-errorbar(ax3,timeList(4:6),sxrMaxList(1,4:6),sxrMaxList_err(1,4:6),'-k','LineWidth',3);
+errorbar(ax2,timeList(4:6),sxrMaxList(1,4:6)./max(sxrMaxList(1,4:6)),sxrMaxList_err(1,4:6)./max(sxrMaxList(1,4:6)),'LineWidth',3);
+% errorbar(ax3,timeList(4:6),sxrMeanList(1,4:6),sxrMeanList_err(1,4:6),'-k','LineWidth',3);
 % yyaxis right
-% errorbar(ax3,timeList(4:6),sxrMaxList(3,4:6),sxrMaxList_err(3,4:6),'--k','LineWidth',3);
-errorbar(ax4,timeList(4:6),sxrMaxList(3,4:6),sxrMaxList_err(3,4:6),'-k','LineWidth',3);
+errorbar(ax2,timeList(4:6),sxrMaxList(3,4:6)./max(sxrMaxList(3,4:6)),sxrMaxList_err(3,4:6)./max(sxrMaxList(3,4:6)),'Color',"#EDB120",'LineWidth',3);
+% errorbar(ax4,timeList(4:6),sxrMeanList(3,4:6),sxrMeanList_err(3,4:6),'-k','LineWidth',3);
+titleList = {'I_{20-80eV}/I_{50-80eV}','I_{100eV<}/I_{50-80eV}'};legend(ax2,titleList);
 ax1.FontSize=18;
 ax2.FontSize=18;
-ax3.FontSize=18;
-ax4.FontSize=18;
+% ax3.FontSize=18;
+% ax4.FontSize=18;
 
+figure;tiledlayout(1,2);
+nexttile;
+errorbar(t(t>=465&t<=470),EtM30(t>=464&t<=469),EtD30(t>=464&t<=469),'k-','LineWidth',3);
+ylim([-inf inf]);xlim([464.5 470.5]);
+% xticks([]);
+ylabel('-E_t [V/m]');
+xlabel('Time [us]');
+ax=gca;ax.FontSize=18;
+nexttile;
+errorbar(thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);
+ylim([0 inf]);xlim([464.5 470.5]);
+ylabel('n_e [m^{-3}]');
+xlabel('Time [us]');
+ax=gca;ax.FontSize=18;
 
 function Et_t = get_Et_time(grid2D,data2D,trange)
     [~,xPointList] = get_axis_x_multi(grid2D,data2D);

@@ -21,12 +21,14 @@ r_grid = linspace(rmax,rmin,n);
 r0_space = sqrt(4*(z_space-z_0).^2+4*(r_space-r_0).^2);
 % r1_space = sqrt(4*(z_space+z_0).^2+4*(r_space+r_0).^2);
 % r0_space = sqrt((z_space-z_0).^2+(r_space-r_0).^2);
-r1_space = sqrt((z_space+z_0).^2+(r_space+r_0).^2);
+% r1_space = sqrt((z_space+z_0).^2+(r_space+r_0).^2);
+r1_space = sqrt((z_space+z_0).^2+(r_space+0.5*r_0).^2);
 % % r1_space = abs((z_space-z_0)+(r_space-r_0));
 % % EE = exp(-0.5*r0_space.^2).*exp(-5*r1_space)+1.5*exp(-r0_space.^2);
 
 
 % 数値的にファントムを生成
+% EE = exp(-25*r0_space.^2) + exp(-25*r1_space.^2);
 EE = exp(-25*r0_space.^2) + exp(-25*r1_space.^2);
 % EE = exp(-100*r0_space.^2) + exp(-25*r1_space.^2);
 % EE = zeros(size(r0_space));
@@ -57,6 +59,8 @@ EE = EE./max(EE,[],'all');
 EE = EE./max(max(EE))*2;
 EE = fliplr(rot90(EE)); %rが縦、zが横、右下最小
 
+% EE = ones(N_grid);
+
 % % 2視点システム時のデータからファントム生成
 % loadpath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/SXR_DATA/result_matrix/LF_LR/210924/shot45/4_high.txt';
 % EE = readmatrix(loadpath);
@@ -73,8 +77,11 @@ E = reshape(EE,1,[]);
 % whos gm2d
 % whos E
 I=gm2d*(E)';
+% I = zeros(716,1);
+SNR = 10;
 % Iwgn=awgn(I,10*log10(10),'measured'); % 5 related to 20%; 10 related to 10%;
-Iwgn=awgn(I,10*log10(5),'measured'); % 5 related to 20%; 10 related to 10%;
+% Iwgn=awgn(I,10*log10(5),'measured'); % 5 related to 20%; 10 related to 10%;
+Iwgn=awgn(I,10*log10(SNR),'measured');
 Iwgn(Iwgn<0)=0;
 
 

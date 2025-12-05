@@ -1,3 +1,5 @@
+addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View'
+
 thomsonShotList = [14,15,16,17,19,21];
 % magShotList = [20,26,27,37,38,46];
 magShotList = 38;

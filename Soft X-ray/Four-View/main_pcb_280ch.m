@@ -79,7 +79,9 @@ dtacqlist=39.*ones(n_data,1);
 
 PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=40; %【input】rz方向のメッシュ数
-PCB.start = 60; %plot開始時間-400
+% PCB.start = 50; %plot開始時間-400
+PCB.start = 63; %plot開始時間-400
+% PCB.start = 69; %plot開始時間-400
 PCB.dt = 2;
 
 % doCheck = false;
@@ -105,6 +107,7 @@ for i=1:n_data
         check_signal(PCB,pathname);
     else
         plot_psi280ch(PCB,pathname);
+        % plot_psi280ch_short(PCB,pathname);
         % rgwData = get_rgw_data(PCB,pathname);
         % figure;hold on;
         % for j = 1:size(rgwData.V_all,1)

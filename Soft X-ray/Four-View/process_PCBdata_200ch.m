@@ -19,6 +19,8 @@ else
     disp('loading processed data');
 end
 
+path_pcbFile = fullfile(pathname.github,'test-open','pcb_experiment');
+addpath(path_pcbFile);
 
 if doCalculation
     %較正係数のバージョンを日付で判別

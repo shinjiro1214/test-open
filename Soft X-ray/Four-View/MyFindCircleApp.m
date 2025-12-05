@@ -17,7 +17,8 @@ if isempty(answer)
 end
 date = str2double(cell2mat(answer));
 
-up=70;
+% up=70;
+up=150;
 
 % フォルダを指定
 sxrFilePath = getenv('SXR_IMAGE_DIR');
@@ -325,11 +326,16 @@ for i=1:8
 
     % 校正データを用いた明るさの修正（カメラの影の補正とか）や入射角度の補正をここでやりたい
     % figure;imagesc(roughImage1);
-    roughImage1(k) = roughImage1(k).*squeeze(calibrationFactor(1,i,:));
+    roughImage1(k) = roughImage1(k).*squeeze(calibrationFactor(1,i,:)).^1.5;
+    % roughImage1(k) = roughImage1(k).*squeeze(calibrationFactor(2,i,:));
     roughImage2(k) = roughImage2(k).*squeeze(calibrationFactor(2,i,:));
     roughImage3(k) = roughImage3(k).*squeeze(calibrationFactor(3,i,:));
     roughImage4(k) = roughImage4(k).*squeeze(calibrationFactor(4,i,:));
     % figure;imagesc(roughImage1);
+
+    if i==4
+        figure;imagesc(roughImage1);
+    end
 
     % 切り出した画像を表示
         figure(f1);
@@ -342,10 +348,12 @@ for i=1:8
         % subplot(4,8,4*(i-1)+2);imagesc(roughImage2);title(title2);yticks([]);xticks([]);
         % subplot(4,8,4*(i-1)+3);imagesc(roughImage3);title(title3);yticks([]);xticks([]);
         % subplot(4,8,4*(i-1)+4);imagesc(roughImage4);title(title4);yticks([]);xticks([]);
-        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(1,i)));imagesc(roughImage1);title(title1);yticks([]);xticks([]);clim([0 20]);
-        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(2,i)));imagesc(roughImage2);title(title2);yticks([]);xticks([]);clim([0 20]);
-        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(3,i)));imagesc(roughImage3);title(title3);yticks([]);xticks([]);clim([0 20]);
-        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(4,i)));imagesc(roughImage4);title(title4);yticks([]);xticks([]);clim([0 20]);
+        % cRange=[0 20];
+        cRange=[0 500];
+        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(1,i)));imagesc(roughImage1);title(title1);yticks([]);xticks([]);clim(cRange);
+        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(2,i)));imagesc(roughImage2);title(title2);yticks([]);xticks([]);clim(cRange);
+        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(3,i)));imagesc(roughImage3);title(title3);yticks([]);xticks([]);clim(cRange);
+        subplot(4,8,positionIdx(centerIdxMatrix==centerIdx(4,i)));imagesc(roughImage4);title(title4);yticks([]);xticks([]);clim(cRange);
 
     % % ベクトル化
     % imageVectors(1,i,:) = roughImage1(k);

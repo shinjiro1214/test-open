@@ -14,6 +14,7 @@ pathname.save=getenv('savedata_path');%outputデータ保存先
 pathname.rawdata38=getenv('rawdata038_path');%dtacq a038のrawdataの保管場所
 pathname.woTFdata=getenv('woTFdata_path');%rawdata（TFoffset引いた）の保管場所
 pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所
+% pathname.github=getenv('GITHUB_dir');%dtacqのrawdataの保管場所
 
 %%%%実験オペレーションの取得
 prompt = {'Date:','Shot number:'};
@@ -209,17 +210,18 @@ if isstruct(grid2D)==0 %もしdtacqデータがない場合次のloopへ(デー�
 end
 
 figure('Position', [0 0 1500 1500],'visible','on');
-start=50;
-dt = 4;
+start=60;
+dt = 1;
 %  t_start=470+start;
  for m=1:16 %図示する時間
      i=start+m.*dt; %end
      t=trange(i);
      subplot(4,4,m)
-%     contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none')
-    contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),40,'LineStyle','none')
+    % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none')
+    % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none')
+    % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),20,'LineStyle','none')
     % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),-100e-3:0.5e-3:100e-3,'LineStyle','none')
-    % contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Jt(:,:,i),30,'LineStyle','none')
+    contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Jt(:,:,i),30,'LineStyle','none')
 %     contourf(grid2D.zq(1,:),grid2D.rq(:,1),-1.*data2D.Et(:,:,i),20,'LineStyle','none')
     colormap(jet)
     axis image
@@ -237,7 +239,7 @@ dt = 4;
 %     plot(grid2D.zq(1,squeeze(mid(:,:,i))),grid2D.rq(:,1))
 %     contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),20,'black')
 %     contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),20,'black')
-    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),[-20e-3:0.2e-3:40e-3],'black','LineWidth',1)
+    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,i)),[-20e-3:2e-3:40e-3],'black','LineWidth',1)
 %     plot(grid2D.zq(1,squeeze(mid(opoint(:,:,i),:,i))),grid2D.rq(opoint(:,:,i),1),"bo")
 %     plot(grid2D.zq(1,squeeze(mid(xpoint(:,:,i),:,i))),grid2D.rq(xpoint(:,:,i),1),"bx")
      % plot(ok_z,ok_r,"k.",'MarkerSize', 6)%測定位置
@@ -334,6 +336,7 @@ sheets = str2double(sheets);
 sheet_date=max(sheets(sheets<=date));
 
 C = readmatrix('coeff200ch.xlsx','Sheet',num2str(sheet_date));
+C = C(1:192,:);
 ok = logical(C(:,14));
 P=C(:,13);
 coeff=C(:,12);
@@ -345,6 +348,8 @@ ch=C(:,7);
 d2p=C(:,15);
 d2bz=C(:,16);
 d2bt=C(:,17);
+
+% coeff = coeff(1:192);
 
 b=rawdata.*coeff';%較正係数RC/NS
 b=b.*P';%極性揃え
@@ -383,8 +388,8 @@ ok_bz_plot=ok_bz;
 %生信号描画用パラメータ
 r = 5;%プローブ本数＝グラフ出力時の縦に並べる個数
 col = 10;%グラフ出力時の横に並べる個数
-y_upper_lim = 0.4;%3e-3;%0.1;%縦軸プロット領域（b_z上限）
-y_lower_lim = -0.4;%3e-3;%-0.1;%縦軸プロット領域（b_z下限）
+y_upper_lim = 0.05;%3e-3;%0.1;%縦軸プロット領域（b_z上限）
+y_lower_lim = -0.05;%3e-3;%-0.1;%縦軸プロット領域（b_z下限）
 t_start=1;%430;%455;%横軸プロット領域（開始時間）
 t_end=1000;%550;%横軸プロット領域（終了時間）
 % r_ch=col1+col2;%r方向から挿入した各プローブのチャンネル数

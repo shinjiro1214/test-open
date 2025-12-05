@@ -110,13 +110,14 @@ Et_t(nanMask) = NaN;
 % plot(trange,xPointList.psi);xlim([455 485]);hold on;
 
 % % 合体率・Br・Btの時間発展を表示
-% plotRange = find(trange>=430&trange<=510);
+% % plotRange = find(trange>=430&trange<=510);
+% plotRange = find(trange>=450&trange<=480);
 % figure('Position', [0 0 1500 1500],'visible','on');
 % subplot(1,3,1);plot(trange(plotRange),mergingRatio(plotRange));xlabel('time');ylabel('merging ratio');
 % subplot(1,3,2);plot(trange(plotRange),B_reconnection(plotRange));xlabel('time');ylabel('B_r');
 % subplot(1,3,3);plot(trange(plotRange),B_guide(plotRange));xlabel('time');ylabel('B_g');
 
-% figure;plot(trange,mergingRatio);xlim([450 500]);
+figure;plot(trange,mergingRatio);xlim([460 480]);
 
 % timing = knnsearch(mergingRatio(plotRange).',0.5);
 % timing = find(mergingRatio==0,1,'last');
@@ -145,7 +146,7 @@ E_t = (E_t_tmp(idx1)*(mergingRatio_tmp(idx2)-0.5) + E_t_tmp(idx2)*(0.5-mergingRa
 if idx1 ~= idx2-1
     disp('Error in calculation of merging ratio!');
     t_data = mean(t_tmp);
-    B_r = mean(B_r_tmp,'omintnan');
+    B_r = mean(B_r_tmp,'omitnan');
     B_t = mean(B_t_tmp,'omitnan');
     B_t_th = mean(B_t_th_tmp,'omitnan');
     E_t = max(E_t_tmp);

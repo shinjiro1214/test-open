@@ -5,9 +5,36 @@ pathLastHalf = '/3.mat';
 
 % 1:'1um Al', 2:'2.5um Al', 3:'2um Mylar', 4:'1um Mylar'
 
-nshot_1 = 25;
-nshot_2 = 11;
-nshot_3 = 25;
+% % High guide-field case
+% nshot_1 = 7;
+% nshot_2 = 12;
+% nshot_3 = 11;
+% CV_z = [-0.01, -0.01, -0.01];
+% CV_r = [0.01, 0.01, -0.03];
+% cLimList = {[0 0.7],[0 0.4],[0 0.3]};
+% idx_mag = 7;
+
+% % Middle guide-field case
+% nshot_1 = 14;
+% nshot_2 = 14;
+% nshot_3 = 13;
+% CV_z = [-0.01, -0.03, 0.01];
+% CV_r = [0.03, 0.00, -0.01];
+% cLimList = {[0 0.7],[0 0.3],[0 0.6]};
+% idx_mag = 25;
+
+% Low guide-field case
+nshot_1 = 17;
+nshot_2 = 18;
+nshot_3 = 17;
+CV_z = [-0.01, -0.01, -0.01];
+CV_r = [0.02, 0.00, -0.0];
+cLimList = {[0 1],[0 1],[0 0.6]};
+idx_mag = 17;
+
+% nshot_1 = 27;
+% nshot_2 = 11;
+% nshot_3 = 13;
 % nshot_3 = 9;
 
 path_1 = strcat(pathFirstHalf,num2str(nshot_1),'/3.mat');
@@ -20,7 +47,7 @@ load(path_3,'EE4');
 
 EE = cat(3,EE1,EE2,EE4);
 
-idx_mag = 25;
+% idx_mag = 25;
 path_mag = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
 PCBfile = strcat(path_mag,'/',num2str(240111),sprintf('%03d',idx_mag),'_200ch.mat');
 load(PCBfile,'data2D','grid2D');PCBdata.data2D=data2D;PCBdata.grid2D=grid2D;
@@ -37,7 +64,7 @@ zhole1=40;zhole2=-40;
 zmin1=-200;zmax1=200;zmin2=-200;zmax2=200;
 rmin=70;rmax=375;
 range = [zmin1,zmax1,zmin2,zmax2,rmin,rmax];
-t = 468;
+t = 470;
 range = range./1000;
 zmin1 = range(1);
 zmax1 = range(2);
@@ -79,9 +106,17 @@ SXRdata.t = t;
 
 nameList = {'E < 50 eV', 'E < 80 eV', 'E > 100 eV'};
 % cLimList = {[0 1],[0 0.6],[0 0.3]};
-cLimList = {[0 0.8],[0 0.3],[0 0.3]};
+% cLimList = {[0 0.8],[0 0.3],[0 0.3]};
+
+% CV_z = [-0.01, -0.01, -0.01];
+% CV_r = [0.01, 0.01, -0.03];
+% cLimList = {[0 0.7],[0 0.4],[0 0.3]};
+% CV_r = [0.03, 0.02, -0.02];
+% cLimList = {[0 0.7],[0 0.4],[0 0.3]};
+% cLimList = {[0 0.6],[0 0.3],[0 0.2]};
 
 f = figure;
+f.Position=[406   419   686   331];
 % f.Position = [0,0,1150,750];
 % f.Position = [818        ,1021         ,881         ,935];
 tiledlayout(1,3,'TileSpacing','tight','Padding','tight');
@@ -125,17 +160,18 @@ tiledlayout(1,3,'TileSpacing','tight','Padding','tight');
         % end
         % cRange = [0 1];
         cRange = cell2mat(cLimList(j));
+        [~,h] = contourf(psi_mesh_z+CV_z(j),psi_mesh_r+CV_r(j),EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,20);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,linspace(cRange(1),cRange(2),20));clim(cRange);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,20);colorbar;
-        if j == 1
-            [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
-        %     [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,20);
-        % elseif i ~=3
-            % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
-        else
-            [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
-        end
+        % if j == 1
+        %     [~,h] = contourf(psi_mesh_z-0.02,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
+        % %     [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,20);
+        % % elseif i ~=3
+        %     % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
+        % else
+        %     [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,linspace(cRange(1),cRange(2),20));clim(cRange);
+        % end
 
         colormap('turbo');
         h.LineStyle = 'none';
@@ -147,15 +183,15 @@ tiledlayout(1,3,'TileSpacing','tight','Padding','tight');
 
         % if i == 3
             % xticks([-0.04,0,0.04]);
-            xlabel('z [m]')
+            
         % else
             % xticks([]);
         % end
         if j == 1
             % yticks([0.21 0.31]);
-            ylabel('r [m]')
+            ylabel('r [m]');xlabel('z [m]')
         else
-            yticks([]);
+            yticks([]);xlabel('z [m]')
         end
 
         axis equal
@@ -163,7 +199,8 @@ tiledlayout(1,3,'TileSpacing','tight','Padding','tight');
         hold off;
         % xlim([-0.02,0.02]);ylim([0.23,0.29]);
         % xlim([-0.06,0.06]);ylim([0.1,0.31]);
-        xlim([-0.1,0.1]);ylim([0.13,0.31]);
+        % xlim([-0.1,0.1]);ylim([0.13,0.31]);
+        xlim([-0.06,0.06]);ylim([0.13,0.3]);
         % if i == 1
             % title(string(nameList(j)));
         % end

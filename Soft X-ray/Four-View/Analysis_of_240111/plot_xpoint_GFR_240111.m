@@ -1,6 +1,6 @@
 % clear
 % close all
-clearvars -except date doFilter doNLR plotMax plotType
+% clearvars -except date doFilter doNLR plotMax plotType
 addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View_Simulation';
 
@@ -208,4 +208,42 @@ end
 % ylabel(label_y);
 % legend({'~50eV','50~80eV','200eV~','100eV~'},'Location','south');
 
+figure;hold on;
+errorbar(GFR_mean*3-4,I_mean(1,:),I_std(1,:),I_std(1,:),GFR_std,GFR_std,'LineWidth',3);
+errorbar(GFR_mean*3-4,I_mean(3,:),I_std(3,:),I_std(3,:),GFR_std,GFR_std,'Color',"#EDB120",'LineWidth',3);
+ylim([0 inf]);
+ylabel('Relative intensity [a.u.]');
+titleList = {'I_{20-80eV}/I_{50-80eV}','I_{100eV<}/I_{50-80eV}'};legend(titleList);
+% xlim([2.5 4]);
+% xlim([2.8 3.8]);
+% yticks([]);
+ax = gca;
+ax.FontSize = 18;
+xlabel(label_x);
+
 % あとは割り算
+
+% 発光強度のプロット
+figure;hold on;
+% I_plot = zeros(numel(ne),2);
+% for i = 1:numel(ne)
+%     I = I_rad(:,i);
+%     I = I./I(2);
+%     % I = I([1,3]);
+%     % plot(I,'LineWidth',2);
+%     I_plot(i,:) = I([1,3]);
+% end
+x_data = 4.5:7.5;
+% x_data = [465, 468, 470];
+% I_plot = I_plot./I_plot(1,:);
+RGB = orderedcolors("gem");
+plot(x_data,I_plot(:,1)/max(I_plot(:,1)),'o-','LineWidth',3);
+plot(x_data,I_plot(:,2)/max(I_plot(:,2)),'o-','LineWidth',3);
+errorbar(GFR_mean*3-4,I_mean(1,:)/max(I_mean(1,:)),I_std(1,:),I_std(1,:),GFR_std,GFR_std,'--','Color',RGB(1,:),'LineWidth',2);
+errorbar(GFR_mean*3-4,I_mean(3,:)/max(I_mean(3,:)),I_std(3,:),I_std(3,:),GFR_std,GFR_std,'--','Color',RGB(2,:),'LineWidth',2);
+% plot(I_plot,'o-','LineWidth',2);
+ylabel('SXR intensity ratio [a.u.]');xlabel('Guide field ratio');
+legend({'Low energy (simulation)','High energy (simulation)','Low energy (experiment)', 'High energy (experiment)'},'Location','southeast')
+% yticks([]);xticks([]);
+ylim([0 inf]);
+ax = gca;ax.FontSize = 18;

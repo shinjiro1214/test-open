@@ -20,7 +20,8 @@ calibrationImage = imadjust(calibrationImage);% imagesc(CalibrationImage);title(
 % else    
 %     radiusRange = [65,75];
 % end
-[centers,radii] = imfindcircles(calibrationImage,radiusRange,'Sensitivity',0.995,"Method","twostage");
+% [centers,radii] = imfindcircles(calibrationImage,radiusRange,'Sensitivity',0.995,"Method","twostage");
+[centers,radii] = imfindcircles(calibrationImage,radiusRange,'Sensitivity',0.999,"Method","twostage");
 % 検出した円をnumber個だけ描画します．このとき，numberは32個の円が全て含まれる程度に大きく設定します．
 % numberに許される最大値はnumel(radii)です．優先度の低い円を考慮から外すためにnumberをある程度小さくする必要があります．
 % こちらを整理前のcentersとします．

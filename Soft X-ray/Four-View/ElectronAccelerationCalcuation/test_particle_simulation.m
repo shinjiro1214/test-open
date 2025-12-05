@@ -2,7 +2,8 @@ close all
 
 % ガイド磁場スキャンのレシピ
 % Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
-Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};
+% Te=10;ne=repelem(5e19,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+Te=10;ne=repelem(1e20,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
 % Te=2:2:8;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};
 % Te=50;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
 
@@ -12,6 +13,7 @@ Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal',
 % % 時間発展のレシピ
 % Te=10;ne=[2e20 2e20 5e19];Et=[120 240 360];GFR=repelem(50,3);
 % legendList = {'Thermal','t=465us','t=468us','t=470us'};
+% x_data = [465, 468, 470];
 
 % Te = 10; %[eV]
 % Te = 100; %[eV
@@ -35,6 +37,14 @@ Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal',
 h = 6.63e-34; %プランク定数
 e = 1.602176634e-19; %C
 me = 9.1093837015e-31;
+e0 = 8.85e-12;
+
+lambdaD = sqrt(e0.*e.*Te./(e^2.*ne));
+Lambda = 4*pi*ne.*lambdaD.^3;
+% v_Te = sqrt(3*e*Te/me);
+v_Te = sqrt(e*Te/me);
+E_D = e^3*ne.*log(Lambda)./(4*pi*e0^2*me*v_Te.^2);
+E_D_Bellan = 0.43*e^3*ne.*log(Lambda)./(8*pi*e0^2*e*Te);
 
 % f = 1e14:1e14:1e17; %計算する波長帯
 % E = 1:1000;
@@ -66,6 +76,7 @@ for i = 1:numel(ne)
     v = v_e(:,i);
     v(v>2e7) = 2e7;
     [N, edges] = histcounts(v,'BinWidth',1e5);
+    N(N==0) = 0.1;
     semilogy(edges(2:end), N,'LineWidth',2);
     % if i == 1
     %     hold on;
@@ -77,18 +88,19 @@ legend(legendList,'Location','northeast');
 ax = gca;
 ax.FontSize = 18;
 xlim([0 1.5e7]);
+ylim([1 1e4]);
 title('Electron velocity distribution');
 
-% 電流計算
-I_e = sum(v_e);I_e_th = sum(v_e_th);
-% I_e = (I_e - I_e_th) * e * 1e20 / num_particle;
-% I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^3);
-I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^2);
-% TF = 2.5:0.5:4;
-GFR = 4.5:7.5;
-figure;plot(GFR,I_e,'o-','LineWidth',3);
-xlabel('Guide field ratio');ylabel('Toroidal current density [A/m^3]');
-ax=gca;ax.FontSize=18;xlim([4 8]);
+% % 電流計算
+% I_e = sum(v_e);I_e_th = sum(v_e_th);
+% % I_e = (I_e - I_e_th) * e * 1e20 / num_particle;
+% % I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^3);
+% I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^2);
+% % TF = 2.5:0.5:4;
+% GFR = 4.5:7.5;
+% figure;plot(GFR,I_e,'o-','LineWidth',3);
+% xlabel('Guide field ratio');ylabel('Toroidal current density [A/m^3]');
+% ax=gca;ax.FontSize=18;xlim([4 8]);
 
 % エネルギー分布のプロット
 k_e = zeros(size(v_e));
@@ -172,8 +184,7 @@ for i = 1:numel(ne)
     % plot(I,'LineWidth',2);
     I_plot(i,:) = I([1,3]);
 end
-% x_data = 4.5:7.5;
-x_data = [465, 468, 470];
+
 % I_plot = I_plot./I_plot(1,:);
 plot(x_data,I_plot(:,1)/max(I_plot(:,1)),'o-','LineWidth',2);
 plot(x_data,I_plot(:,2)/max(I_plot(:,2)),'o-','LineWidth',2);

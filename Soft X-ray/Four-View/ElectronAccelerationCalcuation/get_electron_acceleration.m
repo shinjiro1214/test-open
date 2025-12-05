@@ -24,8 +24,8 @@ Bp = 1;
 Bt = GFR;
 R = 0.02; %加速領域サイズ[m]
 
-t_ra = sqrt(2*R*(1+GFR^2)*m_e/(q_e*E0*GFR));
-disp('escape time is: ');disp(t_ra);
+% t_ra = sqrt(2*R*(1+GFR^2)*m_e/(q_e*E0*GFR));
+% disp('escape time is: ');disp(t_ra);
 
 % 初期位置 (全て原点から開始)
 initial_x = zeros(N_particles, 1);
@@ -49,15 +49,18 @@ ln_Lambda = log(12 * pi * n_e * lambda_D^3); % クーロン対数 (近似式)
 %% 2. 時間ベクトルの作成
 
 % t = 0:dt:t_end; % 時間ベクトル
-% num_steps = length(t); % ステップ数
+% num_steps_max = length(t); % ステップ数
 
 %% 3. 結果を保存するための配列の初期化
 
-num_steps = 1e3;
+num_steps_max = 1e3;
 
-x = zeros(N_particles, num_steps); % 位置を保存する配列
-v = zeros(N_particles, num_steps); % 速度を保存する配列
-t = zeros(N_particles, num_steps); % 時間を保存する配列
+x = zeros(N_particles, num_steps_max); % 位置を保存する配列
+v = zeros(N_particles, num_steps_max); % 速度を保存する配列
+t = zeros(N_particles, num_steps_max); % 時間を保存する配列
+l = nan(N_particles, num_steps_max); % 平均自由行程？を保存する配列
+n_step = zeros(N_particles,1); % ステップ？衝突？回数を保存する配列
+n_update = zeros(N_particles,1); % 粒子が更新された回数を保存する配列
 
 % 初期値を設定
 x(:, 1) = initial_x;
@@ -75,13 +78,16 @@ if a_field == 0
     return;
 end
 
-tau_v_init = (4*pi()*epsilon0^2*m_e^2*initial_v.^3)./(n_e*Z^2*q_e^4*ln_Lambda);
-disp(mean(tau_v_init));
+% tau_v_init = (4*pi()*epsilon0^2*m_e^2*initial_v.^3)./(n_e*Z^2*q_e^4*ln_Lambda);
+% disp(mean(tau_v_init));
 
 % a_flag = ones(N_particles,1);
 % f_v = figure;
 % シミュレーションループ
-for i = 1:(num_steps - 1)
+for i = 1:(num_steps_max - 1)
+    % if min(n_update) >= 1
+    %     break;
+    % end
     for p = 1:N_particles % 各粒子についてループ
         % なぜか速度が0になることがあるのでその場合は熱速度で初期化
         while v(p,i) == 0
@@ -89,7 +95,7 @@ for i = 1:(num_steps - 1)
             v(p, i) = abs( sigma_v * randn() );
         end
         % 時間過ぎてたら計算しない
-        if t(p, i) > 1e-6
+        if t(p, i) > 1e-7
             continue;
         end
         % 衝突判定 (モンテカルロ法)
@@ -102,7 +108,7 @@ for i = 1:(num_steps - 1)
         %     % 速度が0になった粒子は熱速度で再度散乱させる
         %     v(p, i+1) = abs( sigma_v * randn() );
         %     x(p, i+1) = 0;
-        %     tau_v = 1e-6/num_steps;
+        %     tau_v = 1e-6/num_steps_max;
         %     t(p, i+1) = t(p, 1) + tau_v;
         %     continue;
         % end
@@ -112,7 +118,12 @@ for i = 1:(num_steps - 1)
         % 位置の更新
         x(p, i+1) = x(p, i) + (v(p, i)*tau_v+0.5*a_field*tau_v^2) * Bp/sqrt(Bp^2+Bt^2);
         % 時間の更新
-        t(p, i+1) = t(p, 1) + tau_v;
+        % t(p, i+1) = t(p, 1) + tau_v;
+        t(p, i+1) = t(p, i) + tau_v;
+        % 平均自由行程？の更新
+        l(p,i) = v(p, i) * tau_v;
+        % ステップ？衝突？回数の更新
+        n_step(p) = n_step(p) + 1;
 
         % P_v = nu_v * dt;
         % P_v = nu_v * dt * (1-exp(-1));
@@ -124,12 +135,16 @@ for i = 1:(num_steps - 1)
             % v(p, i+1) = abs( sigma_v * randn() + 5e6);
             % 位置もリセット
             x(p, i+1) = 0;
+            n_step(p) = 0;
+            n_update(p) = n_update(p) + 1;
         elseif x(p, i+1) > R && t(p, i+1) < 1e-6
         % elseif x(p, i+1) > R
             % 外に出ても初期値でリセット
             v(p, i+1) = abs( sigma_v * randn() );
             % v(p, i+1) = abs( sigma_v * randn() + 5e6);
             x(p, i+1) = 0;
+            n_step(p) = 0;
+            n_update(p) = n_update(p) + 1;
         end
 
         % もし速度が0なら熱速度で再拡散（0でなくなるまで？）
@@ -157,6 +172,14 @@ for i = 1:(num_steps - 1)
     %     disp(numel(find(v_plot==0)))
     % end
 end
+
+% figure;plot(mean(l,2,'omitnan'),'*');
+% disp(mean(l,'all','omitnan'));
+% figure;plot(n_step,'*');
+% disp(mean(n_step));
+
+% figure;plot(max(t),'*');
+% disp(mean(max(t)));
 
 v_end = v(:,end);
 for p = 1:N_particles

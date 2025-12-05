@@ -172,7 +172,8 @@ SXRdata40.t = t;
 
 nameList = {'E < 50 eV', 'E < 80 eV', 'E > 100 eV'};
 cLimList = {[0 1],[0 0.6],[0 0.3]};
-cLimList2 = {[0 0.8],[0 0.8],[0 0.3]};
+% cLimList = {[0 1],[0 0.8],[0 0.3]};
+cLimList2 = {[0 0.6],[0 0.8],[0 0.3]};
 
 f = figure;
 % f.Position = [0,0,1150,750];
@@ -216,6 +217,13 @@ for i = 1:3
         else
             cRange = cell2mat(cLimList(j));
         end
+
+        % if i==2 && j~=3
+        %     cRange = [0 0.8];
+        % end
+        if i==2 && j==1
+            cRange = [0 0.75];
+        end
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q,20);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,linspace(cRange(1),cRange(2),20));clim(cRange);
         % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q./Bp.^0.3,20);colorbar;
@@ -253,7 +261,8 @@ for i = 1:3
     
         hold off;
         % xlim([-0.02,0.02]);ylim([0.23,0.29]);
-        xlim([-0.05,0.05]);ylim([0.21,0.31]);
+        % xlim([-0.05,0.05]);ylim([0.21,0.31]);
+        xlim([-0.03,0.03]);ylim([0.21,0.31]);
         if i == 1
             title(string(nameList(j)));
         end

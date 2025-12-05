@@ -16,6 +16,7 @@ pathname.woTFdata=getenv('woTFdata_path');%rawdata（TFoffset引いた）の保�
 pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所
 pathname.pre_processed_directory = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
 pathname.SXRDATA = getenv('SXRDATA_DIR');
+pathname.github = getenv('GITHUB_DIR');
 
 
 %%%%実験オペレーションの取得
@@ -90,7 +91,7 @@ if exist(sxrDataFile,'file')
     load(sxrDataFile)
     if ~exist('xpointList','var')
         doX = true;
-        xpointData = struct('max',zeros(4,8),'mean',zeros(4,8),'std',zeros(4,8), ...
+        xpointData = struct('max',zeros(4,8),'mean',zeros(4,8),'std',zeros(4,8),'x',zeros(4,8), ...
             'MR',zeros(1,8),'t',zeros(1,8));
         xpointList = repmat(xpointData,numel(IDXlist),1);
     end
@@ -114,7 +115,7 @@ else
     doDown = true;
     doSep = true;
     idxList = zeros(numel(IDXlist),1);
-    xpointData = struct('max',zeros(4,8),'mean',zeros(4,8),'std',zeros(4,8), ...
+    xpointData = struct('max',zeros(4,8),'mean',zeros(4,8),'std',zeros(4,8),'x',zeros(4,8), ...
         'MR',zeros(1,8),'t',zeros(1,8));
     xpointList = repmat(xpointData,numel(IDXlist),1);
     downstreamData = struct('max_l',zeros(4,8),'mean_l',zeros(4,8),'std_l',zeros(4,8), ...

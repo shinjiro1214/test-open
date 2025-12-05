@@ -39,7 +39,7 @@ Sensitivity = Data(:,2);
 % xlim([0,90]);
 % xlabel('incident angle [degree]');
 % ylabel('relative sensitivity');
-ax=gca;ax.FontSize=18;
+% ax=gca;ax.FontSize=18;
 RS = spline(Angle,Sensitivity,D1);
 % figure;plot(D1,RS);
 SD = zeros(n);
@@ -49,11 +49,15 @@ for i = 1:n
     end
 end
 
+figure;imagesc(flipud(SD)./100);axis image;
+c=colorbar;clim([0 1]);c.Label.String='Relative sensitivity';c.FontSize=18;
+
 L = round(N_projection/2);
 k = find_circle(L);
 
 cf = 100./SD; 
 correctionTerm = cf(k);
+% figure;imagesc(cf);axis image;colorbar;
 
 end
 

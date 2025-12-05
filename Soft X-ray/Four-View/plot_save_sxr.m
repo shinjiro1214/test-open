@@ -101,10 +101,11 @@ nameList = {'1um Al', '2.5um Al', '2um Mylar', '1um Mylar'};
 % cLimList = {[0 1],[0 1],[0 1],[0 0.6]};
 % cLimList = {[0 2],[0 0.2],[0 0.2],[0 1.5]};%240621
 % cLimList = {[0 1],[0 1],[0 1],[0 0.5]};
-cLimList = {[0 1],[0 0.5],[0 0.2],[0 0.5]}; %240111_new
+% cLimList = {[0 1],[0 0.5],[0 0.2],[0 0.5]}; %240111_new
 % cLimList = {[0 5],[0 1],[0 0.2],[0 0.5]};
 % cLimList = {[0 0.5],[0 0.2],[0 0.1],[0 0.1]};
 % cLimList = {[0 0.2],[0 0.1],[0 0.1],[0 0.1]};
+cLimList = {[0 5],[0 5],[0 0.05],[0 10]};%250325
 
 % 負の要素を0で置換
 negativeEE = find(EE<0);
@@ -133,8 +134,11 @@ for i = 1:4
     % [~,h] = contourf(SXR_mesh_z,SXR_mesh_r,EE_plot,linspace(cRange(1),cRange(2),20));clim(cRange);
     % [~,h] = contourf(SXR_mesh_z,SXR_mesh_r,EE_plot,20);
 
-    % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
-    [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
+    % if doSave
+        % [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),linspace(cRange(1),cRange(2),20));clim(cRange);
+    % else
+        [~,h] = contourf(psi_mesh_z,psi_mesh_r,EE_q(:,:,i),20);
+    % end
 
 
     % if i == 1
@@ -148,27 +152,30 @@ for i = 1:4
     colormap('turbo');
     h.LineStyle = 'none';
     c=colorbar;c.Label.String='Intensity [a.u.]';c.FontSize=18;
-    hold on
-    if show_localmax
-        localmax_idx = imregionalmax(EE_plot);
-        EE_localmax = EE_plot.*localmax_idx;
-        [~, localmax_idx] = maxk(EE_localmax(:),2);
-        localmax_pos_r = SXR_mesh_r(localmax_idx);
-        localmax_pos_z = SXR_mesh_z(localmax_idx);
-        plot(localmax_pos_z,localmax_pos_r,'r*');
+    if PCBdata.doPlotPsi
+        hold on
+        if show_localmax
+            localmax_idx = imregionalmax(EE_plot);
+            EE_localmax = EE_plot.*localmax_idx;
+            [~, localmax_idx] = maxk(EE_localmax(:),2);
+            localmax_pos_r = SXR_mesh_r(localmax_idx);
+            localmax_pos_z = SXR_mesh_z(localmax_idx);
+            plot(localmax_pos_z,localmax_pos_r,'r*');
+        end
+        % [~,hp]=contourf(psi_mesh_z,psi_mesh_r,psi,contour_layer,'white','Fill','off');axis([-0.12 0.12 0.06 0.33]);
+        [~,hp]=contourf(interp_matrix(psi_mesh_z,3),interp_matrix(psi_mesh_r,3),interp_matrix(psi,3),contour_layer,'white','Fill','off');
+        % [~,hp]=contourf(psi_mesh_z,psi_mesh_r,psi,contour_layer,'-k','Fill','off');
+        hp.LineWidth = 1.5;
+        % plot(magAxisList.z(:,t_idx),magAxisList.r(:,t_idx),'wo','LineWidth',3);
+        % plot(xPointList.z(t_idx),xPointList.r(t_idx),'wx','LineWidth',3);
+        hold off;
     end
-    % [~,hp]=contourf(psi_mesh_z,psi_mesh_r,psi,contour_layer,'white','Fill','off');axis([-0.12 0.12 0.06 0.33]);
-    [~,hp]=contourf(interp_matrix(psi_mesh_z,3),interp_matrix(psi_mesh_r,3),interp_matrix(psi,3),contour_layer,'white','Fill','off');
-    % [~,hp]=contourf(psi_mesh_z,psi_mesh_r,psi,contour_layer,'-k','Fill','off');
-    hp.LineWidth = 1.5;
-    % plot(magAxisList.z(:,t_idx),magAxisList.r(:,t_idx),'wo','LineWidth',3);
-    % plot(xPointList.z(t_idx),xPointList.r(t_idx),'wx','LineWidth',3);
-    hold off;
     % xlim([-0.05,0.05]);ylim([0.18,0.32]);
     % % xlim([-0.02,0.02]);ylim([0.23,0.29]);
     % xlim([-0.07,0.07]);ylim([0.2,0.32]);
     % xlim([-0.03,0.03]);ylim([0.21,0.3]);
-    xlim([-0.15,0.15]);
+    % xlim([-0.15,0.15]);
+    xlim([-0.1, 0.1]);ylim([0.15, 0.3]);
     title(string(nameList(i)));
 end
 

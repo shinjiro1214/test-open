@@ -1,7 +1,12 @@
-thomsonShotList = [14,15,16,17,19,21];
-% magShotList = [20,26,27,37,38,46];
+addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View'
+
 magShotList = 38;
-thomsonTimeList = [465,466,467,468,469,470];
+% thomsonShotList = [14,15,16,17,19,21];
+% % magShotList = [20,26,27,37,38,46];
+% thomsonTimeList = [465,466,467,468,469,470];
+
+thomsonShotList = [30,31,32,33,36,37,38,40,42];
+thomsonTimeList = [462,462,464,464,466,466,468,468,468];
 
 % ne_t = nan(numel(thomsonTimeList),1);
 % Te_t = nan(numel(thomsonTimeList),1);
@@ -10,8 +15,10 @@ thomsonTimeList = [465,466,467,468,469,470];
 
 i=1;
 for time = thomsonTimeList
-    thomsonIdx = thomsonShotList(thomsonTimeList==time);
-    thomsonPath = ['/Users/shinjirotakeda/Downloads/ThomsonData/241228',num2str(thomsonIdx,'%03i'),'-241228008_CIntvl_CDur_allfiber_TeNePe.csv'];
+    % thomsonIdx = thomsonShotList(thomsonTimeList==time);
+    % thomsonPath = ['/Users/shinjirotakeda/Downloads/ThomsonData/241228',num2str(thomsonIdx,'%03i'),'-241228008_CIntvl_CDur_allfiber_TeNePe.csv'];
+    thomsonIdx = thomsonShotList(i);
+    thomsonPath = ['/Users/shinjirotakeda/Downloads/ThomsonData/250325',num2str(thomsonIdx,'%03i'),'_TeNePe.csv'];
     T = readmatrix(thomsonPath);
     r = reshape(T(:,2),7,[]);
     z = reshape(T(:,3),7,[]);
@@ -19,9 +26,11 @@ for time = thomsonTimeList
     ne_mat = reshape(T(:,6),7,[]);
 
     SD_Te_mat = reshape(T(:,5),7,[]);
-    Te_mat(Te_mat<SD_Te_mat) = NaN;
     SD_ne_mat = reshape(T(:,7),7,[]);
-    ne_mat(ne_mat<SD_ne_mat) = NaN;
+    % Te_mat(Te_mat<SD_Te_mat) = NaN;
+    % ne_mat(ne_mat<SD_ne_mat) = NaN;
+    Te_mat(Te_mat./SD_Te_mat<0.15) = NaN;
+    ne_mat(ne_mat./SD_ne_mat<0.15) = NaN;
 
     % figure;contourf(z,r,Te_mat,linspace(0,10,10),'LineStyle','none');
 
@@ -52,10 +61,13 @@ for time = thomsonTimeList
     z_idx_list = z_idx-1:z_idx+1;
     % r_idx = find(r(1,:)<=xPointList.r(timeIndex),1,'last');
     r_idx_list = find(r(1,:)<=xPointList.r(timeIndex)+0.02&r(1,:)>=xPointList.r(timeIndex)-0.02);
+
     % その点の平均値を取得
-    Te_x = mean([Te_mat(z_idx_list,r_idx_list)],'all','omitnan');
+    % Te_x = mean([Te_mat(z_idx_list,r_idx_list)],'all','omitnan');
+    Te_x = max([Te_mat(z_idx_list,r_idx_list)],[],'all','omitnan');
     Te_x_std = std([Te_mat(z_idx_list,r_idx_list)],0,'all','omitnan');
-    ne_x = mean([ne_mat(z_idx_list,r_idx_list)],'all','omitnan');
+    % ne_x = mean([ne_mat(z_idx_list,r_idx_list)],'all','omitnan');
+    ne_x = max([ne_mat(z_idx_list,r_idx_list)],[],'all','omitnan');
     ne_x_std = std([ne_mat(z_idx_list,r_idx_list)],0,'all','omitnan');
     % disp(Te_x);
     ne_t(i)=ne_x;Te_t(i)=Te_x;
@@ -64,7 +76,10 @@ for time = thomsonTimeList
 end
 
 % figure;plot(thomsonTimeList,ne_t);title('Density');
-figure;errorbar(thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);%title('Density');
+% figure;errorbar(thomsonTimeList([1,4,6]),ne_t([1,4,6]),ne_std([1,4,6]),'k','LineWidth',3);%title('Density');
+figure;errorbar(thomsonTimeList,ne_t,ne_std,'ok','LineWidth',3);%title('Density');
 xlabel('time [us]');ylabel('Electron density [m^{-3}]');ax=gca;ax.FontSize=18;
 % figure;plot(thomsonTimeList,Te_t);title('Temperature');
-figure;errorbar(thomsonTimeList([1,4,6]),Te_t([1,4,6]),Te_std([1,4,6]));title('Temperature');
+% figure;errorbar(thomsonTimeList([1,4,6]),Te_t([1,4,6]),Te_std([1,4,6]));%title('Temperature');
+figure;errorbar(thomsonTimeList,Te_t,Te_std,'ok','LineWidth',3);
+xlabel('time [us]');ylabel('Electron temperature [eV]');ax=gca;ax.FontSize=18;

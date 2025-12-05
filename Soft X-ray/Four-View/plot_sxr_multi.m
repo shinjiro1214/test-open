@@ -107,14 +107,18 @@ else
     % load(parameterFile,'range');
 end
 
-
-times = start:interval:(start+interval*7);
+if date == 230830
+    times = start:interval:(start+interval*3);
+else
+    times = start:interval:(start+interval*7);
+end
 doPlot = false;
 
 if doSave
     f = figure;
     f.Units = 'normalized';
-    f.Position = [0.1,0.2,0.8,0.8];
+    % f.Position = [0.1,0.2,0.8,0.8];
+    f.Position = [0.4830 1.1946 0.8000 0.8002];
 end
 
 for t = times
@@ -122,7 +126,11 @@ for t = times
     matrixPath = strcat(matrixFolder,'/',num2str(number),'.mat');
     if ~exist(matrixPath,'file')%doCalculation
 %         ベクトル形式の画像データの読み込み
-        [VectorImage1,VectorImage2, VectorImage3, VectorImage4] = get_sxr_image(date,number,newProjectionNumber,rawImage);
+        if date == 230830
+            [VectorImage1,VectorImage2, VectorImage3, VectorImage4] = get_sxr_image_230830(date,number,newProjectionNumber,rawImage);
+        else
+            [VectorImage1,VectorImage2, VectorImage3, VectorImage4] = get_sxr_image(date,number,newProjectionNumber,rawImage);
+        end
 
 %         再構成計算
         EE1 = get_distribution(M,K,gm2d1,U1,s1,v1,VectorImage1,doPlot,doNLR);

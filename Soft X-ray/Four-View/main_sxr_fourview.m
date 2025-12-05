@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%
 % clear
 % close all
-clearvars -except date IDXlist doSave doFilter doNLR shotIDX projection grid
+clearvars -except date IDXlist doSave doFilter doNLR shotIDX projection grid doPlotPsi
 addpath([getenv('GITHUB_DIR'),'test-open',filesep,'pcb_experiment']); %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
 %%%%%ここが各PCのパス
@@ -16,8 +16,8 @@ pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所;
 pathname.pre_processed_directory = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
 
 %%%%実験オペレーションの取得
-prompt = {'Date:','Shot number:','doSave:','doFilter:','doNLR:', 'Projection:', 'Grid:'};
-definput = {'','','','','','',''};
+prompt = {'Date:','Shot number:','doSave:','doFilter:','doNLR:', 'Projection:', 'Grid:', 'doPlotPsi:'};
+definput = {'','','','','','','',''};
 if exist('date','var')
     definput{1} = num2str(date);
 end
@@ -39,6 +39,9 @@ end
 if exist('grid','var')
     definput{7} = num2str(grid);
 end
+if exist('doPlotPsi','var')
+    definput{8} = num2str(doPlotPsi);
+end
 dlgtitle = 'Input';
 dims = [1 35];
 % if exist('date','var') && exist('IDXlist','var')
@@ -57,6 +60,7 @@ doFilter = logical(str2num(cell2mat(answer(4))));
 doNLR = logical(str2num(cell2mat(answer(5))));
 projection = str2double(cell2mat(answer(6)));
 grid = str2double(cell2mat(answer(7)));
+doPlotPsi = logical(str2num(cell2mat(answer(8))));
 
 SXR.doSave = doSave;
 SXR.doFilter = doFilter;
@@ -107,19 +111,25 @@ for i=1:n_data
     PCB.idx = shotIDX(i);
     PCB.shot=shotlist(i,:);
     PCB.tfshot=tfshotlist(i,:);
+    if date == 250325 && PCB.idx >= 37
+        PCB.shot=shotlist(1,:);
+        PCB.tfshot=tfshotlist(1,:);
+    end
     if PCB.shot == PCB.tfshot
         PCB.tfshot = [0,0];
     end
     PCB.i_EF=EFlist(i);
     PCB.date = date;
+    PCB.doOverwrite = false;
     TF=TFlist(i);
     SXR.start = startlist(i);
     SXR.interval = intervallist(i);
     % [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_280ch(date, shot, tfshot, pathname, n,i_EF,trange);
-    % [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_280ch(PCB,pathname);
-    [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_200ch(PCB,pathname);
+    [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_280ch(PCB,pathname);
+    % [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_200ch(PCB,pathname);
     % grid2D = NaN;
     % data2D = NaN;
+    PCBdata.doPlotPsi = doPlotPsi;
     SXR.date = date;
     SXR.shot = shotIDX(i);
     % SXR.SXRfilename = strcat(getenv('SXR_IMAGE_DIR'),'/',num2str(date),'/shot',num2str(shot_SXR,'%03i'),'.tif');

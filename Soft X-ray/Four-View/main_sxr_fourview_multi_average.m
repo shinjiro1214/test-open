@@ -18,7 +18,7 @@
 % 各時点における再構成結果の平均をとってプロット
 % この場合も磁気面については平均は取らなくてよさそう
 
-clearvars -except date IDXlist doSave doFilter doNLR
+clearvars -except date IDXlist doSave doFilter doNLR doPlotPsi
 addpath([getenv('GITHUB_DIR'),'test-open',filesep,'pcb_experiment']); %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
 %%%%%ここが各PCのパス
@@ -27,10 +27,11 @@ pathname.NIFS=getenv('NIFS_path');%192.168.1.111
 pathname.fourier=getenv('fourier_path');%fourierのmd0（データックのショットが入ってる）までのpath
 pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所;
 pathname.pre_processed_directory = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
+pathname.github=getenv('GITHUB_DIR');%githubのパス
 
 %%%%実験オペレーションの取得
-prompt = {'Date:','Shot number:','doSave:','doFilter:','doNLR:'};
-definput = {'','','','',''};
+prompt = {'Date:','Shot number:','doSave:','doFilter:','doNLR:','doPlotPsi:'};
+definput = {'','','','','',''};
 if exist('date','var')
     definput{1} = num2str(date);
 end
@@ -45,6 +46,9 @@ if exist('doFilter','var')
 end
 if exist('doNLR','var')
     definput{5} = num2str(doNLR);
+end
+if exist('doPlotPsi','var')
+    definput{6} = num2str(doPlotPsi);
 end
 dlgtitle = 'Input';
 dims = [1 35];
@@ -62,10 +66,13 @@ IDXlist = str2num(cell2mat(answer(2))); %実際のショット番号
 doSave = logical(str2num(cell2mat(answer(3))));
 doFilter = logical(str2num(cell2mat(answer(4))));
 doNLR = logical(str2num(cell2mat(answer(5))));
+doPlotPsi = logical(str2num(cell2mat(answer(6))));
 
 SXR.doSave = doSave;
 SXR.doFilter = doFilter;
 SXR.doNLR = doNLR;
+SXR.projection=30;
+SXR.grid=50;
 
 DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシートのID
 T=getTS6log(DOCID);
@@ -76,7 +83,7 @@ T = T(strcmp(T.SXRComment,'success'),:); %軟X線画像が撮れたshotに限定
 T_condition = T(:,13:end);
 T_condition = rmmissing(T_condition,2);
 
-T_condition.gas = [];
+% T_condition.gas = [];
 T_condition.SXRComment = [];
 rows_to_compare = T_condition;
 % row_to_test = T_condition(10,:); %基準となるshotのインデックス（切り出し後の並び）
@@ -127,12 +134,17 @@ for i=1:n_data
     if PCB.shot == PCB.tfshot
         PCB.tfshot = [0,0];
     end
+    if date == 250325 && PCB.idx >= 37
+        PCB.shot=shotlist(1,:);
+        PCB.tfshot=tfshotlist(1,:);
+    end
     PCB.i_EF=EFlist(i);
     PCB.date = date;
     TF=TFlist(i);
     SXR.start = startlist(i);
     SXR.interval = intervallist(i);
     [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_200ch(PCB,pathname);
+    PCBdata.doPlotPsi = doPlotPsi;
     
     avgIdx = IDXlist(i)+100;
     SXRfilename_avg = strcat(getenv('SXR_IMAGE_DIR'),'/',num2str(date),'/shot',num2str(avgIdx,'%03i'),'.tif');

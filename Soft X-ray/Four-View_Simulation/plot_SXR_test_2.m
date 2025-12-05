@@ -52,8 +52,8 @@ E_L = reshape(flipud(EE_L),[],1);
 
 Iwgn1 = (gm2d1*E1).';
 
-Iwgn1 = awgn(Iwgn1,10*log10(5),'measured');
-% Iwgn=awgn(I,10*log10(10),'measured'); % 5 related to 20%; 10 related to 10%;
+Iwgn1 = awgn(Iwgn1,10*log10(2),'measured');
+% Iwgn=awgn(I,10*log10(10),'measured');
 Iwgn1(Iwgn1<0) = 1e-5;
 
 % figure;
@@ -85,42 +85,42 @@ EE_original = flipud(EE_original);
 EE0 = EE_original(r_range,z_range);
 EE1 = EE1(r_range,z_range);
 EE_L = EE_L(r_range,z_range);
-
-load('/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111030.mat','data2D','grid2D');
-cRange = [0 0.5];
-% cRange = [0 5];
-figure('Position',[1 358 1470 420]);
-subplot(1,3,1)
-[SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
-[~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE0,linspace(cRange(1),cRange(2),20));
-h1.LineStyle = 'none';hold on;
-contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
-c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
-xlim([-0.05,0.05]);ylim([0.2,0.32]);clim(cRange);
-title('オリジナル');
-% axis equal
-
-subplot(1,3,2)
-[SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
-[~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE1,linspace(cRange(1),cRange(2),20));
-h1.LineStyle = 'none';hold on;
-contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
-c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
-xlim([-0.05 0.05]);ylim([0.2 0.32]);clim(cRange);
-title('再構成1回目');
-% axis equal
-
 EE_new1 = EE_new1(r_range,z_range);
 
-subplot(1,3,3);
-[SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
-[~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE_new1,linspace(cRange(1),cRange(2),20));
-h1.LineStyle = 'none';hold on;
-contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
-c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
-xlim([-0.05 0.05]);ylim([0.2 0.32]);clim(cRange);
-title('再構成2回目');
-% axis equal
+load('/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111030.mat','data2D','grid2D');
+% cRange = [0 0.5];
+cRange = [0 0.8];
+% cRange = [0 5];
+% figure('Position',[1 358 1470 420]);
+% subplot(1,3,1)
+% [SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
+% [~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE0,linspace(cRange(1),cRange(2),20));
+% h1.LineStyle = 'none';hold on;
+% contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
+% c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
+% xlim([-0.05,0.05]);ylim([0.2,0.32]);clim(cRange);
+% title('オリジナル');
+% % axis equal
+
+% subplot(1,3,2)
+% [SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
+% [~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE1,linspace(cRange(1),cRange(2),20));
+% h1.LineStyle = 'none';hold on;
+% contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
+% c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
+% xlim([-0.05 0.05]);ylim([0.2 0.32]);clim(cRange);
+% title('再構成1回目');
+% % axis equal
+
+% subplot(1,3,3);
+% [SXR_mesh_z,SXR_mesh_r] = meshgrid(z_space_SXR,r_space_SXR);
+% [~,h1] = contourf(SXR_mesh_z,SXR_mesh_r,EE_new1,linspace(cRange(1),cRange(2),20));
+% h1.LineStyle = 'none';hold on;
+% contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,70)),20,'black')
+% c=colorbar;c.Label.String='Intensity [a.u.]';%c.FontSize=18;
+% xlim([-0.05 0.05]);ylim([0.2 0.32]);clim(cRange);
+% title('再構成2回目');
+% % axis equal
 
 figure('Position',[1 358 1470 420]);
 subplot(1,3,1)
@@ -165,9 +165,25 @@ error1 = sum((EE_new1-EE1).^2,'all')/numel(EE1);
 EE_original = EE_original(r_range,z_range);
 % error_original = sum((EE_original-EE1).^2/max(EE_original,[],'all'),'all')/numel(EE_original);
 error_original = sum((EE_original-EE1).^2,'all')/numel(EE_original);
+% error_original = sum((EE_original-EE1).^2./EE_original,'all')/numel(EE_original);
+mse_original = sum((EE_original-EE1).^2,'all')/numel(EE_original);
+psnr_original = 10*log10(max(EE_original,[],'all')^2/mse_original);
 
-disp(error1);
-disp(error_original);
+psnr1 = 10*log10(max(EE1,[],'all')^2/error1);
+
+% disp(error1);disp(max(EE1,[],'all'));
+% disp(error_original);disp(max(EE_original,[],'all'));
+% disp(psnr_original);
+% disp(psnr1);
+
+error_1 = sum((EE1-EE_original).^2,'all')/numel(EE_original);
+error_new = sum((EE_new1-EE_original).^2,'all')/numel(EE_original);
+error_L = sum((EE_L-EE_original).^2,'all')/numel(EE_original);
+disp(error_1);disp(error_new);disp(error_L);
+PSNR_1 = 10*log10(max(EE_original,[],'all')^2/error_1);
+PSNR_new = 10*log10(max(EE_original,[],'all')^2/error_new);
+PSNR_L = 10*log10(max(EE_original,[],'all')^2/error_L);
+disp(PSNR_1);disp(PSNR_new);disp(PSNR_L);
 
 
 function [GFRM,GFRD] = generate_gfr()

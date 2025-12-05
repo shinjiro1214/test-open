@@ -11,7 +11,8 @@ mergingRatioSXR = mergingRatio(ismember(trange,trange_sxr));
 Imax = zeros(4,8);
 Imean = zeros(4,8);
 Istd = zeros(4,8);
-IxData = struct('max',Imax,'mean',Imean,'std',Istd,'MR',mergingRatioSXR,'t',trange_sxr);
+Ix = zeros(4,8);
+IxData = struct('max',Imax,'mean',Imean,'std',Istd,'x',Ix,'MR',mergingRatioSXR,'t',trange_sxr);
 
 date = SXR.date;
 shot = SXR.shot;
@@ -74,19 +75,30 @@ for i = 1:8
     t = SXR.start+SXR.interval*(i-1);
     t_idx = find(trange==t);
     x_r = xPointList.r(t_idx);
-    x_z = xPointList.z(t_idx);
+    x_z = xPointList.z(t_idx); 
+    [Z1,R] = meshgrid(z_space_SXR1,r_space_SXR);
+    [Z2,~] = meshgrid(z_space_SXR2,r_space_SXR);
     if ~isnan(x_r)
         for j = 1:4
             r_idx = knnsearch(r_space_SXR.',x_r);
+            r_range = r_space_SXR<=x_r + 0.02 & r_space_SXR>=x_r - 0.02;
             if j <= 2
                 z_idx = knnsearch(z_space_SXR2.',x_z);
+                z_range = z_space_SXR2<=x_z + 0.01 & z_space_SXR2>=x_z - 0.01;
+                circleFlag = sqrt((Z2-x_z).^2+(R-x_r).^2)<=0.01;
             else
                 z_idx = knnsearch(z_space_SXR1.',x_z);
+                z_range = z_space_SXR1<=x_z + 0.01 & z_space_SXR1>=x_z - 0.01;
+                circleFlag = sqrt((Z1-x_z).^2+(R-x_r).^2)<=0.01;
             end
-            EE_x = EE(r_idx-2:r_idx+2,z_idx-2:z_idx+2,j);
+            % EE_x = EE(r_idx-2:r_idx+2,z_idx-2:z_idx+2,j);
+            % EE_x = EE(r_range,z_range,j);
+            EE_tmp = EE(:,:,j);
+            EE_x = EE_tmp(circleFlag);
             IxData.max(j,i) = max(EE_x,[],'all');
             IxData.mean(j,i) = mean(EE_x,'all');
             IxData.std(j,i) = std(EE_x,0,'all');
+            IxData.x(j,i) = EE(r_idx,z_idx,j);
         end
     end
 
