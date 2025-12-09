@@ -1,0 +1,29 @@
+\section{トモグラフィ解析コード}
+
+\subsection{問題設定}
+計測データ（画像）ベクトル $P$ から、局所放射率分布 $E$ を求める逆問題である。
+\begin{equation}
+    P = G \cdot E + \epsilon
+\end{equation}
+ここで $G$ は幾何行列（視線がどのグリッドを通るかを表す重み）である。
+本装置は視線数が限られているため、そのまま解くとノイズだらけの解になる（不良設定問題）。
+
+\subsection{Phillips-Tikhonov 正則化}
+解の「滑らかさ」を仮定することで、物理的に妥当な解を得る。
+最小化すべき評価関数 $Q$ は以下である\cite{Takeda2023}。
+\begin{equation}
+    Q = ||P - G E||^2 + \gamma ||L E||^2
+\end{equation}
+\begin{itemize}
+    \item 第1項: データへの当てはまりの良さ（残差）。
+    \item 第2項: 解の滑らかさ（正則化項）。$L$ はラプラシアン行列（2階微分）。
+    \item $\gamma$: 正則化パラメータ。これが画像の出来を左右する**解析の命**である。
+\end{itemize}
+
+\subsection{パラメータ gamma の決定意志 (GCV法)}
+$\gamma$ を人間が目視で決めると、「見たい絵」を恣意的に作れてしまう危険がある。
+客観性を担保するため、本研究では**GCV (Generalized Cross Validation)** 法を採用している。
+以下の $GCV(\gamma)$ が最小になる $\gamma$ を自動探索するコードを実装済みである。
+\begin{equation}
+    GCV(\gamma) = \frac{M ||(I - A(\gamma)) P||^2}{\{\mathrm{Trace}[I - A(\gamma)]\}^2}
+\end{equation}

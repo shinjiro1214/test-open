@@ -1,0 +1,42 @@
+\section{MCPと高電圧パルス駆動回路}
+
+\subsection{MCP仕様}
+\begin{itemize}
+    \item 型番: **Hamamatsu F2222-21P-Y010** (2段式)
+    \item 特性: 高ゲインが得られる2段式（Chevron）を採用。
+\end{itemize}
+
+\subsection{パルス駆動の必要性}
+MCPには DC $+4\,\mathrm{kV}$ 程度の高電圧が必要だが、実験開始時（コイル点弧時）の激しい磁場変動時に電圧がかかっていると、誘導ノイズで画像が乱れるだけでなく、MCPが焼損するリスクがある。
+そのため、**計測タイミング（数ms間）のみ高電圧を印加する「ゲーティング回路」**を自作して使用する\cite{Takeda2023}。
+
+\subsection{パルス回路構成と主要部品}
+本装置で使用している回路は、以下の部品で構成される。
+
+\begin{description}
+    \item[高耐圧MOSFET] スイッチング素子。
+    \begin{itemize}
+        \item 型番: \textbf{IXYS IXTT02N450HV}
+        \item 定格: 耐圧 $4500\,\mathrm{V}$ (これ以下のFETは耐圧不足で即死するため注意)。
+    \end{itemize}
+    
+    \item[ゲートドライバ (フォトカプラ)] 高電圧側と制御側を絶縁する。
+    \begin{itemize}
+        \item 型番: \textbf{RENESAS PS9531}
+        \item 特徴: 高速スイッチングが可能。
+    \end{itemize}
+    
+    \item[絶縁DC-DCコンバータ] フローティング電源（ゲート駆動用15V）を作る。
+    \begin{itemize}
+        \item 型番: \textbf{TRACO POWER TIM 2-0923}
+    \end{itemize}
+    
+    \item[高圧電源 (DC)] ベースとなる電源。
+    \begin{itemize}
+        \item Phosphor用: 松定プレシジョン HPMR-5P (+5kVまで)
+        \item MCP-in用: 松定プレシジョン HPMR-2N (-2kVまで)
+    \end{itemize}
+\end{description}
+
+\subsection{結線上の注意}
+MOSFETはPhosphor側（正電位）とMCP-in側（負電位）の両方に入れ、**同時タイミング**でゲートを開くことで、MCPにかかる電位差を一瞬で形成する設計となっている。

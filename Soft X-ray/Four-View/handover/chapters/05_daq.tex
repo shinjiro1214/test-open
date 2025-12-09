@@ -1,0 +1,20 @@
+\section{データ収集システム (DAQ)}
+
+\subsection{カメラ構成と役割}
+本システムは、瞬間的な高速現象を捉えるために2段階のカメラシステムを採用している。
+
+\begin{enumerate}
+    \item **フレーミングカメラ (Framing Camera):**
+    \begin{itemize}
+        \item 型番: **Hamamatsu C4187**
+        \item 役割: 高速シャッター（ゲート時間 最小10ns）として機能し、最大8フレームの画像を自身の蛍光面に保持する「光のメモリ」として働く。
+    \end{itemize}
+    
+    \item **読み出し用CMOSカメラ:**
+    \begin{itemize}
+        \item 型番: **Hamamatsu C11440-36U**
+        \item 役割: フレーミングカメラの蛍光面に映し出された8枚の画像を、高解像度デジタルデータとしてPCに取り込む。
+    \end{itemize}
+\end{enumerate}
+
+この構成により、高価なハイスピードビデオカメラを使わずとも、極めて短い露光時間（$5\,\mu\mathrm{s}$間隔など）での連続撮影を実現している\cite{Xiang2021}。

@@ -1,0 +1,43 @@
+\documentclass[a4paper,11pt]{jsarticle} 
+
+% --- 共通パッケージ ---
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{otf}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[dvipdfmx,bookmarks=true,colorlinks=true,linkcolor=blue]{hyperref}
+
+% --- 画像フォルダのパス設定 ---
+\graphicspath{{./images/}}
+
+% --- タイトル設定 ---
+\title{多視点軟X線画像計測装置\\引き継ぎ・技術資料}
+
+\author{作成者：岡\UTF{FA11}翔吾、竹田慎次朗}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% --- 各章の読み込み ---
+\include{chapters/01_intro}        % 概要・歴史・目的
+\include{chapters/02_vacuum}       % 真空・チャンバー・フィルター
+\include{chapters/03_optics}       % ピンホール・ファイバー・レンズ
+\include{chapters/04_hv_mcp}       % MCP・高電圧回路・パルス
+\include{chapters/05_daq}          % カメラ・データ収集
+\include{chapters/06_analysis}     % トモグラフィ・正則化コード
+\include{chapters/07_operation}    % 日々の手順
+\include{chapters/08_maintenance}  % トラブル対応・消耗品
+
+\appendix
+\include{chapters/99_appendix}
+
+\bibliographystyle{junsrt}
+\bibliography{references}  
+
+\end{document}
