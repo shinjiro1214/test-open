@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 # ==========================================
 # 設定
 # ==========================================
-SAVE_DIR = "/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Filters/"
+SAVE_DIR = "/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Filters/data/"
 CSV_FILENAME = "materials.csv"
 LEBOW_URL = "https://lebowcompany.com/foils-list"
 

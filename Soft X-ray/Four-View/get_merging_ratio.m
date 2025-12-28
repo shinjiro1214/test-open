@@ -93,7 +93,37 @@ function merging_ratio = get_merging_ratio(data2D,grid2D,times)
     % for i = time
     %     ind=i-time(1)+1;
     %     max_psi_ind=find(islocalmax(smooth(max_psi(:,i)),'MaxNumExtrema', 2));
-        max_psi_ind=find(islocalmax(smooth(max_psi),'MaxNumExtrema', 2));
+        % max_psi_ind=find(islocalmax(smooth(max_psi),'MaxNumExtrema', 2));
+        smoothed_data = smooth(max_psi); 
+    % あるいは平滑化なしで行くなら： smoothed_data = max_psi;
+    
+    % 1. 通常のピーク探索
+    tf_peaks = islocalmax(smoothed_data);
+    
+    % 2. 【重要】境界（端点）のチェックを追加
+    % 左端：隣（2番目）より大きければピークとみなす
+    if smoothed_data(1) > smoothed_data(2)
+        tf_peaks(1) = true;
+    end
+    % 右端：隣（end-1番目）より大きければピークとみなす
+    if smoothed_data(end) > smoothed_data(end-1)
+        tf_peaks(end) = true;
+    end
+    
+    % 3. ピークのインデックスを抽出
+    candidate_ind = find(tf_peaks);
+    
+    % 4. ピークが3つ以上ある場合、値が大きい順に2つ選ぶ
+    if numel(candidate_ind) > 2
+        [~, sort_idx] = sort(smoothed_data(candidate_ind), 'descend');
+        % 上位2つのインデックスを取り出す
+        max_psi_ind = candidate_ind(sort_idx(1:2));
+    else
+        max_psi_ind = candidate_ind;
+    end
+    
+    % 5. インデックスを位置順（左→右）にソートし直す（O1, O2の順序を保つため）
+    max_psi_ind = sort(max_psi_ind);
     %     r_ind=max_psi_r(:,:,i);
         r_ind=max_psi_r;
     %     if numel(max_psi(min(max_psi_ind),i))==0

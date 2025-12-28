@@ -8,57 +8,17 @@ import plotly.graph_objects as go
 # ==========================================
 DATA_DIR = "/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Filters/data/"
 
-# ★ すべての材料をハイライトリストに入れました
-HIGHLIGHT_MATERIALS = [
-    "Al",
-    "Al2O3",
-    "Be",
-    "B",
-    "C",
-    "Cr",
-    "Co",
-    "Cu",
-    "Ge",
-    "Au",    
-    "Hf",
-    "In",
-    "Fe",
-    "C22N2O4H12",
-    "Pb",
-    "LiF",
-    "Mg",
-    "MgF2", 
-    "Mo",
-    "C10H8O4",
-    "Ni",
-    "Nb",
-    "C8H8",
-    "Pd",
-    "Pt",
-    "C16H14O3",
-    "C3H6",
-    "Rh",
-    "Si",
-    "SiO2",
-    "Si3N4",
-    "Ag",
-    "Ta",
-    "Tf", 
-    "Sn",
-    "Ti",
-    "TiO",
-    "W",
-    "V",
-    "Zn",
-    "Zr"
-]
-
 def main():
     # ファイル一覧取得
     file_list = glob.glob(os.path.join(DATA_DIR, "*.txt"))
+    
+    # ファイルが見つからない場合
     if not file_list:
-        print("No text files found.")
+        print(f"No text files found in {DATA_DIR}")
         return
+
+    # ファイル名でソート（アルファベット順に並べる）
+    file_list.sort()
 
     fig = go.Figure()
 
@@ -66,9 +26,10 @@ def main():
 
     for filepath in file_list:
         try:
-            # ファイル名からラベル作成 (例: "Al2O3.txt" -> "Al2O3")
+            # ファイル名からラベル作成
+            # 例: "Pb_0.1um.txt" -> "Pb 0.1um" のように見やすく変換
             filename = os.path.basename(filepath)
-            label_name = filename.replace(".txt", "").replace("_", "/")
+            label_name = filename.replace(".txt", "").replace("_", " ") 
             
             # データ読み込み
             data = np.loadtxt(filepath, skiprows=2)
@@ -77,43 +38,34 @@ def main():
             energy = data[:, 0]
             transmission = data[:, 1]
 
-            # ★ロジック: リストにある場合(今回は全部)はカラー表示、なければグレー
-            # 実質すべてのファイルが if 側に入ります
-            if label_name in HIGHLIGHT_MATERIALS:
-                # 【ハイライト設定】
-                trace = go.Scatter(
-                    x=energy, 
-                    y=transmission, 
-                    mode='lines',
-                    name=label_name,
-                    line=dict(width=3), # 太めの線
-                    hovertemplate=f"<b>{label_name}</b><br>E: %{{x:.1f}} eV<br>T: %{{y:.4f}}<extra></extra>"
-                )
-                fig.add_trace(trace)
-            else:
-                # リストにない未知のファイルがあればここに来ます（グレー表示）
-                trace = go.Scatter(
-                    x=energy, 
-                    y=transmission, 
-                    mode='lines',
-                    name=label_name,
-                    line=dict(color='rgba(150, 150, 150, 0.3)', width=1),
-                    hovertemplate=f"{label_name}<br>E: %{{x:.1f}} eV<br>T: %{{y:.4f}}<extra></extra>"
-                )
-                fig.add_trace(trace)
+            # ★ロジック変更: 条件分岐(if)を削除し、全てを「メインの線」として描画
+            fig.add_trace(go.Scatter(
+                x=energy, 
+                y=transmission, 
+                mode='lines',
+                name=label_name, # 凡例名
+                line=dict(width=2.5), # 線の太さを統一
+                hovertemplate=f"<b>{label_name}</b><br>E: %{{x:.1f}} eV<br>T: %{{y:.4f}}<extra></extra>"
+            ))
 
         except Exception as e:
             print(f"Error reading {filename}: {e}")
 
     # レイアウト設定
     fig.update_layout(
-        title="Soft X-ray Filter Transmission (All Highlighted)",
+        title="Soft X-ray Filter Transmission (All Files)",
         xaxis_title="Photon Energy (eV)",
         yaxis_title="Transmission",
         template="plotly_white",
-        height=800,  # 縦長
-        width=1000,
-        hovermode="closest"
+        height=900,  # 縦長
+        width=1200,  # 横幅も少し広く
+        hovermode="closest",
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.05  # 凡例をグラフの外（右側）に出す
+        )
     )
     
     # ★ X軸範囲を 0 から 1000 (1e3) に固定

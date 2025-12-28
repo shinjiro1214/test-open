@@ -37,37 +37,69 @@ if doCalculation
     rpos=C(:,10)+r_shift;
     ch=C(:,7);
     
-    if ismember(39,dtacq_num_list)
-        % filename1 = strcat(pathname.rawdata,'/rawdata_dtacq',num2str(39),'_shot',num2str(shot(1)),'_tfshot',num2str(tfshot(1)),'.mat');
-        filename1 = strcat(pathname.rawdata,'/mag_probe/dtacq',num2str(39),'/shot',num2str(shot(1)),'_tfshot',num2str(tfshot(1)),'.mat');
+    % ダウンロードが必要かチェックし、必要ならコマンドを発行（待機しない）
+    files_to_wait = {}; % 待ちリスト
+    
+    % --- a039 の確認とバックグラウンド実行 ---
+    if ismember(39, dtacq_num_list)
+        filename1 = strcat(pathname.rawdata,'/mag_probe/dtacq39/shot',num2str(shot(1)),'_tfshot',num2str(tfshot(1)),'.mat');
         if exist(filename1,"file")==0
-            disp('No rawdata file of a039 -- Start generating!')
-            % rawdataPath = pathname.rawdata;
-            % save_dtacq_data(39, shot(1), tfshot(1),rawdataPath)
-            save_dtacq_data(39, shot(1), tfshot(1),filename1)
-            % disp(['File:',filename1,' does not exit']);
-            % return
+            disp('Requesting rawdata for a039 (Background)...')
+            % 第5引数に true を追加して「並列モード」にする
+            save_dtacq_data(39, shot(1), tfshot(1), filename1, true); 
+            files_to_wait{end+1} = filename1;
+        else
+            % すでにロード可能ならロードしておく（あるいは後でまとめてロード）
         end
-        load(filename1,"rawdata_woTF");
-        a039_raw = rawdata_woTF;
-        % a039_raw = importdata(filename1);
     end
-    if ismember(40,dtacq_num_list)
-        % filename2 = strcat(pathname.rawdata,'/rawdata_dtacq',num2str(40),'_shot',num2str(shot(2)),'_tfshot',num2str(tfshot(2)),'.mat');
-        filename2 = strcat(pathname.rawdata,'/mag_probe/dtacq',num2str(40),'/shot',num2str(shot(2)),'_tfshot',num2str(tfshot(2)),'.mat');
+
+    % --- a040 の確認とバックグラウンド実行 ---
+    if ismember(40, dtacq_num_list)
+        filename2 = strcat(pathname.rawdata,'/mag_probe/dtacq40/shot',num2str(shot(2)),'_tfshot',num2str(tfshot(2)),'.mat');
         if exist(filename2,"file")==0
-            disp('No rawdata file of a040 -- Start generating!')
-            % rawdataPath = pathname.rawdata;
-            % save_dtacq_data(40, shot(2), tfshot(2),rawdataPath)
-            save_dtacq_data(40, shot(2), tfshot(2),filename2)
-            % disp(['File:',filename2,' does not exit']);
-            % return
+            disp('Requesting rawdata for a040 (Background)...')
+            save_dtacq_data(40, shot(2), tfshot(2), filename2, true);
+            files_to_wait{end+1} = filename2;
         end
-        % a040_raw = importdata(filename2);
-        load(filename2,"rawdata_woTF");
-        a040_raw = rawdata_woTF;
     end
     
+    % --- 全ファイルの生成待ち ---
+    if ~isempty(files_to_wait)
+        disp('Waiting for Python downloads to finish...');
+        max_wait = 20; % 最大待機時間(秒)
+        tic;
+        while true
+            all_exist = true;
+            for k = 1:length(files_to_wait)
+                if exist(files_to_wait{k}, 'file') == 0
+                    all_exist = false;
+                    break;
+                end
+            end
+            if all_exist, break; end
+            if toc > max_wait, error('Python download timeout.'); end
+            pause(0.1); % 0.1秒待機して再確認
+        end
+        disp('All data downloaded.');
+    end
+    
+    if ismember(39, dtacq_num_list)
+        % もし filename1 が未定義なら再定義（通常は上のif文を通るので大丈夫ですが安全のため）
+        if isempty(filename1)
+            filename1 = strcat(pathname.rawdata,'/mag_probe/dtacq39/shot',num2str(shot(1)),'_tfshot',num2str(tfshot(1)),'.mat');
+        end
+        load(filename1, "rawdata_woTF");
+        a039_raw = rawdata_woTF;
+    end
+    
+    if ismember(40, dtacq_num_list)
+        if isempty(filename2)
+            filename2 = strcat(pathname.rawdata,'/mag_probe/dtacq40/shot',num2str(shot(2)),'_tfshot',num2str(tfshot(2)),'.mat');
+        end
+        load(filename2, "rawdata_woTF");
+        a040_raw = rawdata_woTF;
+    end
+
     raw = zeros(1000,length(dtaq_ch));
     for i = 1:length(dtaq_ch)
         if dtacq_num_list(i) == 39
@@ -169,8 +201,6 @@ if doCalculation
         'Br',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Bl',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Jt',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
-        'Jr',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
-        'Jz',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Et',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Lambda',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'dBzdt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
@@ -185,6 +215,9 @@ if doCalculation
         'curvature', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'jxB', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'Lamor', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
+        'gradB_r', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ... % 追加
+        'gradB_z', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ... % 追加
+        'gradB', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...   % 追加 (大きさ)
         'trange',trange);
 
     % rgwflag = false;
@@ -207,13 +240,53 @@ if doCalculation
     
     
     % ******************* no angle correction ********************
-    for i=1:size(trange,2)
-        t=trange(i);
-    
-        %Bzの二次元補間(線形fit)
-        vq = bz_rbfinterp(rpos_bz, zpos_bz, grid2D, bz, ok_bz, t);
-        B_z = -Bz_EF+vq;
-        B_t = bz_rbfinterp(rpos_bt, zpos_bt, grid2D, bt, ok_bt, t);
+    % --- Bz用の準備 ---
+    valid_idx_bz = find(ok_bz); 
+    % 【修正1】 bz(時間, チャンネル) の順でアクセスし、転置(')して列ベクトルにする
+    t_init = trange(1); % 最初の時間を初期化に使う
+    F_bz = scatteredInterpolant(...
+        rpos_bz(valid_idx_bz), ...
+        zpos_bz(valid_idx_bz), ...
+        double(bz(t_init, valid_idx_bz))', ... % ここを修正: (行, 列)の順
+        'natural', 'nearest'); 
+
+    % --- Bt用の準備 ---
+    valid_idx_bt = find(ok_bt);
+    % 【修正1】 Btも同様に修正
+    F_bt = scatteredInterpolant(...
+        rpos_bt(valid_idx_bt), ...
+        zpos_bt(valid_idx_bt), ...
+        double(bt(t_init, valid_idx_bt))', ... % ここを修正
+        'natural', 'nearest'); 
+
+
+    % ==========================================================
+    % 時間ループ
+    % ==========================================================
+    for i = 1:size(trange, 2)
+        t = trange(i); % 行番号（時間インデックス）
+
+        % --- Bz の高速補完 ---
+        F_bz.Values = double(bz(t, valid_idx_bz))'; 
+        vq_bz = F_bz(grid2D.rq, grid2D.zq);
+        
+        % 【追加】 スムージング処理
+        % sigma の値を大きくするとより滑らかになります。
+        % まずは 1.0 ～ 2.0 程度で試してみてください。
+        smooth_sigma = 1.5; 
+        vq_bz = imgaussfilt(vq_bz, smooth_sigma);
+        
+        B_z = -Bz_EF + vq_bz;
+
+
+        % --- Bt の高速補完 ---
+        F_bt.Values = double(bt(t, valid_idx_bt))'; 
+        vq_bt = F_bt(grid2D.rq, grid2D.zq);
+        
+        % 【追加】 スムージング処理 (Btも同様に)
+        vq_bt = imgaussfilt(vq_bt, smooth_sigma); 
+
+        B_t = vq_bt;
     
         % PSI計算
         data2D.psi(:,:,i) = cumtrapz(grid2D.rq(:,1),2*pi*B_z.*grid2D.rq(:,1),1);
@@ -224,6 +297,14 @@ if doCalculation
         data2D.Bz(:,:,i)=data2D.Bz(:,:,i)./(2.*pi.*grid2D.rq);
         data2D.Bt(:,:,i)=B_t;
         data2D.Bl(:,:,i)=sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2+data2D.Bt(:,:,i).^2);
+
+        
+        [gradB_z_temp, gradB_r_temp] = gradient(data2D.Bl(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
+        data2D.gradB_r(:,:,i) = gradB_r_temp;
+        data2D.gradB_z(:,:,i) = gradB_z_temp;
+        data2D.gradB(:,:,i)   = sqrt(gradB_r_temp.^2 + gradB_z_temp.^2); % 大きさ
+
+
         data2D.Jt(:,:,i)= curl(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),data2D.Br(:,:,i))./(4*pi*1e-7);
         [curlt,~]               = curl(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),data2D.Br(:,:,i));
         data2D.Jt(:,:,i)        = curlt/(4*pi*1e-7);
@@ -288,10 +369,8 @@ if doCalculation
         data2D.Lamor(:,:,i) = me*v_pe/q./data2D.Bl(:,:,i);
 
         data2D.JxBr(:,:,i) = data2D.Jt(:,:,i).*data2D.Bz(:,:,i)-data2D.Jz(:,:,i).*data2D.Bt(:,:,i);
-        data2D.JxBt(:,:,i) = data2D.Jz(:,:,i).*data2D.Br(:,:,i)-data2D.Jr(:,:,i).*data2D.Bz(:,:,i);
-        data2D.JxBz(:,:,i) = data2D.Jr(:,:,i).*data2D.Bt(:,:,i)-data2D.Jt(:,:,i).*data2D.Br(:,:,i);
         
-        data2D.absJxB(:,:,i) = sqrt(data2D.JxBr(:,:,i).^2+data2D.JxBt(:,:,i).^2+data2D.JxBz(:,:,i).^2);
+        % data2D.absJxB(:,:,i) = sqrt(data2D.JxBr(:,:,i).^2+data2D.JxBt(:,:,i).^2+data2D.JxBz(:,:,i).^2);
         
         %まだ試行錯誤中
         % [B_r, B_z] = gradient(data2D.Bl(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
@@ -300,14 +379,16 @@ if doCalculation
         % data2D.VdeltaB(:,:,i) = cross([data2D.Br(:,:,i) data2D.Bt(:,:,i) data2D.Bz(:,:,i)], [B_r 0 B_z]);
     
     end
+    disp("calculation finished")
 else
     load(filename,'data2D','grid2D');
 end
 
 if doCalculation
-    clearvars -except data2D grid2D shot pathname filename;
+    % clearvars -except data2D grid2D shot pathname filename;
     % filename = strcat(pathname.pre_processed_directory,'/a039_',num2str(shot(1)),'.mat');
-    save(filename)
+    % save(filename)
+    save(filename, 'data2D', 'grid2D', 'shot');
 end
 
 end

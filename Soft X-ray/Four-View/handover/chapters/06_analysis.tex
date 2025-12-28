@@ -17,12 +17,12 @@
 \begin{itemize}
     \item 第1項: データへの当てはまりの良さ（残差）。
     \item 第2項: 解の滑らかさ（正則化項）。$L$ はラプラシアン行列（2階微分）。
-    \item $\gamma$: 正則化パラメータ。これが画像の出来を左右する**解析の命**である。
+    \item $\gamma$: 正則化パラメータ。これが画像の出来を左右する解析の命である。
 \end{itemize}
 
 \subsection{パラメータ gamma の決定意志 (GCV法)}
 $\gamma$ を人間が目視で決めると、「見たい絵」を恣意的に作れてしまう危険がある。
-客観性を担保するため、本研究では**GCV (Generalized Cross Validation)** 法を採用している。
+客観性を担保するため、本研究ではGCV (Generalized Cross Validation) 法を採用している。
 以下の $GCV(\gamma)$ が最小になる $\gamma$ を自動探索するコードを実装済みである。
 \begin{equation}
     GCV(\gamma) = \frac{M ||(I - A(\gamma)) P||^2}{\{\mathrm{Trace}[I - A(\gamma)]\}^2}

@@ -2,11 +2,11 @@ function plot_SXR_test()
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Four-view';
 %ReconMethod = 0; %0:Tikhonov, 1:Fisher, 2:MEM
 plot_flag1 = true;
-plot_flag2 = false;
+plot_flag2 = true;
 
 % 再構成条件の定義
-newProjectionNumber = 50;%80; %投影数＝視線数の平方根
-newGridNumber = 90;%100; %グリッド数（再構成結果の画素数の平方根）
+newProjectionNumber = 30;%80; %投影数＝視線数の平方根
+newGridNumber = 50;%100; %グリッド数（再構成結果の画素数の平方根）
 
 if evalin('base', 'exist(''N_projection'', ''var'')')
     NP = evalin('base', 'N_projection');
@@ -79,7 +79,7 @@ sim_cell = cell(3, size(Iwgn1, 1)); % 構造的類似
 immse_cell = cell(3, size(Iwgn1, 1)); % 平均二乗誤差
 multissim_cell = cell(3, size(Iwgn1, 1)); % マルチスケール構造的類似
 
-for r = 1:3
+for r = 3%1:3
     ReconMethod = r-1;
     for i = 1:size(Iwgn1,1)
         Iwgn = Iwgn1{i};

@@ -1,4 +1,4 @@
-function [I_TF,x,aquisition_rate] = get_TF_current(PCB,pathname)
+function [I_FCPF2, I_FCTF2,x,aquisition_rate] = get_TF_current(PCB,pathname)
 
 directory_rogo = strcat(pathname.fourier,'/rogowski/');
 
@@ -23,7 +23,10 @@ time_step = 1;%0.2; % us; time step of plot; must be an integer times of time st
 %calibration = [1, -1516.4, 1, 1, 1533.2, 80, 140, 480, 1, 1,]; % calibration for each channel. I'm not sure about the exact calibration coefficient.
 % calibration = [1, -1, 1, 1, 1, 1, 1, 1, 1, 1,]; % calibration for each channel. I'm not sure about the exact calibration coefficient.
 % calibration = [116.6647, -1, 1, 1, 1, 1, 63.9568, 1, 1, 1,]; % calibration for each channel. I'm not sure about the exact calibration coefficient.
-calibration = 116.6647; % calibration factor for TF coil
+calibration_TF = 116.6647; % calibration factor for TF coil
+calibration_FCPF1 = 82.0*1e3; % calibration factor for FCPF1 coil
+calibration_FCPF2 = 81.1*1e3; % calibration factor for FCPF2 coil
+calibration_FCTF2 = 217*1e3; % calibration factor for FCPT2 coil
 
 [date_str,shot_str,path] = directory_generation_Rogowski(date,shot,directory_rogo);
 
@@ -53,10 +56,53 @@ step = aquisition_rate * time_step;
 x = t_start * aquisition_rate : step : t_end * aquisition_rate;
 
 if PCB.date >= 240400
-    I_TF = data(x,2+2)*calibration;
+    I_TF = data(x,2+2)*calibration_TF;
+    I_FCPF1 = data(x,2+9)*calibration_FCPF1;
+    I_FCPF2 = data(x,2+10)*-1*calibration_FCPF2;
+    I_FCTF2 = data(x,2+12)*calibration_FCTF2;
 else
-    I_TF = data(x,1+2)*calibration; 
+    I_TF = data(x,1+2)*calibration_TF; 
 end
+
+%%%%%%%%%%%プラズマ応用工学の課題で使ったゾーン%%%%%%%%%%%
+%240828 shot40 FCTF2, FCPF2使用
+t = 405;%400;
+limit = 600;
+figure;hold on;
+plot(x./10,I_FCPF1);
+hold on;
+plot(x./10,I_FCPF2);
+xlabel('time [us]');ylabel('current [A]');
+% ylim([-5e4 8e4]);
+xlim([300 600]);
+
+% 理論値計算
+% An1 = 0.15134;%0.3966;%0.7169;%0.8786;
+% An2 = 0.09345;%0.2552;%0.2049;%-0.5372;
+% An3 = 0.2626;
+% C = 18.75*1e-6;
+% T = 87e-6;%77e-6;%86*1e-6;
+% L = T^2/(4*C*((log(abs(An1)/abs(An2)))^2+pi^2));
+% R = 4*L*log(abs(An1)/abs(An2))/T;
+% V = 36e3;%28e3;%39e3;
+% w = (1/(L*C)-(R/(2*L))^2)^0.5;
+
+% cal = V/(w*L)*exp(-R/(2*L).*x./10.*1e-6).*sin(w.*x./10.*1e-6);
+% plot(x(1:limit-t)./10+t,cal(1:limit-t),'r');
+% legend('Signal','Theoretical');
+
+% plot peak
+% [peaks_max, locs_max] = findpeaks(I_FCPF2);
+% [peaks_min, locs_min] = findpeaks(-I_FCPF2);
+% hold on;
+% plot(x(locs_max)./10,peaks_max,'r*');
+% hold on;
+% plot(x(locs_min)./10,-peaks_min,'r*');
+% legend('Signal','Peaks');
+hold off;
+
+ax=gca;ax.FontSize=18;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
 
 function [date_str,shot_str,data_dir] = directory_generation_Rogowski(date,shot,directory_rogo)

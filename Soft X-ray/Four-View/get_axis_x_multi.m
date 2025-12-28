@@ -76,7 +76,28 @@ for i=1:numel(trange)
         %     xPointList.psi(i) = psi(I_x(TF_x));
         % end
     end
-    xpointIdx = islocalmin(smooth(psiRidge_t),'MaxNumExtrema', 1);
+    % xpointIdx = islocalmin(smooth(psiRidge_t),'MaxNumExtrema', 1);
+
+    % 磁気軸の位置（インデックス）を取得
+    axisIdx = find(axisCandidate_t);
+    % 探索範囲を限定するためのベクトルを準備
+    searchPsiRidge = psiRidge_t;
+    % 磁気軸が2つ見つかった場合のみ、その間に探索範囲を限定する
+    if numel(axisIdx) == 2
+        % 2つの磁気軸のz方向インデックスを取得
+        z_idx_1 = min(axisIdx);
+        z_idx_2 = max(axisIdx);
+
+        % 探索範囲外の値を大きな値（Inf）に設定し、極小値として検出されないようにする
+        % これにより、islocalminは z_idx_1 と z_idx_2 の間のみを実質的に探索する
+        searchPsiRidge(1:z_idx_1) = Inf;
+        searchPsiRidge(z_idx_2:end) = Inf;
+    end
+
+    % 範囲を限定したデータでX点を探索
+    xpointIdx = islocalmin(smooth(searchPsiRidge),'MaxNumExtrema', 1);
+
+
     if ~isempty(find(xpointIdx, 1))
         xPointList.r(i) = rqList(psiRidgeIdx_t(xpointIdx));
         xPointList.z(i) = zqList(psiRidgeIdx_t(xpointIdx));

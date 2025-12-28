@@ -132,9 +132,9 @@ FixedCentersForViscircles = [RowPositions ColumnPositions];
 
 figure('Position',[200,250,800,600]);hold on;set(gcf,'Name','実際の放電画像に対する円検出（円を見つつ補正，点は補正前の中心）','NumberTitle','off');
 % スライダーバー作成
-handle_slider_x = uicontrol('Style','slider','Position',[250 30 300 40],'Min',-50,'Max',50,'Value',0);
+handle_slider_x = uicontrol('Style','slider','Position',[250 30 300 40],'Min',-100,'Max',100,'Value',0);
 % handle_slider_y = uicontrol('Style','slider','Position',[10 200 40 300],'Min',-10,'Max',90,'Value',0);
-handle_slider_y = uicontrol('Style','slider','Position',[10 200 40 300],'Min',-90,'Max',10,'Value',0);
+handle_slider_y = uicontrol('Style','slider','Position',[10 200 40 300],'Min',-100,'Max',100,'Value',0);
 % ラジオボタン作成
 fib1 = uicontrol('Style','radiobutton','String','Fiber1','Position',[100 60 60 20]);
 fib2 = uicontrol('Style','radiobutton','String','Fiber2','Position',[100 40 60 20]);
