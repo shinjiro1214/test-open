@@ -1,6 +1,7 @@
 clearvars -except saved_answer
 
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment';
+addpath '/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Four-View/';
 addpath '/Users/shohgookazaki/Documents/MATLAB/inputsdlg_v2.3.2'
 addpath '/Users/shohgookazaki/Documents/matlab/common';
 

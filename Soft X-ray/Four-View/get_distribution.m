@@ -14,7 +14,6 @@ Vgamma = zeros(1,21);
 
 for n=1:l_g
     rho = M*gamma(n)./(s.^2+M*gamma(n));
-
     V11 = rho.*(Z.');
     V1(n)=M*sum(V11.^2);
     V2(n)=(sum(rho))^2;
@@ -130,6 +129,7 @@ if ReconMethod == 4 % ガウス過程再構成
 
 
 elseif ReconMethod == 2
+    disp('calculating MEM')
     gamma = 10^(lg_gamma(gamma_index));%GCVも考え直さないと→計算時間やばくなりそう
     L = gm2d; %Lf=g
     Lt = L.';
@@ -245,6 +245,7 @@ elseif ReconMethod == 1 % 最小フィッシャー
     toc
 
 elseif ReconMethod == 0
+    disp('calculating MFI')
     for i=1:K
         if M>K
             v_1 = [v(i,:) zeros(1,M-K)];

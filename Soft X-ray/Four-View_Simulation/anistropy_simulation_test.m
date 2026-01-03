@@ -1,9 +1,12 @@
-function [] = TS6_Check_Shot8_Noise_Overlay()
+function [] = anistropy_simulation_test()
 % =========================================================================
 %  TS-6 Reconstruction Consistency Check (Shot8)
 %  - Phantom Peak: 5.0
 %  - Noise Added: 10% (awgn 10dB)
-%  - Plot: Emission + Magnetic Flux Overlay
+%  - Plots (2x3 layout):
+%      [Ground Truth]  [Camera(Clean)]  [Camera(Noisy)]
+%      [Tikhonov]      [MFI]            [MEM]
+%  - Magnetic Flux overlay on R-Z plane plots.
 % =========================================================================
 close all; clear; clc;
 
@@ -93,21 +96,31 @@ for i=1:numel(l_up)
     l_up(i).z = l_up_mm(i).z * 1e-3;
 end
 
-% Forward
+% Forward Calculation
 Geom.rmin = rmin; Geom.rmax = rmax; Geom.zmin = zmin; Geom.zmax = zmax;
 Geom.N_g = N_g; Geom.DR = (rmax-rmin)/N_grid; Geom.DZ = (zmax-zmin)/N_grid;
 Phys.Pitch = 30; Phys.Ratio = 0.0;
 
 [~, S_obs_val] = Compute_Projection_Robust(l_up, Geom, Phys, F_E_true, F_Br, F_Bz, F_Bt);
 
+% --- Create Clean Camera Image ---
+k_circle = FindCircle(N_projection/2);
+Img_clean = zeros(N_projection);
+Img_clean(k_circle) = S_obs_val;
+Img_clean = Img_clean'; % Transpose for correct orientation
+
 % --- Noise Addition ---
 fprintf('    Adding Noise (10%%)...\n');
-% User Logic: 5 related to 20%; 10 related to 10%
 SNR_dB = 10 * log10(10); 
 S_obs_noisy = awgn(S_obs_val, SNR_dB, 'measured');
 S_obs_noisy(S_obs_noisy < 0) = 0; % 負値カット
 
-VectorImage1 = S_obs_noisy'; 
+% --- Create Noisy Camera Image & Reconstruction Input ---
+Img_noisy = zeros(N_projection);
+Img_noisy(k_circle) = S_obs_noisy;
+Img_noisy = Img_noisy';
+
+VectorImage1 = S_obs_noisy'; % Input for reconstruction (Row vector)
 
 
 % --- 5. Reconstruction ---
@@ -127,30 +140,42 @@ EE2 = get_distribution(M, K, gm2d1, U1, s1, v1, VectorImage1, false, 2, N_projec
 
 
 % --- 6. Plotting Results with Flux Overlay ---
-fprintf('--- 5. Plotting ---\n');
-figure('Name', 'Check: Shot8 w/ Noise & Flux', 'Position', [50, 50, 1600, 400]);
+fprintf('--- 5. Plotting (2x3 Layout) ---\n');
+figure('Name', 'Check: Shot8 Full Process View', 'Position', [50, 50, 1600, 800]);
 
-titles = {'Ground Truth', 'Tikhonov (10% Noise)', 'MFI (10% Noise)', 'MEM (10% Noise)'};
-images = {E_true, EE0, EE1, EE2};
+% Data and settings for loop plotting
+plot_data_list = {E_true, Img_clean, Img_noisy, EE0, EE1, EE2};
+title_list = {'Ground Truth (Phantom)', 'Camera View (Clean)', 'Camera View (10% Noise)', ...
+              'Tikhonov (Meth=0)', 'MFI (Meth=1)', 'MEM (Meth=2)'};
+% Flag: true if the plot is in R-Z plane and needs flux overlay
+is_rz_plane = [true, false, false, true, true, true];
+
 c_range = [0 5]; % Max intensity 5
 
-for i = 1:4
-    subplot(1, 4, i);
+for i = 1:6
+    subplot(2, 3, i);
+    img_data = plot_data_list{i};
     
-    % 1. Emission Image
-    imagesc(z_axis, r_axis, images{i}); 
-    axis xy; axis image; 
+    if is_rz_plane(i)
+        % --- R-Z Plane Plot (Ground Truth & Reconstructions) ---
+        imagesc(z_axis, r_axis, img_data);
+        axis xy; axis image;
+        xlabel('Z [m]'); ylabel('R [m]');
+        
+        % Magnetic Flux Overlay
+        hold on;
+        [~, h] = contour(Z_mesh, R_mesh, Psi_map, 15, 'w'); 
+        h.LineWidth = 0.8; h.EdgeAlpha = 0.6;
+        hold off;
+    else
+        % --- Camera View Plot (Sensor Plane) ---
+        % Note: Flux overlay is not applicable here due to different coordinate system.
+        imagesc(img_data);
+        axis image; axis off; % Hide axes for camera view
+    end
+    
+    title(title_list{i});
     colorbar; clim(c_range);
-    title(titles{i});
-    xlabel('Z [m]'); 
-    if i==1, ylabel('R [m]'); end
-    
-    % 2. Magnetic Flux Overlay
-    hold on;
-    [C, h] = contour(Z_mesh, R_mesh, Psi_map, 15, 'w'); 
-    h.LineWidth = 0.8;
-    h.EdgeAlpha = 0.6;
-    hold off;
 end
 
 fprintf('--- Done ---\n');

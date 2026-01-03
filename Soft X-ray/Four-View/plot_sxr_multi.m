@@ -74,8 +74,13 @@ if doCalculation
     end
 
     % 生画像の取得
+    info = imfinfo(SXRfilename);
+    disp(info.StripOffsets); % これがヘッダーサイズ(バイト)の可能性大
+    disp([info.Width, info.Height]); % 画素数
+    disp(info.BitDepth); % ビット深度 (16ならuint16, 8ならuint8)
     rawImage = imread(SXRfilename);
-    
+    disp('raw image loaded')
+
     % 非線形フィルターをかける（必要があれば）
     if doFilter
         % figure;imagesc(rawImage);
@@ -99,10 +104,12 @@ if doSave
 end
 
 for t = times
+    
     number = (t-start)/interval+1;
     matrixPath = strcat(matrixFolder,'/',num2str(number),'.mat');
     if any(~exist(matrixPath,'file')) || any(SXR.Reset == 1)%doCalculation
 %         ベクトル形式の画像データの読み込み
+        disp('getting vector image')
         [VectorImage1,VectorImage2, VectorImage3, VectorImage4] = get_sxr_image(date,number,newProjectionNumber,rawImage);
         
         datadirPath = getenv('SXR_DATA_DIR');
@@ -129,7 +136,7 @@ for t = times
 
 
 %         再構成計算
-
+        disp('getting distribution')
         EE1 = get_distribution(M,K,gm2d1,U1,s1,v1,VectorImage1,doPlot,ReconMethod, N_projection);
         EE2 = get_distribution(M,K,gm2d2,U2,s2,v2,VectorImage2,doPlot,ReconMethod, N_projection);
         EE3 = get_distribution(M,K,gm2d3,U3,s3,v3,VectorImage3,doPlot,ReconMethod, N_projection);
