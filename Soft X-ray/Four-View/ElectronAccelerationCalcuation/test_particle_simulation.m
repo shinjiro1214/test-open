@@ -1,9 +1,13 @@
 close all
 
-% ガイド磁場スキャンのレシピ
-% Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
-% Te=10;ne=repelem(5e19,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
-Te=10;ne=repelem(1e20,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+% % ガイド磁場スキャンのレシピ
+% % Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
+% % Te=10;ne=repelem(5e19,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+% % Te=10;ne=repelem(1e20,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+% % x_data = [4.5583    5.2295    6.4095    7.6048];
+% % Te=10;ne=repelem(1e20,4);Et=[270 330 390 450];GFR=[20 27 32 45];legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+
+% Te=10;ne=repelem(1e20,4);Et=[270 300 350 450];GFR=[27 33 39 45];legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = [4.5583    5.2295    6.4095    7.6048];
 % Te=2:2:8;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};
 % Te=50;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
 
@@ -12,12 +16,59 @@ Te=10;ne=repelem(1e20,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal'
 
 % % 時間発展のレシピ
 % Te=10;ne=[2e20 2e20 5e19];Et=[120 240 360];GFR=repelem(50,3);
+% % Te=10;ne=[2e20 2e20 2e20];Et=[120 240 360];GFR=repelem(50,3);
+% % Te=10;ne=[2e20 1e20 5e19];Et=[240 240 240];GFR=repelem(50,3);
+% legendList = {'Thermal','t=465us','t=468us','t=470us'};
+% x_data = [465, 468, 470];
+% 電子温度が時間変化する場合
+% Te=[10 12 15];ne=[2e20 2e20 5e19];Et=[120 240 360];GFR=repelem(50,3);
+
+% % 時間発展のレシピ（ダブルプローブ）
+% Te=18;ne=[7.5e18 1.2e19 1.5e19];Et=[120 240 360];GFR=repelem(50,3);
 % legendList = {'Thermal','t=465us','t=468us','t=470us'};
 % x_data = [465, 468, 470];
 
+% % 位置のレシピ（下流）
+% % Te=5;ne=[3e20 2e20 1e20];Et=[100 100 200];GFR=[10 15 20];
+% Te=5;ne=[3e20 2e20 1e20];Et=[100 200 300];GFR=[10 15 20];
+% % Te=10;ne=[3e20 2e20 1e20];Et=[100 200 300];GFR=repelem(23,3);
+% % Te=10;% Et=[50 100 300];
+% % GFR=[20 25 30];
+% % GFR=repelem(10,3);
+% legendList = {'Thermal','r=0.150m','r=0.175m','r=0.200m'};
+% x_data = [0.15 0.175 0.2];
+
+% % ガイド磁場スキャンのレシピ（下流）
+% Te=10;ne=repelem(1e20,4);Et=[320 280 240 200];GFR=[4, 6, 8, 20];
+% legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+
+% % 時間のレシピ（下流）
+% % Te=5;ne=[6e19 1e20 3e20];Et=[60 80 100];GFR=[10 10 10];
+% % legendList = {'Thermal','t=465us','t=468us','t=470us'};
+% % x_data = [465, 468, 470];
+% % Te=5;ne=[1e20 3e20 4e20];Et=[80 100 200];GFR=[10 10 10];
+% legendList = {'Thermal','t=468us','t=470us','t=472us'};
+% x_data = [468, 470, 472];
+% Te=5;ne=[1e20 3e20 4e20];Et=[120 200 300];GFR=[10 10 10];
+
+% % 収束テスト用レシピ
+% Te=10;ne=repelem(5e19,4);Et=repelem(400,4);GFR=Et/5;
+% num_particle=[1e4, 2e4, 5e4, 1e5];timeLimits=repelem(1e-7,4);
+% % num_particle=repelem(1e5,4);timeLimits=[1e-8, 2e-8, 5e-8, 1e-7];
+
+Te = [3, 8, 20, 4];
+ne = [7e19, 3.5e20, 5.5e20, 4e20];
+Et = repelem(300,4);
+GFR = repelem(100,4);
+legendList = {'Thermal','462 us','463 us','464 us','465 us'};
+x_data = 462:465;
+
+
+
+
 % Te = 10; %[eV]
 % Te = 100; %[eV
-% Te =300; %[eV]
+% Te = 300; %[eV]
 
 % ne = [3e20, 5e19]; %[m^-3]
 % ne = [1e20, 5e19]; %[m^-3]
@@ -53,17 +104,23 @@ f = e * E ./ h;
 
 num_particle = 1e5;
 
+% v_e = zeros(num_particle,numel(ne));
 v_e = zeros(num_particle,numel(ne));
 eps_rad = zeros(numel(ne),numel(f));
 I_rad = zeros(4,numel(ne));
 
 for i = 1:numel(ne)
-    v_e(:,i) = get_electron_acceleration(num_particle,Te,ne(i),Et(i),GFR(i),false);
+    % v_e(:,i) = get_electron_acceleration(num_particle,Te,ne(i),Et(i),GFR(i),false);
+    v_e(:,i) = get_electron_acceleration(num_particle,Te(i),ne(i),Et(i),GFR(i),false);
+    % v_e(:,i) = get_electron_acceleration2(num_particle,Te,ne(i),Et(i),GFR(i),false);
+    % v_e(:,i) = get_electron_acceleration3(num_particle(i),Te,ne(i),Et(i),GFR(i),timeLimits(i));
     % v_e(:,i) = get_electron_acceleration(num_particle,Te(i),ne(i),Et(i),GFR(i),false);
     eps_rad(i,:) = get_bremsstrahlung_spectrum(v_e(:,i),f,false);
     I_rad(:,i) = get_filtered_intensity(eps_rad(i,:), f);
 end
 v_e_th = get_electron_acceleration(num_particle,Te(1),ne(1),0,0,false);
+% v_e_th = get_electron_acceleration(num_particle,Te(1),ne(1),10,100,false);
+% v_e_th = repelem(mean(v_e_th),num_particle).';
 eps_rad_th = get_bremsstrahlung_spectrum(v_e_th,f,false);
 I_rad_th = get_filtered_intensity(eps_rad_th, f);
 
@@ -176,21 +233,28 @@ ax.FontSize = 18;
 
 % 発光強度のプロット
 figure;hold on;
-I_plot = zeros(numel(ne),2);
+% I_plot = zeros(numel(ne),2);
+I_plot = zeros(numel(ne),3);
 for i = 1:numel(ne)
     I = I_rad(:,i);
     I = I./I(2);
     % I = I([1,3]);
     % plot(I,'LineWidth',2);
-    I_plot(i,:) = I([1,3]);
+    % I_plot(i,:) = I([1,3]);
+    I_plot(i,:) = I([1,3,4]);
 end
 
 % I_plot = I_plot./I_plot(1,:);
 plot(x_data,I_plot(:,1)/max(I_plot(:,1)),'o-','LineWidth',2);
 plot(x_data,I_plot(:,2)/max(I_plot(:,2)),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,3)/max(I_plot(:,3)),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,1),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,2),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,3),'o-','LineWidth',2);
 % plot(I_plot,'o-','LineWidth',2);
 ylabel('Intensity [a.u.]');%xlabel('Photon energy [eV]');
 legend({'Low energy','High energy'},'Location','southeast')
+% legend({'Low energy','High energy', 'Super high energy'},'Location','southeast')
 % yticks([]);xticks([]);
 % ylim([0 inf]);
 ax = gca;ax.FontSize = 18;

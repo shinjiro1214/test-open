@@ -1,7 +1,7 @@
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
-% t = 460:500;
-t = 460:475;
+t = 460:500;
+% t = 460:475;
 psi_t = zeros(numel(shotList),numel(t));
 trange = t-399;
 j = 1;
@@ -57,9 +57,11 @@ function psi_t = get_psi_time(grid2D,data2D,trange)
         % xpoint.z = xPointList.z(:,i);
         % if numel(magaxis.r) == 2
         if magaxis.z(1)~=magaxis.z(2) && ~isnan(magaxis.r(1))
-            psi_t(1,m) = mean(magAxisList.psi(:,i));
+            % psi_t(1,m) = mean(magAxisList.psi(:,i));
+            psi_t(1,m) = min(magAxisList.psi(:,i));
         elseif ~isnan(magaxis.r(1))
-            psi_t(1,m) = mean(magAxisList.psi(:,i));
+            % psi_t(1,m) = mean(magAxisList.psi(:,i));
+            psi_t(1,m) = min(magAxisList.psi(:,i));
         else
             psi_t(1,m) = NaN;
         end

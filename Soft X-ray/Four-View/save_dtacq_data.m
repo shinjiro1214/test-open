@@ -60,7 +60,8 @@ if tfshot>0
     end
     rawdata_TF(:,i)=rawdata_TF(:,i)-rawdata_TF(1,i);% オフセット調整
     end
-    rawdata_woTF=rawdata_wTF-rawdata_TF;% TFノイズを差し引いたもの
+    % rawdata_woTF=rawdata_wTF-rawdata_TF;% TFノイズを差し引いたもの
 end
+rawdata_woTF=rawdata_wTF-rawdata_TF;% TFノイズを差し引いたもの
 
 end

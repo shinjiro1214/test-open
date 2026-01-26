@@ -19,6 +19,13 @@ for j = 1:4
     title(num2str(t_j));
 end
 
+t_tmp = 465;
+[~,I] = max(psi(:,:,trange==t_tmp),[],1,'linear');
+Br_t = Br(:,:,trange==t_tmp);
+figure;plot(zq(I),Br_t(I));grid on;
+xlabel('z [m]');ylabel('B_r [T]','Interpreter','tex');
+ax=gca;ax.FontSize=18;
+
 trange = trange(newTimeRange);
 Br = Br(:,:,newTimeRange);
 
@@ -47,7 +54,7 @@ timing_last = find(mergingRatio==0,1,'last');
 B_r = B_reconnection(1,timing_last);
 % B_r = B_reconnection(1,knnsearch(mergingRatio.',0.2));
 
-figure;plot(trange,B_reconnection);%xlim([460 500]);
-figure;plot(trange,mergingRatio);%xlim([460 500]);
+figure;plot(trange,B_reconnection);xlim([460 500]);
+figure;plot(trange,mergingRatio);xlim([460 500]);
 
 end

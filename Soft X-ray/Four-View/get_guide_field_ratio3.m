@@ -173,7 +173,7 @@ data.GFR_th = b_th;
 data.Et = E_t;
 data.t = t_data;
 
-% % ガイド磁場比の計算に使用した磁気面を表示
+% ガイド磁場比の計算に使用した磁気面を表示
 % time = trange(timing);
 % PCB.time = time;
 % plot_psi280ch_at_t(PCB,pathname);
@@ -191,5 +191,73 @@ data.t = t_data;
 % end
 % 
 % save(magDataFile,'idxList','BrList','BtList','bList');
+
+% =========================================================================
+% 追加プロット処理: 合体率0.5 (t = t_data) における Br の Z方向分布
+% =========================================================================
+if ~isnan(t_data)
+    % 1. t_data を挟む元の時間軸のインデックスを探す
+    % (trange は既に newTimeRange でスライスされている前提)
+    idx_floor = find(trange <= t_data, 1, 'last');
+    idx_ceil = find(trange >= t_data, 1, 'first');
+    
+    if isempty(idx_floor) || isempty(idx_ceil)
+        warning('t_data が trange の範囲外です。プロットをスキップします。');
+    else
+        % 時間方向の補間重みを計算
+        if idx_floor == idx_ceil
+            w_t = 0; % 完全に同じ時刻の場合
+        else
+            w_t = (t_data - trange(idx_floor)) / (trange(idx_ceil) - trange(idx_floor));
+        end
+
+        % 2. 2次元 Br 場を時間補間して作成
+        Br2D_floor = Br(:,:,idx_floor);
+        Br2D_ceil  = Br(:,:,idx_ceil);
+        % 時刻 t_data における推定 2D Br 場
+        Br2D_at_tdata = Br2D_floor * (1 - w_t) + Br2D_ceil * w_t;
+        
+        % 3. X点のR, Z座標も時間補間する
+        % xPointList.r が [複数候補 x 時間] の場合、最初の候補(1行目)を使用
+        rx_floor = xPointList.r(1, idx_floor);
+        rx_ceil  = xPointList.r(1, idx_ceil);
+        zx_floor = xPointList.z(1, idx_floor);
+        zx_ceil  = xPointList.z(1, idx_ceil);
+        
+        Rx_at_tdata = rx_floor * (1 - w_t) + rx_ceil * w_t;
+        Zx_at_tdata = zx_floor * (1 - w_t) + zx_ceil * w_t;
+
+        % 4. Zプロファイルの抽出とプロット
+        % グリッド軸の取得 (rq, zq の構造に依存します。通常 rq(:,1) がR軸、zq(1,:) がZ軸)
+        r_axis = rq(:,1);
+        z_axis = zq(1,:).'; % 列ベクトルにしておく
+
+        % 補間された X点の R座標 に最も近いグリッドのインデックスを探す
+        [~, idxR_closest] = min(abs(r_axis - Rx_at_tdata));
+        R_closest_val = r_axis(idxR_closest);
+
+        % そのR位置における Z方向の Br 分布を抽出 (Br2D は [R x Z] と仮定)
+        Br_z_profile = Br2D_at_tdata(idxR_closest, :);
+
+        % --- プロット作成 ---
+        figure('Name', 'Br Z-profile at Merging Ratio 0.5');
+        plot(z_axis, Br_z_profile, 'b.-', 'LineWidth', 1.5, 'MarkerSize', 10); hold on;
+        
+        % X点のZ位置を赤破線で表示
+        xline(Zx_at_tdata, 'r--', 'LineWidth', 1.5, 'DisplayName', sprintf('X-point Z (%.3f m)', Zx_at_tdata));
+        % ゼロ点を黒線で表示
+        yline(0, 'k-', 'HandleVisibility', 'off'); 
+        
+        grid on;
+        xlabel('Z [m]', 'FontSize', 12);
+        ylabel('B_r [T]', 'FontSize', 12);
+        % title({sprintf('B_r Z-profile at t = %.2f $\\mu s$ (MR=0.5)', t_data); ...
+            %    sprintf('at R $\\approx$ %.3f m (X-point R: %.3f m)', R_closest_val, Rx_at_tdata)}, ...
+            %    'Interpreter', 'latex', 'FontSize', 12);
+        legend('B_r(z)', 'Location', 'best');
+        set(gca, 'FontSize', 10);
+    end
+end
+% =========================================================================
 
 end

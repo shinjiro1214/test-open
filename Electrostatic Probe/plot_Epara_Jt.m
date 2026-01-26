@@ -33,21 +33,18 @@ t_plot_idx=PCB.start;
 t_plot = PCB.trange(t_plot_idx);
 % legendList = arrayfun(@(x) sprintf('%dus', x), t_plot, 'UniformOutput', false);
 
-% a = 1.6;n=4;
-a = 2;n=4;
+n=4;
 if PCB.date == 240111
-    ER1 = ESPdata2D.Er_grid.*a;
+    ER1 = ESPdata2D.Er_grid;
     ER2 = ER1;
     ER2(:,:,1:50-n) = ER1(:,:,1+n:50);
     ER2(:,:,50-n+1:50) = repmat(ER1(:,:,50),1,1,n);
     ESPdata2D.Er_grid = ER2;
-    EZ1 = ESPdata2D.Ez_grid.*a;
+    EZ1 = ESPdata2D.Ez_grid;
     EZ2 = EZ1;
     EZ2(:,:,1:50-n) = EZ1(:,:,1+n:50);
     EZ2(:,:,50-n+1:50) = repmat(EZ1(:,:,50),1,1,n);
     ESPdata2D.Ez_grid = EZ2;
-    % ESPdata2D.Er_grid = ESPdata2D.Er_grid.*a;
-    % ESPdata2D.Ez_grid = ESPdata2D.Ez_grid.*a;
 end
 [E_data,B_data] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot);
 % Epara = E_data.Epara;

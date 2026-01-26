@@ -1,49 +1,10 @@
 function [] = plot_ESP_on_PCB(ESP,ESPdata2D,pathname)
 addpath(fullfile(pathname.github,'test-open','Soft X-ray','Four-View'));
-PCB.type = 1;
-PCB.doOverwrite = false;
-PCB.trange = 400:800;
-PCB.n = 40;
-PCB.start = 50;
-PCB.dt = 3;
-PCB.idx = 29;
-PCB.shot = [3597 2071];
-PCB.tfshot = [3569 2043];
-PCB.i_EF = 200;
-PCB.TF = 4;
-PCB.date = 240111;
-
-% PCB.idx = 55;
-% PCB.shot = [6136 4727];
-% PCB.tfshot = [6093 4684];
-% PCB.i_EF = 200;
-% PCB.TF = 4;
-% PCB.date = 250314;
-
-% PCB.start = 71;
-% PCB.dt = 1;
-% PCB.idx = 41;
-% PCB.shot = [2325 803];
-% PCB.tfshot = [2287 765];
-% PCB.i_EF = 150;
-% PCB.TF = 4;
-% PCB.date = 230828;
-
-% PCB.idx = 37;
-% PCB.date = 230830;
-% PCB.shot = [2452 931];
-% PCB.tfshot = [2417,896];
-PCB.date = 230830;
-PCB.tfshot = [2417,896];
-% PCB.idx = 37;PCB.shot = [2452 931];
-PCB.idx = 24;
-if PCB.idx >= 17
-    PCB.shot = PCB.tfshot+PCB.idx-2;
-else
-    PCB.shot = PCB.tfshot+PCB.idx-3;
-end
-PCB.i_EF = 200;
-PCB.TF = 4;
+% PCB = get_PCB_data(240111,29,450,2);
+% PCB = get_PCB_data(240827,13,460,2);
+% PCB = get_PCB_data(240828,16,460,2);
+% PCB = get_PCB_data(240828,32,468,1);
+PCB = get_PCB_data(230830,32,468,1);
 
 % [grid2D,data2D] = process_PCBdata_280ch(PCB,pathname);
 [grid2D,data2D] = process_PCBdata_200ch(PCB,pathname);
@@ -54,7 +15,7 @@ dt = PCB.dt;
 start = PCB.start;
 % Et_t = zeros(1,16);
 % times = start+dt:dt:start+dt*16;
-start_t = PCB.trange(1) + PCB.start;
+start_t = PCB.trange(1) + PCB.start - 1;
  for m=1:16 %図示する時間
      i=start+(m-1).*dt; %end
     %  t=trange(i);
@@ -96,4 +57,45 @@ start_t = PCB.trange(1) + PCB.start;
 %  end
 
 
+end
+
+function PCB = get_PCB_data(date,shotIDX,start,dt)
+    PCB.type = 1;
+    PCB.doOverwrite = false;
+    PCB.trange = 400:800;
+    PCB.n = 40;
+    PCB.start = start-399;
+    PCB.dt = dt;
+
+    % date = 230828;shotIDX=41;
+    % date = 230830;shotIDX=37;
+    % date = 240111;shotIDX=29;
+    % date = 240828;shotIDX=5;
+    % date = 250314;shotIDX=55;
+    DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシートのID
+    T=getTS6log(DOCID);
+    node='date';
+    % date=230714;
+    T=searchlog(T,node,date);
+    IDXlist = find(T.shot==shotIDX);
+    % IDXlist= 1; %[5:50 52:55 58:59];%[4:6 8:11 13 15:19 21:23 24:30 33:37 39:40 42:51 53:59 61:63 65:69 71:74];
+    % n_data=numel(IDXlist);%計測データ数
+    shotlist_a039 =T.a039(IDXlist);
+    shotlist_a040 = T.a040(IDXlist);
+    shotlist = [shotlist_a039, shotlist_a040];
+    tfshotlist_a039 =T.a039_TF(IDXlist);
+    tfshotlist_a040 =T.a040_TF(IDXlist);
+    tfshotlist = [tfshotlist_a039, tfshotlist_a040];
+    EFlist=T.EF_A_(IDXlist);
+    TFlist=T.TF_kV_(IDXlist);
+    % dtacqlist=39.*ones(n_data,1);
+    PCB.idx = shotIDX;
+    PCB.shot=shotlist;
+    PCB.tfshot=tfshotlist;
+    if PCB.shot == PCB.tfshot
+        PCB.tfshot = [0,0];
+    end
+    PCB.i_EF=EFlist;
+    PCB.TF=TFlist;
+    PCB.date = date;
 end

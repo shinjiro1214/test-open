@@ -5,7 +5,9 @@ PCB.doOverwrite = false;
 PCB.trange = 400:800;
 PCB.n = 40;
 % PCB.start = 56;
-PCB.start = 72;
+% PCB.start = 72;
+% PCB.start = 68;
+PCB.start = 69;
 % PCB.dt = 2;
 % PCB.dt = 10;
 PCB.idx = 30;
@@ -33,25 +35,22 @@ t_plot_idx=PCB.start;
 t_plot = PCB.trange(t_plot_idx);
 % legendList = arrayfun(@(x) sprintf('%dus', x), t_plot, 'UniformOutput', false);
 
-% a = 1.6;n=4;
-a = 2;n=4;
+n=4;
 if PCB.date == 240111
-    ER1 = ESPdata2D.Er_grid.*a;
+    ER1 = ESPdata2D.Er_grid;
     ER2 = ER1;
     ER2(:,:,1:50-n) = ER1(:,:,1+n:50);
     ER2(:,:,50-n+1:50) = repmat(ER1(:,:,50),1,1,n);
     ESPdata2D.Er_grid = ER2;
-    EZ1 = ESPdata2D.Ez_grid.*a;
+    EZ1 = ESPdata2D.Ez_grid;
     EZ2 = EZ1;
     EZ2(:,:,1:50-n) = EZ1(:,:,1+n:50);
     EZ2(:,:,50-n+1:50) = repmat(EZ1(:,:,50),1,1,n);
     ESPdata2D.Ez_grid = EZ2;
-    % ESPdata2D.Er_grid = ESPdata2D.Er_grid.*a;
-    % ESPdata2D.Ez_grid = ESPdata2D.Ez_grid.*a;
 end
 [E_data,B_data] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot);
-% Epara = E_data.Epara;
-Epara = E_data.Epara_t;
+Epara = E_data.Epara;
+% Epara = E_data.Epara_t;
 Jt = B_data.Jt;
 
 pathFirstHalf = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/SXR_DATA/result_matrix/LF_NLR/240111/shot';
@@ -59,33 +58,67 @@ pathLastHalf = '/3.mat';
 nshot_1 = 17;
 path_1 = strcat(pathFirstHalf,num2str(nshot_1),pathLastHalf);
 load(path_1,'EE1');
+nshot_4 = 9;
+% nshot_4 = 14;
+% nshot_4 = 23;
+path_4 = strcat(pathFirstHalf,num2str(nshot_4),pathLastHalf);
+load(path_4,'EE4');EE4 = EE4.*2;
 
 zmin1=-200;zmax1=200;zmin2=-200;zmax2=200;
 rmin=70;rmax=375;
 range = [zmin1,zmax1,zmin2,zmax2,rmin,rmax];
 
 range = range./1000;
+zmin1 = range(1);
+zmax1 = range(2);
 zmin2 = range(3);
 zmax2 = range(4);
 rmin = range(5);
 rmax = range(6);
 r_space_SXR = linspace(rmin,rmax,50);
+z_space_SXR1 = linspace(zmin1,zmax1,50);
 z_space_SXR2 = linspace(zmin2,zmax2,50);
 
-z_indices_SXR = abs(z_space_SXR2)<=0.01;
-SXR_r_tmp = EE1(:,z_indices_SXR);
-SXR_r_mean = mean(SXR_r_tmp,2);
-SXR_r_std = std(SXR_r_tmp,0,2);
+z_indices_SXR2 = abs(z_space_SXR2)<=0.01;
+SXR_r_tmp1 = EE1(:,z_indices_SXR2);
+SXR_r_mean1 = mean(SXR_r_tmp1,2);
+SXR_r_std1 = std(SXR_r_tmp1,0,2);
+SXR_r_mean1(SXR_r_mean1<0) = 0.01;
+
+z_indices_SXR1 = abs(z_space_SXR1)<=0.01;
+SXR_r_tmp4 = EE4(:,z_indices_SXR1);
+SXR_r_mean4 = mean(SXR_r_tmp4,2);
+SXR_r_std4 = std(SXR_r_tmp4,0,2);
+% SXR_r_mean4(SXR_r_mean4<0) = 0.01;
 
 % z_target=0;
 z_axis = ESPdata2D.phi_mesh_z(1,:);
 r_axis = ESPdata2D.phi_mesh_r(:,1);
 figure;hold on;
 % [~, z_idx] = min(abs(z_axis - z_target));
-z_indices = abs(z_axis)<=0.01;
-% z_indices = abs(z_axis-0.01)<=0.01;
+% z_indices = abs(z_axis)<=0.01;
+z_indices = abs(z_axis-0.01)<=0.01;
 
 yyaxis left
+% J_r_tmp = squeeze(Jt(:,z_indices,1));
+% J_r_mean = mean(J_r_tmp,2);
+% J_r_std = std(J_r_tmp,0,2);
+% errorbar(r_axis,J_r_mean./max(J_r_mean),J_r_std./max(J_r_mean),'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
+% h1 = errorbar(r_space_SXR,SXR_r_mean1,SXR_r_std1,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10,'DisplayName','I_{20-80eV}');
+hold on;
+% h2 = errorbar(r_space_SXR,SXR_r_mean4,SXR_r_std4,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10,'DisplayName','I_{100eV<}');
+h2 = errorbar(r_space_SXR-0.005,SXR_r_mean4+0.04,SXR_r_std4,'LineWidth',2,'Marker','s','MarkerSize',6,'CapSize',10,'DisplayName','I_{100eV<}');
+ylabel('SXR intensity [a.u.]'); % 単位は適宜変更してください
+% legend([h1, h2], 'Location', 'best');
+xlim([0.1 0.25]);
+xlabel('r [m]'); % 単位は適宜変更してください
+% ylabel('$E_{\parallel , t}$ [V/m]','Interpreter','latex'); % 単位は適宜変更してください
+% title(['r方向の電場分布 (t = ', num2str(t_idx), ', z \approx ', num2str(z_actual), ' m)']);
+grid on;
+ax=gca;ax.FontSize=18;ylim([0 Inf]);
+
+
+yyaxis right
 E_r_tmp = squeeze(Epara(:,z_indices,1));
 E_r_mean = mean(E_r_tmp,2);
 E_r_std = std(E_r_tmp,0,2);
@@ -96,19 +129,10 @@ errorbar(r_axis,E_r_mean,E_r_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapS
 % errorbar(r_axis,J_r_mean,J_r_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
 % ax=gca;currentLimits=ax.YLim;maxVal=max(abs(currentLimits));ax.YLim =[-maxVal, maxVal];
 ylim([-300 300])
+ylabel('$E_{\parallel}$ [V/m]','Interpreter','latex'); % 単位は適宜変更してください
+% legend([h1, h2], 'Location', 'best');
 
-yyaxis right
-J_r_tmp = squeeze(Jt(:,z_indices,1));
-J_r_mean = mean(J_r_tmp,2);
-J_r_std = std(J_r_tmp,0,2);
-errorbar(r_axis,J_r_mean./max(J_r_mean),J_r_std./max(J_r_mean),'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
-errorbar(r_space_SXR,SXR_r_mean,SXR_r_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
-xlim([0.1 0.25]);
-xlabel('r [m]'); % 単位は適宜変更してください
-% ylabel('$E_{\parallel , t}$ [V/m]','Interpreter','latex'); % 単位は適宜変更してください
-% title(['r方向の電場分布 (t = ', num2str(t_idx), ', z \approx ', num2str(z_actual), ' m)']);
-grid on;
-ax=gca;ax.FontSize=18;ylim([0 Inf]);
+
 
 end
 

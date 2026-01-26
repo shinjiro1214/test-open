@@ -1,15 +1,19 @@
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
-t = 451:480;
+% t = 451:480;
+% t = 431:480;
+t = 454:480;
 Br_t = zeros(numel(shotList),numel(t));
 trange = t-399;
 j = 1;
 figure;hold on;
 for i = shotList
     load([dirPath,num2str(i,'%03i'),'.mat'],'data2D','grid2D');
-    % Br_t_tmp = get_Br_time(grid2D,data2D,trange);
-    % Br_t(j,:) = Br_t_tmp - Br_t_tmp(1);
-    Br_t(j,:) = get_Br_time(grid2D,data2D,trange);
+    % load([dirPath,num2str(i,'%03i'),'_200ch.mat'],'data2D','grid2D');
+    Br_t_tmp = get_Br_time(grid2D,data2D,trange);
+    Br_t(j,:) = Br_t_tmp - Br_t_tmp(1);
+    % Br_t(j,:) = get_Br_time(grid2D,data2D,trange);
+    % Br_t(j,2:end) = diff(Br_t_tmp);
     plot(t,Br_t(j,:));
     j = j+1;
 end
@@ -27,6 +31,7 @@ MRD30 = std(Br_t(idxTF30,:),'omitmissing');
 MRM25 = mean(Br_t(idxTF25,:),'omitmissing');
 MRD25 = std(Br_t(idxTF25,:),'omitmissing');
 figure;
+t=t+1;
 errorbar(t,MRM25,MRD25);hold on;
 errorbar(t,MRM30,MRD30);
 errorbar(t,MRM35,MRD35);
@@ -35,6 +40,7 @@ legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'},'Location','northwest');
 xlabel('Time [us]');
 ax=gca;ax.FontSize=18;
 ylabel('Merging ratio');
+% ylabel('合体率の時間変化');
 
 
 function mergingRatio = get_Br_time(grid2D,data2D,trange)
@@ -56,9 +62,11 @@ function mergingRatio = get_Br_time(grid2D,data2D,trange)
         % xpoint.z = xPointList.z(:,i);
         % if numel(magaxis.r) == 2
         if magaxis.z(1)~=magaxis.z(2) && ~isnan(magaxis.r(1))
-            mergingRatio(1,m) = xPointList.psi(i)/mean(magAxisList.psi(:,i));
+            % mergingRatio(1,m) = xPointList.psi(i)/mean(magAxisList.psi(:,i));
+            mergingRatio(1,m) = xPointList.psi(i)/min(magAxisList.psi(:,i));
         elseif ~isnan(magaxis.r(1))
-            mergingRatio(1,m) = xPointList.psi(i)/mean(magAxisList.psi(:,i));
+            % mergingRatio(1,m) = xPointList.psi(i)/mean(magAxisList.psi(:,i));
+            mergingRatio(1,m) = xPointList.psi(i)/min(magAxisList.psi(:,i));
         else
             mergingRatio(1,m) = NaN;
         end

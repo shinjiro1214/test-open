@@ -10,9 +10,20 @@ pathLastHalf = '/3.mat';
 % nshot_2 = 12;
 % nshot_3 = 11;
 % CV_z = [-0.01, -0.01, -0.01];
-% CV_r = [0.01, 0.01, -0.03];
+% % CV_r = [0.01, 0.01, -0.03];
+% CV_r = [0.01, 0.01, -0.0];
 % cLimList = {[0 0.7],[0 0.4],[0 0.3]};
 % idx_mag = 7;
+
+% High guide-field case2
+nshot_1 = 13;
+nshot_2 = 7;
+nshot_3 = 14;
+CV_z = [-0.01, -0.01, 0.01];
+% CV_r = [0.01, 0.01, -0.03];
+CV_r = [0.01, 0.01, -0.0];
+cLimList = {[0 0.7],[0 0.4],[0 0.3]};
+idx_mag = 7;
 
 % % Middle guide-field case
 % nshot_1 = 14;
@@ -23,14 +34,14 @@ pathLastHalf = '/3.mat';
 % cLimList = {[0 0.7],[0 0.3],[0 0.6]};
 % idx_mag = 25;
 
-% Low guide-field case
-nshot_1 = 17;
-nshot_2 = 18;
-nshot_3 = 17;
-CV_z = [-0.01, -0.01, -0.01];
-CV_r = [0.02, 0.00, -0.0];
-cLimList = {[0 1],[0 1],[0 0.6]};
-idx_mag = 17;
+% % Low guide-field case
+% nshot_1 = 17;
+% nshot_2 = 18;
+% nshot_3 = 17;
+% CV_z = [-0.01, -0.01, -0.01];
+% CV_r = [0.02, 0.00, -0.0];
+% cLimList = {[0 1],[0 1],[0 0.6]};
+% idx_mag = 17;
 
 % nshot_1 = 27;
 % nshot_2 = 11;

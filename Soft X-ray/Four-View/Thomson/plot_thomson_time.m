@@ -7,6 +7,8 @@ thomsonTimeList = [465,466,467,468,469,470];
 
 ne_t = nan(numel(thomsonTimeList),1);
 Te_t = nan(numel(thomsonTimeList),1);
+ne_t_err = nan(numel(thomsonTimeList),1);
+Te_t_err = nan(numel(thomsonTimeList),1);
 i=1;
 for time = thomsonTimeList
     thomsonIdx = thomsonShotList(thomsonTimeList==time);
@@ -31,6 +33,8 @@ for time = thomsonTimeList
     % Te_q = F(zq,rq);
     Te_q = interp2(r,z,Te_mat,rq,zq);
     ne_q = interp2(r,z,ne_mat,rq,zq);
+    SD_Te_q = interp2(r,z,SD_Te_mat,rq,zq);
+    SD_ne_q = interp2(r,z,SD_ne_mat,rq,zq);
     % figure;contourf(zq,rq,Te_q,linspace(0,10,10));
     % figure;contourf(zq,rq,ne_q,linspace(0,5e20,10));
 
@@ -45,7 +49,7 @@ for time = thomsonTimeList
     [~,xPointList] = get_axis_x_multi(grid2D,data2D);
     % hold on;plot(xPointList.z(time-400),xPointList.r(time-400),'kx');
     % 最も近い点（上下左右で4点？）を検索
-    z=zq;r=rq;Te_mat=Te_q;ne_mat=ne_q;
+    z=zq;r=rq;Te_mat=Te_q;ne_mat=ne_q;SD_Te_mat=SD_Te_q;SD_ne_mat=SD_ne_q;
     timeIndex=time-400;
     z_idx = find(z(:,1)<=xPointList.z(timeIndex),1,'last');
     r_idx = find(r(1,:)<=xPointList.r(timeIndex),1,'last');
@@ -53,17 +57,30 @@ for time = thomsonTimeList
     if r_idx == numel(r(1,:))
         % Te_x = mean([Te_mat([z_idx,z_idx+1],r_idx)],'omitnan');
         % ne_x = mean([ne_mat([z_idx,z_idx+1],r_idx)],'omitnan');
-        Te_x = mean([Te_mat(z_idx-1:z_idx+1,r_idx)],'omitnan');
-        ne_x = mean([ne_mat(z_idx-1:z_idx+1,r_idx)],'omitnan');
+        % Te_x = mean([Te_mat(z_idx-1:z_idx+1,r_idx)],'omitnan');
+        % ne_x = mean([ne_mat(z_idx-1:z_idx+1,r_idx)],'omitnan');
+        Te_x = mean([Te_mat(z_idx-2:z_idx+2,r_idx-2:r_idx)],'omitnan');
+        ne_x = mean([ne_mat(z_idx-2:z_idx+2,r_idx-2:r_idx)],'omitnan');
+        Te_x_err = mean([SD_Te_mat(z_idx-2:z_idx+2,r_idx-2:r_idx)],'omitnan');
+        ne_x_err = mean([SD_ne_mat(z_idx-2:z_idx+2,r_idx-2:r_idx)],'omitnan');
     else
-        Te_x = mean([Te_mat([z_idx,z_idx+1],[r_idx,r_idx+1])],'all','omitnan');
-        ne_x = mean([ne_mat([z_idx,z_idx+1],[r_idx,r_idx+1])],'all','omitnan');
+        % Te_x = mean([Te_mat([z_idx,z_idx+1],[r_idx,r_idx+1])],'all','omitnan');
+        % ne_x = mean([ne_mat([z_idx,z_idx+1],[r_idx,r_idx+1])],'all','omitnan');
+        Te_x = mean([Te_mat([z_idx-2,z_idx+2],[r_idx-2,r_idx+2])],'all','omitnan');
+        ne_x = mean([ne_mat([z_idx-2,z_idx+2],[r_idx-2,r_idx+2])],'all','omitnan');
+        Te_x_err = mean([SD_Te_mat([z_idx-2,z_idx+2],[r_idx-2,r_idx+2])],'all','omitnan');
+        ne_x_err = mean([SD_ne_mat([z_idx-2,z_idx+2],[r_idx-2,r_idx+2])],'all','omitnan');
     end
     % disp(Te_x);
     ne_t(i)=ne_x;
     Te_t(i)=Te_x;
+    ne_t_err(i)=ne_x_err;
+    Te_t_err(i)=Te_x_err;
     i=i+1;
 end
 
-figure;plot(thomsonTimeList,ne_t);title('Density');
-figure;plot(thomsonTimeList,Te_t);title('Temperature');
+% figure;plot(thomsonTimeList,ne_t);title('Density');
+% figure;plot(thomsonTimeList,Te_t);title('Temperature');
+
+figure;errorbar(thomsonTimeList,ne_t,ne_t_err);title('Density');
+figure;errorbar(thomsonTimeList,Te_t,Te_t_err);title('Temperature');

@@ -1,5 +1,7 @@
 % function [grid2D,data2D] = process_PCBdata_280ch(date, shot, tfshot, pathname, n,i_EF,trange)
 function [grid2D,data2D] = process_PCBdata_280ch(PCB,pathname)
+    
+addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/pcb_experiment'
 date = PCB.date;
 shot = PCB.shot;
 tfshot = PCB.tfshot;
@@ -101,15 +103,18 @@ if doCalculation
     
     %digital filter
     windowSize = 8;
+    % windowSize = 3;
     bb = (1/windowSize)*ones(1,windowSize);
     aa = 1;
     
     for i=1:length(ch)
         b(:,i) = filter(bb,aa,b(:,i));
-        % b(:,i) = b(:,i) - mean(b(1:40,i));
-        b(:,i) = b(:,i) - mean(b(580:600,i));
+        b(:,i) = b(:,i) - mean(b(1:40,i));
+        % b(:,i) = b(:,i) - mean(b(580:600,i));
+        % b(:,i) = b(:,i) - mean(b(780:800,i));
         b_TF(:,i) = filter(bb,aa,b_TF(:,i));
         b_TF(:,i) = b_TF(:,i) - mean(b_TF(1:40,i));
+        % b_TF(:,i) = b_TF(:,i) - mean(b_TF(780:800,i));
         if rem(ch(i),2)==1
             bz(:,ceil(ch(i)/2))=b(:,i);
             ok_bz(ceil(ch(i)/2))=ok(i);
@@ -215,8 +220,10 @@ if doCalculation
         [data2D.Br(:,:,i),data2D.Bz(:,:,i)]=gradient(data2D.psi(:,:,i),grid2D.zq(1,:),grid2D.rq(:,1)) ;
         data2D.Br(:,:,i)=-data2D.Br(:,:,i)./(2.*pi.*grid2D.rq);
         data2D.Bz(:,:,i)=data2D.Bz(:,:,i)./(2.*pi.*grid2D.rq);
-        data2D.Bt(:,:,i)=B_t;
+        data2D.Bt(:,:,i)=B_t;%*1.2
         data2D.Jt(:,:,i)= curl(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),data2D.Br(:,:,i))./(4*pi*1e-7);
+        [~,drBt_dr] = gradient(1.2*data2D.Bt(:,:,i).*grid2D.rq,grid2D.zq(1,:),grid2D.rq(:,1));
+        data2D.Jz(:,:,i) = drBt_dr./(4*pi*1e-7.*grid2D.rq);
 
         if rgwflag
             timing = x/aquisition_rate==t;

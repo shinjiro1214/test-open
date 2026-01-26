@@ -15,8 +15,8 @@ function [imageVector1,imageVector2,imageVector3,imageVector4] = get_sxr_image(d
 % % 画像を切り取る
 % N_projection = 80;
 % VectorImages = CutImage(date,shot,N_projection/230,false);
-% doCheck = true;
-doCheck = false;
+doCheck = true;
+% doCheck = false;
 
 % % 生画像の取得
 % rawImage = imread(sxrFilename);

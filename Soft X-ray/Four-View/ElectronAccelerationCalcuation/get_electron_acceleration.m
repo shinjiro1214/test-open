@@ -23,6 +23,10 @@ Te_K = Te_eV * (q_e / k_B); % 電子温度 (K)
 Bp = 1;
 Bt = GFR;
 R = 0.02; %加速領域サイズ[m]
+% R = 0.05; %加速領域サイズ[m]
+
+timeLimit = 1e-7; %時間制限
+
 
 % t_ra = sqrt(2*R*(1+GFR^2)*m_e/(q_e*E0*GFR));
 % disp('escape time is: ');disp(t_ra);
@@ -61,6 +65,11 @@ t = zeros(N_particles, num_steps_max); % 時間を保存する配列
 l = nan(N_particles, num_steps_max); % 平均自由行程？を保存する配列
 n_step = zeros(N_particles,1); % ステップ？衝突？回数を保存する配列
 n_update = zeros(N_particles,1); % 粒子が更新された回数を保存する配列
+Work_done = zeros(N_particles, 1);
+
+% 【追加】損失エネルギー積算用 (Joule)
+Loss_Collision_Total_J = 0;
+Loss_Escape_Total_J = 0;
 
 % 初期値を設定
 x(:, 1) = initial_x;
@@ -95,7 +104,7 @@ for i = 1:(num_steps_max - 1)
             v(p, i) = abs( sigma_v * randn() );
         end
         % 時間過ぎてたら計算しない
-        if t(p, i) > 1e-7
+        if t(p, i) > timeLimit
             continue;
         end
         % 衝突判定 (モンテカルロ法)
@@ -124,6 +133,11 @@ for i = 1:(num_steps_max - 1)
         l(p,i) = v(p, i) * tau_v;
         % ステップ？衝突？回数の更新
         n_step(p) = n_step(p) + 1;
+
+        % 電場のした仕事の合計
+        dx = (v(p, i)*tau_v + 0.5*a_field*tau_v^2) * Bp/sqrt(Bp^2+Bt^2);
+        E_eff = E0 * Bt / sqrt(Bp^2+Bt^2); % 有効電場
+        Work_done(p) = Work_done(p) + (q_e * E_eff * dx);
 
         % P_v = nu_v * dt;
         % P_v = nu_v * dt * (1-exp(-1));
@@ -189,6 +203,15 @@ for p = 1:N_particles
     end
 end
 % disp(numel(find(v_end==0)));
+
+% K_initial = 0.5 * m_e * initial_v.^2 ./ q_e; 
+% K_final   = 0.5 * m_e * v_end.^2     ./ q_e;
+K_initial = 0.5 * m_e * initial_v.^2; 
+K_final   = 0.5 * m_e * v_end.^2;
+Energy_Gain = (sum(K_final) - sum(K_initial)) * ne ./ num_particle ./ timeLimit;
+% disp(Energy_Gain);
+Total_Work = sum(Work_done)* ne ./ num_particle ./ timeLimit;
+fprintf('Total work by E field is %e and total energy gain is %e.\n',Total_Work,Energy_Gain)
 
 if plotFlag
     v(v>2e7) = 2e7;

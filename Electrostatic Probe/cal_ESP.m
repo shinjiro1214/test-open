@@ -18,8 +18,10 @@ if doCalculation
 
     z = linspace(-0.15,0.15,ESP.mesh);%プロットメッシュZ座標[m]
     z_probe = linspace(-0.15,0.15,21);%静電プローブ計測点Z座標[m]
-    ng_ch = [4 6 16];%死んだCH 230830
+    % ng_ch = [4 6 16];%死んだCH 230830
     % ng_ch = [4 6 16 20];%死んだCH 230828
+    % ng_ch = [4,11,12,14:21];%死んだCH 240827
+    ng_ch = [14:21];%死んだCH 240828
     z_probe(ng_ch) = [];
     r = linspace(min(ESP.rlist),max(ESP.rlist),ESP.mesh)*1E-3;%プロットメッシュR座標[m]
     r_probe = unique(ESP.rlist)*1E-3;%静電プローブ計測点R座標[m]

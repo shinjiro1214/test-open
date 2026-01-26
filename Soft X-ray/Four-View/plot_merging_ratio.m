@@ -98,7 +98,7 @@ for i=1:n_data
 
 end
 legend(legendList,'Location','northwest');
-ylim([0 100]);xlim([460 480]);
+ylim([0 100]);%xlim([460 480]);
 
 % if shot == tfshot
 %     tfshot = [0,0];

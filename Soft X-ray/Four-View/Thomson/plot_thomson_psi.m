@@ -70,11 +70,11 @@ for i = 1:numel(thomsonTimeList)
         c2.Layout.Tile='east';
     end
 
-    psiLevels = linspace(-5e-3,5e-3,15);
+    % psiLevels = linspace(-5e-3,5e-3,15);
     [~,xPointList] = get_axis_x_multi(grid2D,data2D);
     timeIndex = time-401;
     figure(f1);
-    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),psiLevels,'black');
+    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),20,'black');
     axis equal
     % plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
     xlim([-0.078,0.078]);ylim([0.125,0.302]);
@@ -86,7 +86,7 @@ for i = 1:numel(thomsonTimeList)
     title(string(time)+' us')
     ax=gca;ax.FontSize=18;
     figure(f2);
-    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),psiLevels,'black');
+    contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,timeIndex)),20,'black');
     axis equal
     % plot(xPointList.z(timeIndex),xPointList.r(timeIndex),'kx');
     xlim([-0.078,0.078]);ylim([0.125,0.302]);

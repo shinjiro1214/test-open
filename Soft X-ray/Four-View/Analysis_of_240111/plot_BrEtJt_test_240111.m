@@ -1,4 +1,4 @@
-close all
+close all 
 
 addpath('/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View');
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';

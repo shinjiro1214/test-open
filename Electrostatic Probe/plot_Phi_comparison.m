@@ -31,27 +31,20 @@ t_plot_idx = PCB.start:PCB.dt:PCB.start+PCB.dt*31;
 % t_plot_idx = PCB.start:PCB.dt:PCB.start+PCB.dt*3;
 t_plot = PCB.trange(t_plot_idx);
 
-a = 1.6;n=4;
+n=4;
 if PCB.date == 240111
-    P1 = ESPdata2D.phi_grid.*a;
-    P2 = P1;
-    P2(:,:,1:50-n) = P1(:,:,1+n:50);
-    P2(:,:,50-n+1:50) = repmat(P1(:,:,50),1,1,n);
-    ESPdata2D.phi_grid = P2;
-    ER1 = ESPdata2D.Er_grid.*a;
+    ER1 = ESPdata2D.Er_grid;
     ER2 = ER1;
     ER2(:,:,1:50-n) = ER1(:,:,1+n:50);
     ER2(:,:,50-n+1:50) = repmat(ER1(:,:,50),1,1,n);
     ESPdata2D.Er_grid = ER2;
-    EZ1 = ESPdata2D.Ez_grid.*a;
+    EZ1 = ESPdata2D.Ez_grid;
     EZ2 = EZ1;
     EZ2(:,:,1:50-n) = EZ1(:,:,1+n:50);
     EZ2(:,:,50-n+1:50) = repmat(EZ1(:,:,50),1,1,n);
     ESPdata2D.Ez_grid = EZ2;
-    % ESPdata2D.Er_grid = ESPdata2D.Er_grid.*a;
-    % ESPdata2D.Ez_grid = ESPdata2D.Ez_grid.*a;
 end
-[E_data,~] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot);
+[E_data,B_data] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot);
 
 
 r_axis = ESPdata2D.phi_mesh_r(:,1);
@@ -64,24 +57,26 @@ dPhi = max(phi_subset,[],[2 3])-min(phi_subset,[],[2 3]);
 
 % dPhi_perp = squeeze(max(E_data.phi_perp,[],[1 2]) - min(E_data.phi_perp,[],[1 2]));
 % dPhi = max(ESPdata2D.phi_grid,[],[2 3])-min(ESPdata2D.phi_grid,[],[2 3]);
-figure;plot(t_plot,dPhi_perp,'LineWidth',2);
-hold on;plot(ESP.trange,dPhi,'LineWidth',2);
-legend({'Calculation','Experiment'})
-% xlim([460 480]);
-xlim([458 473]);
-ylabel("Potential difference [V]");xlabel("time [us]");ax=gca;ax.FontSize=18;
+
+% figure;plot(t_plot,dPhi_perp,'LineWidth',2);
+% hold on;plot(ESP.trange,dPhi,'LineWidth',2);
+% legend({'Calculation','Experiment'},'Location','best')
+% % xlim([460 480]);
+% xlim([458 473]);
+% ylabel("Potential difference [V]");xlabel("time [us]");ax=gca;ax.FontSize=18;
 
 % dphi = max(ESPdata2D.phi_grid,[],[2 3])-min(ESPdata2D.phi_grid,[],[2 3]);
 ddphi_perp = diff(dPhi_perp)./(t_plot(2)-t_plot(1));
 ddphi = diff(dPhi)./(ESP.trange(2)-ESP.trange(1));
-figure;hold on;
-plot(t_plot(1:end-1),smoothdata(ddphi_perp),'LineWidth',2);%xlim([460 475]);
-plot(ESP.trange(1:end-1),smoothdata(ddphi,"movmean",6),'LineWidth',2);%xlim([460 475]);
-xlim([458 473]);
-ylabel("$\frac{d}{dt}\Delta\Phi$ [V/us]",'Interpreter','latex');xlabel("time [us]");ax=gca;ax.FontSize=18;
+% figure;hold on;
+% plot(t_plot(1:end-1),smoothdata(ddphi_perp),'LineWidth',2);%xlim([460 475]);
+% plot(ESP.trange(1:end-1),smoothdata(ddphi,"movmean",6),'LineWidth',2);%xlim([460 475]);
+% xlim([458 473]);
+% ylabel("$\frac{d}{dt}\Delta\Phi$ [V/us]",'Interpreter','latex');xlabel("time [us]");ax=gca;ax.FontSize=18;
 
 
-plotRange = [-180 180];
+% plotRange = [-180 180];
+plotRange = [-300 300];
 timing_plot = 469;
 t_plot_idx_cal = find(t_plot==timing_plot);
 t_plot_idx_exp = knnsearch(ESP.trange',timing_plot);
@@ -90,26 +85,29 @@ phi_exp = squeeze(ESPdata2D.phi_grid(t_plot_idx_exp,:,:));
 phi_exp(ESPdata2D.phi_mesh_r(:,1)>0.23,:)= 0;
 phi_exp = phi_exp - mean(phi_exp,"all");phi_exp(ESPdata2D.phi_mesh_r(:,1)>0.23,:)= 0;
 % t_plot = PCB.trange(t_plot_idx);
-figure;
-subplot(1,2,1);
-contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,E_data.phi_perp(:,:,t_plot_idx_cal),linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
-colormap(redblue(3000));
-xlim([-0.1,0.1]);ylim([0.13,0.31]);
-pbaspect([1 1 1])
-clim(plotRange)
-hold on
-contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,t_plot_idx_mag)),20,'black')
-ax=gca;ax.FontSize=18;
-subplot(1,2,2);
-contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,phi_exp,linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
-% contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,squeeze(ESPdata2D.phi_grid(t_plot_idx_exp,:,:)),linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
-colormap(redblue(3000));
-xlim([-0.1,0.1]);ylim([0.13,0.31]);
-pbaspect([1 1 1])
-clim(plotRange)
-hold on
-contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,t_plot_idx_mag)),20,'black')
-ax=gca;ax.FontSize=18;
+% figure;
+% subplot(1,2,1);
+% contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,E_data.phi_perp(:,:,t_plot_idx_cal),linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
+% colormap(redblue(3000));
+% xlim([-0.1,0.1]);ylim([0.13,0.31]);
+% pbaspect([1 1 1])
+% clim(plotRange)
+% hold on
+% contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,t_plot_idx_mag)),20,'black')
+% ax=gca;ax.FontSize=18;
+% subplot(1,2,2);
+% contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,phi_exp,linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
+% % contourf(ESPdata2D.phi_mesh_z,ESPdata2D.phi_mesh_r,squeeze(ESPdata2D.phi_grid(t_plot_idx_exp,:,:)),linspace(plotRange(1),plotRange(2),100),'edgecolor','none');
+% colormap(redblue(3000));
+% xlim([-0.1,0.1]);ylim([0.13,0.31]);
+% pbaspect([1 1 1])
+% clim(plotRange)
+% hold on
+% contour(grid2D.zq(1,:),grid2D.rq(:,1),squeeze(data2D.psi(:,:,t_plot_idx_mag)),20,'black')
+% ax=gca;ax.FontSize=18;
+
+figure;plot(t_plot,dPhi_perp,'LineWidth',2);xlim([460 480]);xlim([458 473]);ylabel("Potential difference [V]");xlabel("time [us]");ax=gca;ax.FontSize=18;
+figure;plot(ESP.trange,dPhi,'LineWidth',2);xlim([460 480]);xlim([458 473]);ylabel("Potential difference [V]");xlabel("time [us]");ax=gca;ax.FontSize=18;
 
 end
 

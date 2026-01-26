@@ -10,6 +10,7 @@ for i = shotList
     % psi_t_tmp = get_psi_time(grid2D,data2D,trange);
     % psi_t(j,:) = psi_t_tmp - psi_t_tmp(1);
     psi_t(j,:) = get_psi_time(grid2D,data2D,trange);
+    % psi_t(j,2:end) = diff(psi_t_tmp);
     plot(t,psi_t(j,:));
     j = j+1;
 end
@@ -45,6 +46,7 @@ function psi_t = get_psi_time(grid2D,data2D,trange)
     [~,xPointList] = get_axis_x_multi(grid2D,data2D);
     % psi_t = zeros(1,20);
     psi_t = NaN(1,numel(trange));
+    % psi_t = zeros(1,numel(trange));
     % t = 461:480;
     m = 1;
     for i = trange

@@ -1,8 +1,8 @@
 addpath('/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View');
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
-% t = 441:480;
-t = 461:480;
+t = 441:480;
+% t = 461:480;
 Jt_t = zeros(numel(shotList),numel(t));
 trange = t-399;
 j = 1;
@@ -11,8 +11,8 @@ for i = shotList
     load([dirPath,num2str(i,'%03i'),'.mat'],'data2D','grid2D');
     % Et_t_tmp = -1*get_Et_time(grid2D,data2D,trange);
     % Et_t(j,:) = Et_t_tmp - Et_t_tmp(1);
-    % Jt_t(j,:) = -1*get_Jt_time(grid2D,data2D,trange);
-    Jt_t(j,:) = get_Jt_down_time(grid2D,data2D,trange);
+    Jt_t(j,:) = -1*get_Jt_time(grid2D,data2D,trange);
+    % Jt_t(j,:) = get_Jt_down_time(grid2D,data2D,trange);
     plot(t,Jt_t(j,:));
     j = j+1;
 end

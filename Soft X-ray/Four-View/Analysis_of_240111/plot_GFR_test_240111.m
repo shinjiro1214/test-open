@@ -1,12 +1,14 @@
 addpath('/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View');
 dirPath = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/probedata/processed/240111';
 shotList = 7:30;
+% shotList = 7:29;
 t = 441:480;
 Br_z = zeros(numel(shotList),50);
 GFR_z = zeros(numel(shotList),50);
 trange = t-399;
 j = 1;
-t = 468;
+% t = 468;
+t = 470;
 figure;hold on;
 for i = shotList
     load([dirPath,num2str(i,'%03i'),'_200ch.mat'],'data2D','grid2D');
@@ -14,8 +16,19 @@ for i = shotList
     [~,xPointList] = get_axis_x_multi(grid2D,data2D);
     idxR = knnsearch(grid2D.rq(:,1),xPointList.r(t_idx));
     z_mag = grid2D.zq(1,:);
-    Br_z(j,:) = mean(data2D.Br(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
-    Bt_z = mean(data2D.Bt_th(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
+    if numel(z_mag)~=50
+        Br_z_tmp = mean(data2D.Br(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
+        Br_z(j,:) = imresize(Br_z_tmp, [1, 50], 'bilinear');
+        Bt_z = mean(data2D.Bt_th(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
+        Bt_z = imresize(Bt_z,[1 50],"bilinear");
+        z_mag = imresize(z_mag,[1 50],"bilinear");
+    else
+        Br_z(j,:) = mean(data2D.Br(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
+        Bt_z = mean(data2D.Bt_th(max(1,idxR-2):min(idxR+2,numel(grid2D.rq(:,1))),:,t_idx));
+    end
+    % if i == 30
+    %     disp(i);
+    % end
     GFR_z(j,:) = Bt_z./abs(Br_z(j,:));
     plot(z_mag,GFR_z(j,:));
     j = j+1;

@@ -37,6 +37,9 @@ xlabel('Time [us]');
 ax=gca;ax.FontSize=18;
 ylabel('Reconnection electric field [V/t]');
 
+Et_t = [t;EtM40;EtD40];
+writematrix(Et_t.','/Users/shinjirotakeda/Downloads/Et_t.xlsx','Range','A2');
+
 % TF = 2.5:0.5:4;
 % 4.5583    5.2295    6.4095    7.6048 GFR
 % 0.1367    0.1569    0.1923    0.2281 Bt
@@ -45,10 +48,17 @@ Bt = 1e3 * [0.1367    0.1569    0.1923    0.2281];
 t_idx = find(t==468);
 Et_M = [EtM25(t_idx) EtM30(t_idx) EtM35(t_idx) EtM40(t_idx)];
 Et_D = [EtD25(t_idx) EtD30(t_idx) EtD35(t_idx) EtD40(t_idx)];
-figure;errorbar(Bt,Et_M,Et_D,'LineWidth',3);
+figure;hold on;
+errorbar(Bt,Et_M,Et_D,'LineWidth',3);
+a = Bt(:) \ Et_M(:);
+x_line = linspace(0, max(Bt), 100); 
+% y_line = polyval(p, x_line);
+y_line = a * x_line;
+plot(x_line, y_line, 'r-', 'LineWidth', 2);
 xlabel('Toroidal magnetic field [mT]');ylabel('Reconnection electric field [V/m]');
 ax=gca;ax.FontSize=18;
-xlim([130 230]);
+% xlim([130 230]);
+xlim([0 230]);ylim([0 Inf]);
 % xlim([2.3 4.2]);
 
 

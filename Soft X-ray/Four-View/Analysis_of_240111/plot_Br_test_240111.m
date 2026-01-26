@@ -10,6 +10,7 @@ figure;hold on;
 for i = shotList
     load([dirPath,num2str(i,'%03i'),'.mat'],'data2D','grid2D');
     Br_t(j,:) = get_Br_time(grid2D,data2D,trange);
+    % Br_t(j,:) = get_Br_time(grid2D,data2D,trange) .* 0.75;
     plot(t,Br_t(j,:));
     j = j+1;
 end
@@ -31,12 +32,14 @@ errorbar(t,BrM25,BrD25);hold on;
 errorbar(t,BrM30,BrD30);
 errorbar(t,BrM35,BrD35);
 errorbar(t,BrM40,BrD40);
-legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'});
+% legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'});
+legend({'GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'});
 
 xlabel('Time [us]');
 ax=gca;ax.FontSize=18;
 ylabel('Reconection magnetic field [T]');
 
+figure;hold on;
 TF = 2.5:0.5:4;
 % 4.5583    5.2295    6.4095    7.6048 GFR
 % 0.1367    0.1569    0.1923    0.2281 Bt
@@ -45,10 +48,18 @@ Bt = 1e3 * [0.1367    0.1569    0.1923    0.2281];
 t_idx = find(t==467);
 Br_M = [BrM25(t_idx) BrM30(t_idx) BrM35(t_idx) BrM40(t_idx)];
 Br_D = [BrD25(t_idx) BrD30(t_idx) BrD35(t_idx) BrD40(t_idx)];
-figure;errorbar(Bt,Br_M,Br_D,'LineWidth',3);
+% p = polyfit(Bt, Br_M, 1);
+a = Bt(:) \ Br_M(:);
+x_line = linspace(0, max(Bt), 100); 
+% y_line = polyval(p, x_line);
+y_line = a * x_line;
+
+errorbar(Bt,Br_M,Br_D,'LineWidth',3);
+plot(x_line, y_line, 'r-', 'LineWidth', 2);
 xlabel('Toroidal magnetic field [mT]');ylabel('Reconnection magnetic field [mT]');
 ax=gca;ax.FontSize=18;
-xlim([130 230]);
+% xlim([130 230]);ylim([0 Inf]);
+xlim([0 230]);ylim([0 Inf]);
 % xlim([2.3 4.2]);
 
 
@@ -78,6 +89,7 @@ function B_reconnection = get_Br_time(grid2D,data2D,trange)
             if sum(range_r) == 1
                 Br_mean = Br_tmp(range_r,range_z);
             else
+                % Br_mean = mean(Br_tmp(range_r,range_z));
                 Br_mean = mean(Br_tmp(range_r,range_z));
             end
             Br1 = max(Br_mean);
@@ -86,7 +98,8 @@ function B_reconnection = get_Br_time(grid2D,data2D,trange)
         elseif ~isnan(magaxis.r(1))
             range = rq>=min(magaxis.r(1),xpoint.r)&rq<=max(magaxis.r(1),xpoint.r)&zq>=min(magaxis.z(1),xpoint.z)&zq<=max(magaxis.z(1),xpoint.z);
             Br_tmp = Br(:,:,i);
-            B_reconnection(1,m) = mean([max(Br_tmp(range),[],'all'),abs(min(Br_tmp(range),[],"all"))]);
+            % B_reconnection(1,m) = mean([max(Br_tmp(range),[],'all'),abs(min(Br_tmp(range),[],"all"))]);
+            B_reconnection(1,m) = min([max(Br_tmp(range),[],'all'),abs(min(Br_tmp(range),[],"all"))]);
         else
             B_reconnection(1,m) = NaN;
         end

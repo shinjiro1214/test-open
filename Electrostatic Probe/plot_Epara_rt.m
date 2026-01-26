@@ -15,46 +15,48 @@ PCB.date = 240111;
 PCB.shot = [3597 2071];
 PCB.tfshot = [3569 2043];
 
-PCB.date = 230830;
-PCB.tfshot = [2417,896];
-% PCB.idx = 37;PCB.shot = [2452 931];
-PCB.idx = 24;
-if PCB.idx >= 17
-    PCB.shot = PCB.tfshot+PCB.idx-2;
-else
-    PCB.shot = PCB.tfshot+PCB.idx-3;
-end
+% PCB.date = 230830;
+% PCB.tfshot = [2417,896];
+% % PCB.idx = 37;PCB.shot = [2452 931];
+% PCB.idx = 24;
+% if PCB.idx >= 17
+%     PCB.shot = PCB.tfshot+PCB.idx-2;
+% else
+%     PCB.shot = PCB.tfshot+PCB.idx-3;
+% end
 PCB.i_EF = 200;
 PCB.TF = 4;
+
+% PCB = get_PCB_data(240828,16,475,5);
+% PCB = get_PCB_data(240111,27,465,2);
+
 % [grid2D,data2D] = process_PCBdata_280ch(PCB,pathname);
 [grid2D,data2D] = process_PCBdata_200ch(PCB,pathname);
 % t_plot_idx = PCB.start:PCB.dt:PCB.start+PCB.dt*15;
 % t_plot_idx = PCB.start:PCB.dt:PCB.start+PCB.dt*31;
 % t_plot_idx = PCB.start:PCB.dt:PCB.start+PCB.dt*3;
 % t_plot_idx = 51:81;
-t_plot_idx = 61:71;
+t_plot_idx = 51:101;
+% t_plot_idx = 61:81;
 t_plot = PCB.trange(t_plot_idx);
 % legendList = arrayfun(@(x) ['$\mathrm{', num2str(x), '}\mu\mathrm{s}$'], t_plot, 'UniformOutput', false);
 
-% a = 1.6;n=4;
-a = 2;n=4;
+n=4;
 if PCB.date == 240111
-    ER1 = ESPdata2D.Er_grid.*a;
+    ER1 = ESPdata2D.Er_grid;
     ER2 = ER1;
     ER2(:,:,1:50-n) = ER1(:,:,1+n:50);
     ER2(:,:,50-n+1:50) = repmat(ER1(:,:,50),1,1,n);
     ESPdata2D.Er_grid = ER2;
-    EZ1 = ESPdata2D.Ez_grid.*a;
+    EZ1 = ESPdata2D.Ez_grid;
     EZ2 = EZ1;
     EZ2(:,:,1:50-n) = EZ1(:,:,1+n:50);
     EZ2(:,:,50-n+1:50) = repmat(EZ1(:,:,50),1,1,n);
     ESPdata2D.Ez_grid = EZ2;
-    % ESPdata2D.Er_grid = ESPdata2D.Er_grid.*a;
-    % ESPdata2D.Ez_grid = ESPdata2D.Ez_grid.*a;
 end
 [E_data,B_data] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot);
-% Epara = E_data.Epara;
-Epara = E_data.Epara_t;
+Epara = E_data.Epara;
+% Epara = E_data.Epara_t;
 % Jt = B_data.Jt;
 
 % z_target=0;
@@ -62,8 +64,8 @@ z_axis = ESPdata2D.phi_mesh_z(1,:);
 r_axis = ESPdata2D.phi_mesh_r(:,1);
 % figure;hold on;
 % [~, z_idx] = min(abs(z_axis - z_target));
-% z_indices = abs(z_axis)<=0.01;
-z_indices = abs(z_axis-0.01)<=0.01;
+z_indices = abs(z_axis)<=0.01;
+% z_indices = abs(z_axis-0.01)<=0.01;
 Epara_rt = zeros(numel(r_axis),numel(t_plot_idx));
 for i = 1:numel(t_plot_idx)
     % % E_r_tmp = squeeze(Epara(:,z_idx,i));
@@ -81,21 +83,24 @@ for i = 1:numel(t_plot_idx)
 
 end
 % xlim([0.1 0.25]);
-Emax = 200;
+% Emax = 300;
+Emax = 100;
 Emin = -1*Emax;
 ELevels = Emin:Emax;
-[T,R] = meshgrid(t_plot,r_axis);
+% [T,R] = meshgrid(t_plot,r_axis);
+[T,R] = meshgrid(t_plot+3,r_axis);
 Epara_rt = smoothdata(Epara_rt,2);
 Epara_rt(Epara_rt>Emax) = Emax;Epara_rt(Epara_rt<Emin) = Emin;
 figure;contourf(T,R,Epara_rt,ELevels,'EdgeColor','none');
 ylabel('r [m]'); % 単位は適宜変更してください
 xlabel('$\mathrm{time} [\mu s]$','Interpreter','latex');
-c=colorbar;c.Label.Interpreter = 'latex';c.Label.String = '$E_{\parallel , t}$ [V/m]';c.Label.FontSize = 18;
+c=colorbar;c.Label.Interpreter = 'latex';c.Label.String = '$E_{\parallel}$ [V/m]';c.Label.FontSize = 18;
 % ylabel('$E_{\parallel , t}$ [V/m]','Interpreter','latex'); % 単位は適宜変更してください
 % ylabel('$J_t$ [A/$\mathrm{m}^3$]','Interpreter','latex');
 % title(['r方向の電場分布 (t = ', num2str(t_idx), ', z \approx ', num2str(z_actual), ' m)']);
 % grid on;
 % legend(legendList);
+% xlim([460 475]);
 ax=gca;ax.FontSize=18;
 % currentLimits=ax.YLim;maxVal=max(abs(currentLimits));ax.YLim =[-maxVal, maxVal];
 
@@ -163,4 +168,45 @@ function [E_data,B_data] = get_Epara(grid2D,data2D,ESP,ESPdata2D,t_plot)
     E_data.Er = E_r;E_data.Ez = E_z;E_data.Et = E_t;E_data.E = E;
     B_data.Br = B_r;B_data.Bz = B_z;B_data.Bt = B_t;B_data.B = B;B_data.Jt = J_t;
     E_data.phi_perp = phi_perp;
+end
+
+function PCB = get_PCB_data(date,shotIDX,start,dt)
+    PCB.type = 1;
+    PCB.doOverwrite = false;
+    PCB.trange = 400:800;
+    PCB.n = 40;
+    PCB.start = start-399;
+    PCB.dt = dt;
+
+    % date = 230828;shotIDX=41;
+    % date = 230830;shotIDX=37;
+    % date = 240111;shotIDX=29;
+    % date = 240828;shotIDX=5;
+    % date = 250314;shotIDX=55;
+    DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシートのID
+    T=getTS6log(DOCID);
+    node='date';
+    % date=230714;
+    T=searchlog(T,node,date);
+    IDXlist = find(T.shot==shotIDX);
+    % IDXlist= 1; %[5:50 52:55 58:59];%[4:6 8:11 13 15:19 21:23 24:30 33:37 39:40 42:51 53:59 61:63 65:69 71:74];
+    % n_data=numel(IDXlist);%計測データ数
+    shotlist_a039 =T.a039(IDXlist);
+    shotlist_a040 = T.a040(IDXlist);
+    shotlist = [shotlist_a039, shotlist_a040];
+    tfshotlist_a039 =T.a039_TF(IDXlist);
+    tfshotlist_a040 =T.a040_TF(IDXlist);
+    tfshotlist = [tfshotlist_a039, tfshotlist_a040];
+    EFlist=T.EF_A_(IDXlist);
+    TFlist=T.TF_kV_(IDXlist);
+    % dtacqlist=39.*ones(n_data,1);
+    PCB.idx = shotIDX;
+    PCB.shot=shotlist;
+    PCB.tfshot=tfshotlist;
+    if PCB.shot == PCB.tfshot
+        PCB.tfshot = [0,0];
+    end
+    PCB.i_EF=EFlist;
+    PCB.TF=TFlist;
+    PCB.date = date;
 end

@@ -58,10 +58,20 @@ if NL
         E(i)=sum(E1);
     end
     EE = E;
-    W(diag_idx) = 1./EE;
-    W(W==Inf) = -1;
-    W(W<0) = max(W, [], 'all');
-    EE = (H' * H + (M * gamma) .* (C'* W * C))^(-1) * H' * G'; 
+    % W(diag_idx) = 1./EE;
+    % W(W==Inf) = -1;
+    % W(W<0) = max(W, [], 'all');
+    % EE = (H' * H + (M * gamma) .* (C'* W * C))^(-1) * H' * G'; 
+    L2 = zeros(1,10);
+    for j = 1:10
+        W(diag_idx) = 1./EE;
+        W(W==Inf) = -1;
+        W(W<0) = max(W, [], 'all');
+        EE_new = (H' * H + (M * gamma) .* (C'* W * C))^(-1) * H' * G';
+        L2(j) = sqrt(sum((EE-EE_new.').^2))/sqrt(sum(EE.^2));
+        EE = EE_new.';
+    end
+    % figure;plot(L2,'LineWidth',3);xlabel('n');ylabel('画像の相対変化率');ax=gca;ax.FontSize=18;
 
     EE = reshape(EE, sqrt(K), sqrt(K));
 else

@@ -37,7 +37,7 @@ errorbar(z,EtM35,EtD35);
 errorbar(z,EtM40,EtD40);
 legend({'TF=2.5kV','TF=3kV','TF=3.5kV','TF=4kV'});
 
-xlabel('Time [us]');
+xlabel('z [m]');
 ax=gca;ax.FontSize=18;
 ylabel('Reconnection electric field [V/t]');
 

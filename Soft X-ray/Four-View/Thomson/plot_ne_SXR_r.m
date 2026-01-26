@@ -26,20 +26,17 @@ z_indices = abs(z_axis) <= 0.03;
 ne_tmp = squeeze(ne_mat(z_indices,:));
 ne_mean = mean(ne_tmp,1);
 ne_std = std(ne_tmp,0,1);
-figure;
-% yyaxis left
-errorbar(r_axis,ne_mean,ne_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
-ylabel('Electron density [m^{-3}]');
-% title(string(time)+' us')
-ax=gca;ax.FontSize=18;
 
 pathFirstHalf = '/Users/shinjirotakeda/Library/CloudStorage/GoogleDrive-takeda-shinjiro234@g.ecc.u-tokyo.ac.jp/マイドライブ/SXR_DATA/result_matrix/LF_NLR/240111/shot';
 pathLastHalf = '/3.mat';
 % nshot_1 = 29;
-nshot_1 = 7;
+% nshot_1 = 7;
+nshot_1 = 17;
 path_1 = strcat(pathFirstHalf,num2str(nshot_1),pathLastHalf);
-load(path_1,'EE2');
-EE = EE2;
+% load(path_1,'EE2');
+% EE = EE2;
+load(path_1,'EE1');
+EE = EE1;
 
 zmin1=-200;zmax1=200;zmin2=-200;zmax2=200;
 rmin=70;rmax=375;
@@ -54,12 +51,27 @@ r_space_SXR = linspace(rmin,rmax,50);
 z_space_SXR2 = linspace(zmin2,zmax2,50);
 
 z_indices_SXR = abs(z_space_SXR2)<=0.01;
-SXR_r_tmp = EE(:,z_indices_SXR) .* 4;
+% SXR_r_tmp = EE(:,z_indices_SXR) .* 4;
+SXR_r_tmp = EE(:,z_indices_SXR);
 SXR_r_mean = mean(SXR_r_tmp,2);
 SXR_r_std = std(SXR_r_tmp,0,2);
 
-% yyaxis right
+figure;
+yyaxis left
+% errorbar(r_axis,ne_mean,ne_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
+% errorbar(r_axis-0.04,ne_mean./2,ne_std./2,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
+% ylabel('Electron density [m^{-3}]');
+% title(string(time)+' us')
+errorbar(r_space_SXR,SXR_r_mean,SXR_r_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
+ylabel('SXR intensity [a.u.]');ylim([0 1]);
+ax=gca;ax.FontSize=18;
+
+
+yyaxis right
+errorbar(r_axis-0.04,ne_mean./2,ne_std./2,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
+ylabel('Electron density [m^{-3}]');
 % errorbar(r_space_SXR,SXR_r_mean,SXR_r_std,'LineWidth',2,'Marker','o','MarkerSize',6,'CapSize',10);
 % ylabel('SXR intensity [a.u.]');ylim([0 1]);
-% xlabel('r [m]');
+xlabel('r [m]');
 % xlim([0.15 0.3])
+xlim([0.1 0.25])

@@ -49,8 +49,8 @@ for i = 1:n
     end
 end
 
-figure;imagesc(flipud(SD)./100);axis image;
-c=colorbar;clim([0 1]);c.Label.String='Relative sensitivity';c.FontSize=18;
+% figure;imagesc(flipud(SD)./100);axis image;
+% c=colorbar;clim([0 1]);c.Label.String='Relative sensitivity';c.FontSize=18;
 
 L = round(N_projection/2);
 k = find_circle(L);

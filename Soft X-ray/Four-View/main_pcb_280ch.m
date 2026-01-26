@@ -2,8 +2,8 @@
 % close all
 % clearvars -except date shotIDXList doCheck
 clearvars -except default
-addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
-addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View_Simulation';
+% addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
+% addpath '/Users/shinjirotakeda/Documents/GitHub/test-open/Soft X-ray/Four-View_Simulation';
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %280ch用新規pcbプローブのみでの磁気面（Bz）
@@ -21,6 +21,12 @@ pathname.woTFdata=getenv('woTFdata_path');%rawdata（TFoffset引いた）の保�
 pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所
 pathname.pre_processed_directory = getenv('pre_processed_directory_path');%計算結果の保存先（どこでもいい）
 pathname.MAGDATA = getenv('MAGDATA_DIR');
+pathname.github = getenv('GITHUB_DIR');
+pathname.ESP = getenv('NIFS_ESP');
+
+addpath(fullfile(pathname.github,'test-open','Electrostatic Probe'));
+addpath(fullfile(pathname.github,'test-open','Soft X-ray','Four-View_Simulation'));
+addpath(fullfile(pathname.github,'test-open','pcb_experiment'));
 
 % %%%%実験オペレーションの取得
 % prompt = {'Date:','Shot number:','doCheck:'};
@@ -79,10 +85,12 @@ dtacqlist=39.*ones(n_data,1);
 
 PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=40; %【input】rz方向のメッシュ数
-% PCB.start = 50; %plot開始時間-400
-PCB.start = 63; %plot開始時間-400
-% PCB.start = 69; %plot開始時間-400
+% PCB.n=20; %【input】rz方向のメッシュ数
+% PCB.start = 66; %plot開始時間-400
+% PCB.start = 40; %plot開始時間-400
+PCB.start = 62; %plot開始時間-400
 PCB.dt = 2;
+% PCB.dt = 5;
 
 % doCheck = false;
 % doCheck = true;
@@ -106,24 +114,26 @@ for i=1:n_data
     if doCheck
         check_signal(PCB,pathname);
     else
-        plot_psi280ch(PCB,pathname);
-        % plot_psi280ch_short(PCB,pathname);
+        % plot_psi280ch(PCB,pathname);
+        plot_psi280ch_short(PCB,pathname);
         % rgwData = get_rgw_data(PCB,pathname);
         % figure;hold on;
         % for j = 1:size(rgwData.V_all,1)
         %     plot(rgwData.t,rgwData.V_all(j,:));
         % end
         % xlim([3900 5000]);ylim([-0.5 0.5]);
-        % [B_r,B_t,b] = get_guide_field_ratio(PCB,pathname);
-        % [B_r,B_t,b] = get_guide_field_ratio2(PCB,pathname);
-        % disp(['B_r=',num2str(B_r),', B_t=',num2str(B_t),', b=',num2str(b)]);
         % data = get_guide_field_ratio3(PCB,pathname);
         % disp(['B_r=',num2str(data.Br),', B_t=',num2str(data.Bt),', b=',num2str(data.GFR)]);
         % disp(['B_t_th=',num2str(data.Bt_th),', b_th=',num2str(data.GFR_th)]);
         % get_B_reconnection(PCB,pathname);
         % [grid2D,data2D] = process_PCBdata_200ch(PCB,pathname);
-        % [magAxisList,xPointList] = get_axis_x_multi(grid2D,data2D);
+        % get_TF_current(PCB,pathname);
+
         % psiList(i,:) = xPointList.psi;
+        % profiles = plot_Br_profiles_at_MR(PCB, pathname);
+
+        % plot_HeatingPower_time(PCB,pathname);
+        % plot_psi_withLine(PCB,pathname);
     end
 end
 % figure;hold on
@@ -197,7 +207,7 @@ function answer = customDialog(default)
     dataTypeList = uicontrol('Parent', d, ...
                              'Style', 'popupmenu', ...
                              'Position', [130, 210, 200, 25], ...
-                             'String', {'psi', 'Bz', 'Bt', 'Br', 'Et', 'Jt', 'GFR', 'Bp', 'B', 'Eeff', 'Energy increment', 'Energy gain', 'Resistivity'}, ...
+                             'String', {'psi', 'Bz', 'Bt', 'Br', 'Et', 'Jt', 'Jz', 'GFR', 'Bp', 'B', 'Eeff', 'Energy increment', 'Energy gain', 'Resistivity'}, ...
                              'Value', defaultDataType);
 
     % 'check'ラジオボタン
