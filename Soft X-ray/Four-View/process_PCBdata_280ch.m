@@ -7,6 +7,7 @@ n = PCB.n;
 i_EF = PCB.i_EF;
 trange = PCB.trange;
 idx = PCB.idx;
+mu0 = 4 * pi * 1e-7; % 真空の透磁率
 
 % idx = convert_shot_number(PCB);
 
@@ -22,11 +23,15 @@ end
 
 
 if doCalculation
-    %較正係数のバージョンを日付で判別
-    sheets = sheetnames('coeff200ch.xlsx');
-    sheets = str2double(sheets);
-    sheet_date=max(sheets(sheets<=date));
-    C = readmatrix('coeff200ch.xlsx','Sheet',num2str(sheet_date));
+    
+    C = PCB.C;
+    
+    % 一時ファイルの削除（クリーンアップ）
+    % %較正係数のバージョンを日付で判別
+    % sheets = sheetnames('coeff200ch.xlsx');
+    % sheets = str2double(sheets);
+    % sheet_date=max(sheets(sheets<=date));
+    % C = readmatrix('coeff200ch.xlsx','Sheet',num2str(sheet_date));
     r_shift = 0.00;
     ok = logical(C(:,14));
     dtacq_num_list = C(:,1);
@@ -66,7 +71,7 @@ if doCalculation
     % --- 全ファイルの生成待ち ---
     if ~isempty(files_to_wait)
         disp('Waiting for Python downloads to finish...');
-        max_wait = 20; % 最大待機時間(秒)
+        max_wait = 100; % 最大待機時間(秒)
         tic;
         while true
             all_exist = true;
@@ -130,7 +135,7 @@ if doCalculation
     for i=1:length(ch)
         b(:,i) = filter(bb,aa,b(:,i));
         
-        if PCB.date >= 241110 && PCB.date <= 250118
+        if PCB.date >= 241110 %&& PCB.date <= 250125
             b(:,i) = b(:,i) - mean(b(580:600,i));
         end
 
@@ -190,10 +195,33 @@ if doCalculation
         z1_EF   = 0.78;
         z2_EF   = -0.78;
     end
-    [Bz_EF,~] = B_EF(z1_EF,z2_EF,r_EF,i_EF,n_EF,grid2D.rq,grid2D.zq,false);
-    clear EF r_EF n_EF i_EF z_EF
+    % [Bz_EF,~] = B_EF(z1_EF,z2_EF,r_EF,i_EF,n_EF,grid2D.rq,grid2D.zq,false);
+
     
-    data2D=struct(...
+    
+    
+    data2D_probe=struct(...
+        'psi',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Bz',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Bt',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Bt_th',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Br',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Bl',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Jt',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'Et',zeros(size(grid2D_probe.rq,1),size(grid2D_probe.rq,2),size(trange,2)),...
+        'dBzdt', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'dBtdt', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'dBrdt', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'dBdt_magnitude', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'dpsi_dt', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'magnetic_pressure', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'B_parallel', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'dB_parallel_dt', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'curvature', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...
+        'gradB', zeros(size(grid2D_probe.rq,1), size(grid2D_probe.rq,2), size(trange,2)), ...   % 追加 (大きさ)
+        'trange',trange);
+    
+    data2D = struct(...
         'psi',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Bz',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Bt',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
@@ -202,21 +230,15 @@ if doCalculation
         'Bl',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Jt',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'Et',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
-        'Lambda',zeros(size(grid2D.rq,1),size(grid2D.rq,2),size(trange,2)),...
         'dBzdt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'dBtdt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'dBrdt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'dBdt_magnitude', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
+        'dpsi_dt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
+        'magnetic_pressure', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'B_parallel', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'dB_parallel_dt', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'curvature_B_r', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'curvature_B_t', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'curvature_B_z', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
         'curvature', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'jxB', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'Lamor', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...
-        'gradB_r', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ... % 追加
-        'gradB_z', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ... % 追加
         'gradB', zeros(size(grid2D.rq,1), size(grid2D.rq,2), size(trange,2)), ...   % 追加 (大きさ)
         'trange',trange);
 
@@ -258,7 +280,8 @@ if doCalculation
         zpos_bt(valid_idx_bt), ...
         double(bt(t_init, valid_idx_bt))', ... % ここを修正
         'natural', 'nearest'); 
-
+    [Bz_EF,~] = B_EF(z1_EF,z2_EF,r_EF,i_EF,n_EF,rpos_bz(valid_idx_bz), zpos_bz(valid_idx_bz),false);
+    clear EF r_EF n_EF i_EF z_EF
 
     % ==========================================================
     % 時間ループ
@@ -267,128 +290,121 @@ if doCalculation
         t = trange(i); % 行番号（時間インデックス）
 
         % --- Bz の高速補完 ---
-        F_bz.Values = double(bz(t, valid_idx_bz))'; 
-        vq_bz = F_bz(grid2D.rq, grid2D.zq);
-        
-        % 【追加】 スムージング処理
-        % sigma の値を大きくするとより滑らかになります。
-        % まずは 1.0 ～ 2.0 程度で試してみてください。
+        F_bz.Values = double(bz(t, valid_idx_bz))' - Bz_EF(:); 
+
+        vq_bz = F_bz(grid2D_probe.rq, grid2D_probe.zq); 
+
         smooth_sigma = 1.5; 
-        vq_bz = imgaussfilt(vq_bz, smooth_sigma);
-        
-        B_z = -Bz_EF + vq_bz;
+        B_z = imgaussfilt(vq_bz, smooth_sigma);
 
 
         % --- Bt の高速補完 ---
         F_bt.Values = double(bt(t, valid_idx_bt))'; 
-        vq_bt = F_bt(grid2D.rq, grid2D.zq);
+        vq_bt = F_bt(grid2D_probe.rq, grid2D_probe.zq);
         
         % 【追加】 スムージング処理 (Btも同様に)
-        vq_bt = imgaussfilt(vq_bt, smooth_sigma); 
-
-        B_t = vq_bt;
+        B_t = imgaussfilt(vq_bt, smooth_sigma); 
     
         % PSI計算
-        data2D.psi(:,:,i) = cumtrapz(grid2D.rq(:,1),2*pi*B_z.*grid2D.rq(:,1),1);
+        data2D_probe.psi(:,:,i) = cumtrapz(grid2D_probe.rq(:,1),2*pi*B_z.*grid2D_probe.rq(:,1),1);
         % data2D.psi(:,:,i) = flip(get_psi(flip(B_z,1),flip(grid2D.rq(:,1)),1),1);
         % このままだと1/2πrが計算されてないので
-        [data2D.Br(:,:,i),data2D.Bz(:,:,i)]=gradient(data2D.psi(:,:,i),grid2D.zq(1,:),grid2D.rq(:,1)) ;
-        data2D.Br(:,:,i)=-data2D.Br(:,:,i)./(2.*pi.*grid2D.rq);
-        data2D.Bz(:,:,i)=data2D.Bz(:,:,i)./(2.*pi.*grid2D.rq);
-        data2D.Bt(:,:,i)=B_t;
-        data2D.Bl(:,:,i)=sqrt(data2D.Bz(:,:,i).^2+data2D.Br(:,:,i).^2+data2D.Bt(:,:,i).^2);
+        [data2D_probe.Br(:,:,i),data2D_probe.Bz(:,:,i)]=gradient(data2D_probe.psi(:,:,i),grid2D_probe.zq(1,:),grid2D_probe.rq(:,1)) ;
+        data2D_probe.Br(:,:,i)=-data2D_probe.Br(:,:,i)./(2.*pi.*grid2D_probe.rq);
+        data2D_probe.Bz(:,:,i)=data2D_probe.Bz(:,:,i)./(2.*pi.*grid2D_probe.rq);
+        data2D_probe.Bt(:,:,i)=B_t;
+        data2D_probe.Bl(:,:,i)=sqrt(data2D_probe.Bz(:,:,i).^2+data2D_probe.Br(:,:,i).^2+data2D_probe.Bt(:,:,i).^2);
+        % data2D.Brt(:,:,i)=sqrt(data2D.Bt(:,:,i).^2+data2D.Br(:,:,i).^2);
 
         
-        [gradB_z_temp, gradB_r_temp] = gradient(data2D.Bl(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
-        data2D.gradB_r(:,:,i) = gradB_r_temp;
-        data2D.gradB_z(:,:,i) = gradB_z_temp;
-        data2D.gradB(:,:,i)   = sqrt(gradB_r_temp.^2 + gradB_z_temp.^2); % 大きさ
+        data2D_probe.magnetic_pressure(:,:,i) = (data2D_probe.Bl(:,:,i)).^2 / (2 * mu0);
 
+        
+        [gradB_z_temp, gradB_r_temp] = gradient(data2D_probe.Bl(:,:,i), grid2D_probe.zq(1,:), grid2D_probe.rq(:,1));
+        data2D_probe.gradB(:,:,i)   = sqrt(gradB_r_temp.^2 + gradB_z_temp.^2); % 大きさ
 
-        data2D.Jt(:,:,i)= curl(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),data2D.Br(:,:,i))./(4*pi*1e-7);
-        [curlt,~]               = curl(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),data2D.Br(:,:,i));
-        data2D.Jt(:,:,i)        = curlt/(4*pi*1e-7);
-        [~,dRBt_dR]             = gradient(grid2D.rq.*data2D.Bt(:,:,i),grid2D.zq(1,:),grid2D.rq(:,1));
-        [dBt_dZ,~]              = gradient(data2D.Bt(:,:,i),grid2D.zq(1,:),grid2D.rq(:,1));
-        data2D.Jz(:,:,i)        = 1./grid2D.rq.*dRBt_dR./(4*pi*1e-7);
-        data2D.Jr(:,:,i)        = -dBt_dZ./(4*pi*1e-7);
+        data2D_probe.Jt(:,:,i)= curl(grid2D_probe.zq(1,:),grid2D_probe.rq(:,1),data2D_probe.Bz(:,:,i),data2D_probe.Br(:,:,i))./(4*pi*1e-7);
+        [curlt,~]               = curl(grid2D_probe.zq(1,:),grid2D_probe.rq(:,1),data2D_probe.Bz(:,:,i),data2D_probe.Br(:,:,i));
+        data2D_probe.Jt(:,:,i)        = curlt/(4*pi*1e-7);
+        
 
         if rgwflag
             timing = x/aquisition_rate==t;
-            data2D.Bt_th(:,:,i) = m0*I_TF(timing)*1e3*12./(2*pi()*grid2D.rq);
+            data2D_probe.Bt_th(:,:,i) = m0*I_TF(timing)*1e3*12./(2*pi()*grid2D_probe.rq);
         end
         
         % 磁力線方向の単位ベクトル
-        e_parallel_r = data2D.Br(:,:,i) ./ data2D.Bl(:,:,i);
-        e_parallel_z = data2D.Bz(:,:,i) ./ data2D.Bl(:,:,i);
-        e_parallel_t = data2D.Bt(:,:,i) ./ data2D.Bl(:,:,i);
-        data2D.B_parallel(:,:,i) = data2D.Br(:,:,i).*e_parallel_r + ...
-                           data2D.Bz(:,:,i).*e_parallel_z + ...
-                           data2D.Bt(:,:,i).*e_parallel_t;
-
+        e_parallel_r = data2D_probe.Br(:,:,i) ./ data2D_probe.Bl(:,:,i);
+        e_parallel_z = data2D_probe.Bz(:,:,i) ./ data2D_probe.Bl(:,:,i);
+        e_parallel_t = data2D_probe.Bt(:,:,i) ./ data2D_probe.Bl(:,:,i);
+        data2D_probe.B_parallel(:,:,i) = data2D_probe.Br(:,:,i).*e_parallel_r + ...
+                           data2D_probe.Bz(:,:,i).*e_parallel_z + ...
+                           data2D_probe.Bt(:,:,i).*e_parallel_t;
         
         if i>1
-            data2D.Et(:,:,i) = -1*(data2D.psi(:,:,i)-data2D.psi(:,:,i-1))./(2*pi()*grid2D.rq);
+            data2D_probe.Et(:,:,i) = -1*(data2D_probe.psi(:,:,i)-data2D_probe.psi(:,:,i-1))./(2*pi()*grid2D_probe.rq);
             
             dt = (trange(i) - trange(i-1))*1e-6; % 時間ステップ
-            data2D.Et(:,:,i) = data2D.Et(:,:,i)/dt;
+            data2D_probe.Et(:,:,i) = data2D_probe.Et(:,:,i)/dt;
 
-            data2D.dBzdt(:,:,i) = (data2D.Bz(:,:,i) - data2D.Bz(:,:,i-1)) / dt;
-            data2D.dBtdt(:,:,i) = (data2D.Bt(:,:,i) - data2D.Bt(:,:,i-1)) / dt;
-            data2D.dBrdt(:,:,i) = (data2D.Br(:,:,i) - data2D.Br(:,:,i-1)) / dt;
+            data2D_probe.dBzdt(:,:,i) = (data2D_probe.Bz(:,:,i) - data2D_probe.Bz(:,:,i-1)) / dt;
+            data2D_probe.dBtdt(:,:,i) = (data2D_probe.Bt(:,:,i) - data2D_probe.Bt(:,:,i-1)) / dt;
+            data2D_probe.dBrdt(:,:,i) = (data2D_probe.Br(:,:,i) - data2D_probe.Br(:,:,i-1)) / dt;
+            data2D_probe.dpsi_dt(:,:,i) = (data2D_probe.psi(:,:,i) - data2D_probe.psi(:,:,i-1)) / dt;
 
-            data2D.dBdt_magnitude(:,:,i) = sqrt(...
-                data2D.dBzdt(:,:,i).^2 + ...
-                data2D.dBtdt(:,:,i).^2 + ...
-                data2D.dBrdt(:,:,i).^2);
-            data2D.dB_parallel_dt(:,:,i) = (data2D.B_parallel(:,:,i) - data2D.B_parallel(:,:,i-1)) / dt;
+            data2D_probe.dBdt_magnitude(:,:,i) = sqrt(...
+                data2D_probe.dBzdt(:,:,i).^2 + ...
+                data2D_probe.dBtdt(:,:,i).^2 + ...
+                data2D_probe.dBrdt(:,:,i).^2);
+            data2D_probe.dB_parallel_dt(:,:,i) = (data2D_probe.B_parallel(:,:,i) - data2D_probe.B_parallel(:,:,i-1)) / dt;
         end
 
-        [Br_z, Br_r] = gradient(data2D.Br(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
-        [Bz_z, Bz_r] = gradient(data2D.Bz(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
-        [Bt_z, Bt_r] = gradient(data2D.Bt(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
-        e_Br_r = Br_r ./ data2D.Bl(:,:,i);
-        e_Br_z = Br_z ./ data2D.Bl(:,:,i);
-        e_Bz_z = Bz_z ./ data2D.Bl(:,:,i);
-        e_Bz_r = Bz_r ./ data2D.Bl(:,:,i);
-        e_Bt_z = Bt_z ./ data2D.Bl(:,:,i);
-        e_Bt_r = Bt_r ./ data2D.Bl(:,:,i);
+        [Br_z, Br_r] = gradient(data2D_probe.Br(:,:,i), grid2D_probe.zq(1,:), grid2D_probe.rq(:,1));
+        [Bz_z, Bz_r] = gradient(data2D_probe.Bz(:,:,i), grid2D_probe.zq(1,:), grid2D_probe.rq(:,1));
+        [Bt_z, Bt_r] = gradient(data2D_probe.Bt(:,:,i), grid2D_probe.zq(1,:), grid2D_probe.rq(:,1));
+        e_Br_r = Br_r ./ data2D_probe.Bl(:,:,i);
+        e_Br_z = Br_z ./ data2D_probe.Bl(:,:,i);
+        e_Bz_z = Bz_z ./ data2D_probe.Bl(:,:,i);
+        e_Bz_r = Bz_r ./ data2D_probe.Bl(:,:,i);
+        e_Bt_z = Bt_z ./ data2D_probe.Bl(:,:,i);
+        e_Bt_r = Bt_r ./ data2D_probe.Bl(:,:,i);
         
         curvature_B_r = e_Br_r .* e_parallel_r + e_Bt_r .* e_parallel_t + e_Bz_r .* e_parallel_z; % 
         curvature_B_t = zeros(size(curvature_B_r));
         curvature_B_z = e_Br_z .* e_parallel_r + e_Bt_z .* e_parallel_t + e_Bz_z .* e_parallel_z;
-        
-        data2D.curvature_B_r(:,:,i) = curvature_B_r;
-        data2D.curvature_B_t(:,:,i) = curvature_B_t;
-        data2D.curvature_B_z(:,:,i) = curvature_B_z;
-        data2D.curvature(:,:,i) = sqrt(curvature_B_r.^2+curvature_B_t.^2+curvature_B_z.^2);
-        
-        me = 9.11e-31; %電子質量
-        v_pe = 1e6; %垂直速度仮定 この時3eV。1e5m/sの時は0.03eV。1e7の時は300eV。
-        q = 1.6e-19; %電子素量
-        data2D.Lamor(:,:,i) = me*v_pe/q./data2D.Bl(:,:,i);
 
-        data2D.JxBr(:,:,i) = data2D.Jt(:,:,i).*data2D.Bz(:,:,i)-data2D.Jz(:,:,i).*data2D.Bt(:,:,i);
-        
-        % data2D.absJxB(:,:,i) = sqrt(data2D.JxBr(:,:,i).^2+data2D.JxBt(:,:,i).^2+data2D.JxBz(:,:,i).^2);
-        
-        %まだ試行錯誤中
-        % [B_r, B_z] = gradient(data2D.Bl(:,:,i), grid2D.zq(1,:), grid2D.rq(:,1));
+        data2D_probe.curvature(:,:,i) = sqrt(curvature_B_r.^2+curvature_B_t.^2+curvature_B_z.^2);
 
-        % data2D.Vcurvature(:,:,i) = cross([data2D.Br(:,:,i) data2D.Bt(:,:,i) data2D.Bz(:,:,i)],[data2D.curvature_B_r(:,:,i) data2D.curvature_B_t(:,:,i) data2D.curvature_B_z(:,:,i)]);
-        % data2D.VdeltaB(:,:,i) = cross([data2D.Br(:,:,i) data2D.Bt(:,:,i) data2D.Bz(:,:,i)], [B_r 0 B_z]);
     
     end
+
+    disp('Interpolating all coarse data to fine grid2D...');
+    
+    fields = fieldnames(data2D_probe);
+    for f = 1:length(fields)
+        fname = fields{f};
+        if strcmp(fname, 'trange')
+            data2D.(fname) = data2D_probe.(fname);
+            continue;
+        end
+        % 各変数の全時間ステップを細かいグリッドに一括補間
+        for i = 1:size(trange, 2)
+            data2D.(fname)(:,:,i) = interp2(grid2D_probe.zq, grid2D_probe.rq, data2D_probe.(fname)(:,:,i), grid2D.zq, grid2D.rq, 'spline');
+        end
+    end
+
+    
+    % save(filename, 'data2D', 'grid2D', 'shot');
     disp("calculation finished")
 else
     load(filename,'data2D','grid2D');
 end
 
-if doCalculation
-    % clearvars -except data2D grid2D shot pathname filename;
-    % filename = strcat(pathname.pre_processed_directory,'/a039_',num2str(shot(1)),'.mat');
-    % save(filename)
-    save(filename, 'data2D', 'grid2D', 'shot');
-end
+% if doCalculation
+%     % clearvars -except data2D grid2D shot pathname filename;
+%     % filename = strcat(pathname.pre_processed_directory,'/a039_',num2str(shot(1)),'.mat');
+%     % save(filename)
+%     
+% end
 
 end

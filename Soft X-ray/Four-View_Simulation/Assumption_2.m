@@ -204,7 +204,7 @@ function k = FindCircle(L)
 end
 
 function l = MCPLine_up(N_projection,Z_hole,plot_flag)
-    d_hole = 24.4; r_mcp=10; Y_hole = 413.24+12; X_hole = 208.13;
+    d_hole = 24.4; r_mcp=8.5; Y_hole = 413.24+12; X_hole = 208.13;
     Y_init=Y_hole+d_hole; X_init=X_hole-r_mcp; Z_init=Z_hole+r_mcp;
     X_end=X_hole+r_mcp; Z_end=Z_hole-r_mcp;
     Nh=N_projection-1; Dhx=(X_end-X_init)/Nh; Dhz=(Z_end-Z_init)/Nh;

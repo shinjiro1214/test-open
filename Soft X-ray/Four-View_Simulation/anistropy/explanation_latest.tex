@@ -1,0 +1,940 @@
+\documentclass[a4paper,11pt]{bxjsarticle} % エンジン自動判定
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{physics} % 微分・ブラケット記法用
+\usepackage{geometry}
+\makeatletter
+\newcommand{\subsubsubsection}{\@startsection{paragraph}{4}{\z@}%
+  {1.0\Cvs \@plus.5\Cdp \@minus.2\Cdp}%
+  {.1\Cvs \@plus.3\Cdp}%
+  {\reset@font\sffamily\normalsize}
+}
+\makeatother
+\setcounter{secnumdepth}{4}
+
+\geometry{left=25mm,right=25mm,top=30mm,bottom=30mm}
+
+\title{異方性を考慮した軟X線放射のシミュレーションと\\等方性仮定に基づく再構成手法の検証}
+\author{TS-6 Experiment Group}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本研究の目的は、現実のプラズマが持つ「見る角度によって明るさが変わる性質（異方性）」を、粒子シミュレーション（PIC）データに基づき厳密に計算する順解析を行い、そのデータを従来の「どの角度から見ても同じ明るさと仮定する手法（等方性再構成）」で解析した際に生じる誤差を定量化することにある。
+\end{abstract}
+
+% \section{現状の問題点：等方性の仮定}
+% 従来のトモグラフィ手法では、計算を簡単にするために\textbf{「プラズマの光源は、どの方向から見ても同じ明るさで光る（等方性）」}という仮定を置いている。
+% しかし、実際のプラズマ中では、電子が磁力線に沿ってビーム状に走っている場合など、\textbf{「見る角度によって明るさが異なる（異方性）」}現象が発生する。
+% この異方性を無視して無理やり画像を復元すると、実際には存在しない構造（ゴースト）が現れたり、温度を見誤ったりする危険性がある。
+
+% 本コードは、PICシミュレーションから得られる非熱的な粒子分布を直接用いることで、この「異方性がある現実」をコンピュータ上で完全再現し、既存の解析手法がどれくらい通用するのか（あるいは間違えるのか）をテストするためのものである。
+
+\section{Derivation of the Liénard-Wiechert Potentials and Electric Field}
+\subsection{Maxwell's Equations and Potentials}
+ポテンシャルによる記述から始める。電場 $\mathbf{E}$ と磁場 $\mathbf{B}$ は、スカラーポテンシャル $\phi$ とベクトルポテンシャル $\mathbf{A}$ を用いて次のように表される。
+\begin{equation}
+    \mathbf{B} = \nabla \times \mathbf{A}, \quad \mathbf{E} = -\nabla \phi - \frac{1}{c} \frac{\partial \mathbf{A}}{\partial t}
+\end{equation}
+ローレンツゲージ条件 $\nabla \cdot \mathbf{A} + \frac{1}{c}\frac{\partial \phi}{\partial t} = 0$ を課すと、マクスウェル方程式は以下の非斉次波動方程式（ダランベール方程式）に帰着される。
+\begin{align}
+    (\nabla^2 - \frac{1}{c^2}\frac{\partial^2}{\partial t^2})\phi &= -4\pi \rho \\
+    (\nabla^2 - \frac{1}{c^2}\frac{\partial^2}{\partial t^2}) \mathbf{A} &= -\frac{4\pi}{c} \mathbf{J}
+\end{align}
+
+\subsection{Retarded Potentials}
+上記の波動方程式の解は、グリーン関数法を用いることで、遅延時間 $t_r$ を含む積分形式（遅延ポテンシャル）として得られる。
+\begin{align}
+    \phi(\mathbf{r}, t) &= \int \frac{\rho(\mathbf{r}', t_r)}{|\mathbf{r} - \mathbf{r}'|} d^3x' \\
+    \mathbf{A}(\mathbf{r}, t) &= \frac{1}{c} \int \frac{\mathbf{J}(\mathbf{r}', t_r)}{|\mathbf{r} - \mathbf{r}'|} d^3x'
+\end{align}
+ここで、遅延時間 $t_r$ は以下の関係を満たす。
+\begin{equation}
+    t_r = t - \frac{|\mathbf{r} - \mathbf{r}'|}{c}
+\end{equation}
+
+\subsection{Liénard-Wiechert Potentials for a Point Charge}
+位置 $\mathbf{r}_0(t)$ を運動する点電荷 $q$ を考える。電荷密度と電流密度はデルタ関数を用いて記述される。
+\begin{align}
+    \rho(\mathbf{r}', t') &= q \delta(\mathbf{r}' - \mathbf{r}_0(t')) \\
+    \mathbf{J}(\mathbf{r}', t') &= q \mathbf{v}(t') \delta(\mathbf{r}' - \mathbf{r}_0(t'))
+\end{align}
+これを遅延ポテンシャルの式に代入して積分を行う。デルタ関数の積分において、変数変換に伴うヤコビアン（ドップラー因子）が現れる点に注意すると、以下のリエナール・ヴィーヘルト・ポテンシャルが得られる。
+\begin{equation}
+    \phi(\mathbf{r}, t) = \left[ \frac{q}{R(1 - \mathbf{n} \cdot \boldsymbol{\beta})} \right]_{ret}, \quad
+    \mathbf{A}(\mathbf{r}, t) = \left[ \frac{q \boldsymbol{\beta}}{R(1 - \mathbf{n} \cdot \boldsymbol{\beta})} \right]_{ret}
+\end{equation}
+ここで、記号の意味は以下の通りである。
+\begin{itemize}
+    \item $R(t') = |\mathbf{r} - \mathbf{r}_0(t')|$ : 観測点と電荷の距離
+    \item $\mathbf{n}(t') = \frac{\mathbf{r} - \mathbf{r}_0(t')}{R(t')}$ : 電荷から観測点への単位ベクトル
+    \item $\boldsymbol{\beta}(t') = \frac{\mathbf{v}(t')}{c}$ : 無次元化された速度
+    \item $[\dots]_{ret}$ : 遅延時間 $t_r$ における値を評価することを意味する
+\end{itemize}
+
+\subsection{Derivation of the Electric Field}
+電場 $\mathbf{E} = -\nabla \phi - \frac{1}{c} \frac{\partial \mathbf{A}}{\partial t}$ を計算するためには、観測位置 $\mathbf{r}$ と観測時間 $t$ に対する遅延時間 $t_r$ の偏微分が必要となる。
+定義式 $c(t - t_r) = R(t_r)$ を微分することで、以下の重要な関係式が導かれる。
+\begin{equation}
+    \nabla t_r = -\frac{\mathbf{n}}{c(1 - \mathbf{n} \cdot \boldsymbol{\beta})}, \quad \frac{\partial t_r}{\partial t} = \frac{1}{1 - \mathbf{n} \cdot \boldsymbol{\beta}}
+\end{equation}
+これらを用いてポテンシャルを微分し、整理すると、電場は「速度場（近傍場）」と「加速度場（放射場）」の和として得られる。
+\begin{equation}
+    \mathbf{E} = q \left[ \frac{(\mathbf{n} - \boldsymbol{\beta})(1 - \beta^2)}{\kappa^3 R^2} \right]_{ret} + \frac{q}{c} \left[ \frac{\mathbf{n} \times \{(\mathbf{n} - \boldsymbol{\beta}) \times \dot{\boldsymbol{\beta}}\}}{\kappa^3 R} \right]_{ret}
+\end{equation}
+ここで $\kappa = 1 - \mathbf{n} \cdot \boldsymbol{\beta}$ である。
+第1項は $1/R^2$ に比例するクーロン場であり、第2項が $1/R$ に比例する放射場である。
+
+\subsection{Non-Relativistic Limit (The Final Formula)}
+ここで、非相対論的な極限（$v \ll c$、すなわち $\beta \ll 1$）を考える。
+このとき、以下の近似が成立する。
+\begin{itemize}
+    \item $\kappa = 1 - \mathbf{n} \cdot \boldsymbol{\beta} \approx 1$
+    \item $\mathbf{n} - \boldsymbol{\beta} \approx \mathbf{n}$
+    \item 遅延時間の差は無視できるため、$t_r \approx t$ とみなせる（遠方場の場合、位相としてのみ残るが、振幅としては現在の加速度を用いてよい）。
+\end{itemize}
+放射場（第2項）のみを取り出し、近似を適用すると：
+\begin{equation}
+    \mathbf{E}_{rad} \approx \frac{q}{c} \frac{\mathbf{n} \times (\mathbf{n} \times \dot{\boldsymbol{\beta}})}{R}
+\end{equation}
+ここで $\dot{\boldsymbol{\beta}} = \dot{\mathbf{v}}/c = \mathbf{a}/c$ であるから、
+\begin{equation}
+    \mathbf{E}_{rad} \approx \frac{q}{c^2 R} \mathbf{n} \times (\mathbf{n} \times \mathbf{a})
+\end{equation}
+さらに、双極子モーメントを $\mathbf{d} = q \mathbf{r}_0$ と定義すれば、その2階微分は $\ddot{\mathbf{d}} = q \mathbf{a}$ となる。
+これを代入することで、目的の式が得られる。
+\begin{equation}
+    \mathbf{E}_{rad} = \frac{\mathbf{n} \times (\mathbf{n} \times \ddot{\mathbf{d}})}{c^2 R}
+\end{equation}
+
+\section{Derivation of the Frequency Spectrum of Radiation}
+
+前節で導出した時間領域における非相対論的な放射電場の式から出発する。
+\begin{equation}
+    \mathbf{E}_{rad}(t) = \frac{1}{c^2 R} \mathbf{n} \times (\mathbf{n} \times \ddot{\mathbf{d}}(t))
+\end{equation}
+ここで、電場のフーリエ変換 $\hat{\mathbf{E}}_{rad}(\omega)$ を以下のように定義して計算する。
+\begin{equation}
+    \hat{\mathbf{E}}_{rad}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \mathbf{E}_{rad}(t) e^{i\omega t} dt
+\end{equation}
+上式に $\mathbf{E}_{rad}(t)$ を代入すると、$\mathbf{n}$ と $R$ は（遠方場において時間変化しないとみなすと）積分の外に出せるため、以下のようになる。
+\begin{equation}
+    \hat{\mathbf{E}}_{rad}(\omega) = \frac{1}{c^2 R} \mathbf{n} \times \left( \mathbf{n} \times \left[ \frac{1}{2\pi} \int_{-\infty}^{\infty} \ddot{\mathbf{d}}(t) e^{i\omega t} dt \right] \right)
+\end{equation}
+ここで、双極子モーメント $\mathbf{d}(t)$ とそのフーリエ成分 $\hat{\mathbf{d}}(\omega)$ の関係（逆変換）を以下のように定義する。
+\begin{equation}
+    \mathbf{d}(t) = \int_{-\infty}^{\infty} \hat{\mathbf{d}}(\omega') e^{-i\omega' t} d\omega'
+\end{equation}
+これを時間 $t$ で2階微分すると、加速度項 $\ddot{\mathbf{d}}(t)$ が得られる。
+\begin{equation}
+    \ddot{\mathbf{d}}(t) = \frac{d^2}{dt^2} \int_{-\infty}^{\infty} \hat{\mathbf{d}}(\omega') e^{-i\omega' t} d\omega' = \int_{-\infty}^{\infty} (-i\omega')^2 \hat{\mathbf{d}}(\omega') e^{-i\omega' t} d\omega' = - \int_{-\infty}^{\infty} \omega'^2 \hat{\mathbf{d}}(\omega') e^{-i\omega' t} d\omega'
+\end{equation}
+この $\ddot{\mathbf{d}}(t)$ の表式を、先の $\hat{\mathbf{E}}_{rad}(\omega)$ の積分の中括弧 $[\dots]$ 内に代入する。
+\begin{align}
+    \left[ \dots \right] &= \frac{1}{2\pi} \int_{-\infty}^{\infty} \left( - \int_{-\infty}^{\infty} \omega'^2 \hat{\mathbf{d}}(\omega') e^{-i\omega' t} d\omega' \right) e^{i\omega t} dt \\
+    &= - \int_{-\infty}^{\infty} \omega'^2 \hat{\mathbf{d}}(\omega') \left( \frac{1}{2\pi} \int_{-\infty}^{\infty} e^{i(\omega - \omega')t} dt \right) d\omega'
+\end{align}
+ここで、時間の積分はディラックのデルタ関数 $2\pi \delta(\omega - \omega')$ を与える公式
+\begin{equation}
+    \frac{1}{2\pi} \int_{-\infty}^{\infty} e^{i(\omega - \omega')t} dt = \delta(\omega - \omega')
+\end{equation}
+を用いると、$\omega'$ に関する積分が実行できる。
+\begin{align}
+    \left[ \dots \right] &= - \int_{-\infty}^{\infty} \omega'^2 \hat{\mathbf{d}}(\omega') \delta(\omega - \omega') d\omega' \notag \\
+    &= - \omega^2 \hat{\mathbf{d}}(\omega)
+\end{align}
+したがって、周波数領域における放射電場 $\hat{\mathbf{E}}_{rad}(\omega)$ は次のように求まる。
+\begin{equation}
+    \hat{\mathbf{E}}_{rad}(\omega) = - \frac{\omega^2}{c^2 R} \mathbf{n} \times (\mathbf{n} \times \hat{\mathbf{d}}(\omega))
+\end{equation}
+なお、ここで $\hat{\mathbf{d}}(\omega)$ は定義より以下で与えられる。
+\begin{equation}
+    \hat{\mathbf{d}}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \mathbf{d}(t) e^{i\omega t} dt
+\end{equation}
+
+最後に、単位立体角あたり、単位周波数あたりの放射エネルギー（スペクトル分布）$\frac{dW}{d\omega d\Omega}$ を求める。
+
+
+ある一方向（立体角 $d\Omega$）に放射される全エネルギー $d W$ は、ポインティング・ベクトル $S(t) = \frac{c}{4\pi}|\bm{E}(t)|^2$ の時間積分に面積要素 $dA = R^2 d\Omega$ を乗じたものである。
+\begin{equation}
+    \frac{dW}{d\Omega} = R^2 \int_{-\infty}^{\infty} S(t) dt = \frac{c R^2}{4\pi} \int_{-\infty}^{\infty} |\bm{E}(t)|^2 dt
+\end{equation}
+ここで、パーセバルの等式（エネルギー保存則） $\int_{-\infty}^{\infty} |f(t)|^2 dt = 2\pi \int_{-\infty}^{\infty} |\hat{f}(\omega)|^2 d\omega$ を用いると、周波数領域での表現が得られる。ただし、物理的な周波数は正の値 $\omega > 0$ のみ考えるため、負の周波数成分を折り返して 2倍する。
+\begin{equation}
+    \frac{dW}{d\Omega} = \frac{c R^2}{4\pi} \cdot 4\pi \int_{0}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega = c R^2 \int_{0}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega
+\end{equation}
+したがって、単位周波数・単位立体角あたりの放射エネルギーは次式となる。
+\begin{equation}
+    \frac{dW}{d\omega d\Omega} = c R^2 |\hat{\mathbf{E}}_{rad}(\omega)|^2
+\end{equation}
+これに先ほど求めた $\hat{\mathbf{E}}_{rad}(\omega)$ を代入する。
+\begin{align}
+    \frac{dW}{d\omega d\Omega} &= c R^2 \left| - \frac{\omega^2}{c^2 R} \mathbf{n} \times (\mathbf{n} \times \hat{\mathbf{d}}(\omega)) \right|^2 \\
+    &= c R^2 \cdot \frac{\omega^4}{c^4 R^2} \left| \mathbf{n} \times (\mathbf{n} \times \hat{\mathbf{d}}(\omega)) \right|^2 \\
+    &= \frac{\omega^4}{c^3} \left| \mathbf{n} \times (\mathbf{n} \times \hat{\mathbf{d}}(\omega)) \right|^2
+\end{align}
+
+
+\section{Derivation of Total Emissivity from Plasma}
+
+前節で導出した単一の衝突プロセスにおける放射エネルギースペクトル $\frac{dW}{d\omega d\Omega}$ を、プラズマ中の多粒子系へと拡張し、単位体積・単位時間あたりの放射パワー（放射率）を導出する。
+
+\subsection{Integration over Impact Parameters (Cross-section)}
+単一の電子が速度 $v$ でイオン密度 $n_i$ の領域を通過する場合を考える。
+単位時間あたりに電子が経験する衝突の回数は、流束（Flux）と断面積（Cross-section）の積で表される。
+微小断面積 $d\sigma$ は、衝突径数（インパクトパラメータ）$b$ と、衝突の方位角 $\phi$ を用いて次のように書ける。
+\begin{equation}
+    d\sigma = b \, db \, d\phi
+\end{equation}
+したがって、電子密度 $n_e$、イオン密度 $n_i$、相対速度 $v$ のプラズマにおける、単位体積・単位時間・単位周波数・単位立体角あたりの総放射エネルギー（放射率 $j_{\omega, \Omega}$）は、単一衝突の放射エネルギーを全衝突径数および全方位角で積分し、粒子の流束密度を掛けることで得られる。
+\begin{equation}
+    \frac{dW_{vol}}{dt \, d\omega \, d\Omega} = n_e n_i v \int_{b_{min}}^{b_{max}} \int_{0}^{2\pi} \frac{dW}{d\omega d\Omega} \, d\phi \, b \, db
+\end{equation}
+ここで、積分範囲 $b_{min}, b_{max}$ は、それぞれ量子力学的限界やデバイ長などで決まる物理的なカットオフである。
+
+\subsubsection{$b_{\max}$（断熱限界）}
+電子が通り過ぎる時間 $b/v$ が、光の振動周期 $1/\omega$ よりも短い場合のみ放射が起きる。この限界距離を $b_{\max}$ とする。
+\begin{equation}
+    b_{\max} = \frac{v}{\omega} 
+\end{equation}
+
+\subsubsection{$b_{\min}$（量子限界と古典限界）}
+
+制動放射の計算において、電子はイオンに対して無限に近づくことはできず、物理的な最小接近距離 $b_{\min}$ が存在する。この距離は、量子力学的制約と古典力学的制約のうち、より制限の厳しい（値が大きい）方によって決定される。
+
+\begin{equation}
+    b_{\min} = \max\left( \underbrace{\frac{\hbar}{m_e v}}_{\text{量子論的限界}}, \quad \underbrace{\frac{Z e^2}{4\pi\varepsilon_0 m_e v^2}}_{\text{古典論的限界}} \right)
+\end{equation}
+
+ここで、各項の物理的意味は以下の通りである。
+
+\begin{itemize}
+    \item \textbf{量子論的限界}（第一項）: \\
+    電子は点粒子ではなく波の性質を持つ。ハイゼンベルクの不確定性原理（$\Delta x \Delta p \gtrsim \hbar$）により、運動量 $p \approx m_e v$ を持つ電子の位置はド・ブロイ波長程度の広がりを持つため、これ以上イオンに局在して近づくことはできない。高速な電子（高温領域）で支配的となる項である。
+    
+    \item \textbf{古典論的限界}（第二項）: \\
+    古典力学的に、電子の運動エネルギーがクーロン相互作用によるポテンシャルエネルギーと同程度になる距離（ランダウ長）である。これより内側では、電子は強い静電力によって軌道を大きく曲げられるため、直進近似が成立しなくなる。低速な電子（低温領域）で支配的となる項である。
+\end{itemize}
+
+
+\subsection{Geometry and Dipole Definition}
+積分を実行するために、双極子モーメント $\mathbf{d}$ と観測方向 $\mathbf{n}$ の具体的な成分を設定する。
+画像の手書きメモに従い、電子が直線軌道を移動すると近似（または衝突の瞬間を記述）し、以下のように座標を設定する。
+
+\begin{itemize}
+    \item \textbf{Dipole moment vector} $\mathbf{d}(t)$:
+    衝突径数ベクトル方向を $x, y$ 平面に取り、進行方向を $z$ 軸（$vt$）とすると、
+    \begin{equation}
+        \mathbf{d}(t) = \mqty(b \cos\phi \\ b \sin\phi \\ vt)
+    \end{equation}
+    ここで $\phi$ は衝突面の方位角であり、イオンが電子の周囲に一様に分布していると仮定するため、$0 \sim 2\pi$ で積分される変数である。
+
+    \item \textbf{Observation vector} $\mathbf{n}$:
+    観測者が速度ベクトルに対して角度 $\alpha$（視線角）の方向にいるとすると、
+    \begin{equation}
+        \mathbf{n} = \mqty(\sin\alpha \\ 0 \\ \cos\alpha)
+    \end{equation}
+    ここで $\alpha$ の範囲は $0 \sim \pi$ である。
+\end{itemize}
+
+\subsection{Fourier Transform of the Dipole}
+周波数領域での計算に必要な $\hat{\mathbf{d}}(\omega)$ を計算する。
+有限の時間区間 $[t_{min}, t_{max}]$（あるいは衝突が有効な時間スケール）での積分を考えると、
+\begin{equation}
+    \hat{\mathbf{d}}(\omega) = \frac{1}{2\pi} \int_{t_{min}}^{t_{max}} \mathbf{d}(t) e^{i\omega t} dt
+\end{equation}
+この積分により、スペクトル強度の計算に必要な $\hat{\mathbf{d}}$ の各成分が決定される。
+周波数 $\omega$ の範囲は、概ね $0 \sim v/b_{min}$ 程度が主要な寄与を持つ。
+
+\subsection{Gyro-averaging (Averaging over Velocity Space)}
+プラズマ中の電子は磁場に巻き付いて旋回運動（ジャイロ運動）をしている。
+観測される放射を正確に記述するには、電子の速度ベクトル $\mathbf{v}$ が磁力線の周りを回転している効果（ジャイロ位相 $\varphi$）について平均化する必要がある。
+
+速度ベクトルを磁場に垂直な成分 $v_\perp$ と平行な成分 $v_\parallel$ に分解し、ジャイロ角 $\varphi$ を導入すると、
+\begin{equation}
+    \mathbf{v} = \mqty(v_\perp \cos\varphi \\ v_\perp \sin\varphi \\ v_\parallel) = \mqty(v \sin\theta_p \cos\varphi \\ v \sin\theta_p \sin\varphi \\ v \cos\theta_p)
+\end{equation}
+ここで $\theta_p$ はピッチ角（Pitch Angle）である。
+ジャイロ平均された放射率は、先ほどの放射率を $\varphi$ について $0$ から $2\pi$ まで積分し、平均化することで得られる。
+\begin{equation}
+    \left\langle \frac{dW_{vol}}{dt \, d\omega \, d\Omega} \right\rangle_{gyro} = \frac{1}{2\pi} \int_{0}^{2\pi} \left( \frac{dW_{vol}}{dt \, d\omega \, d\Omega} \right) d\varphi
+\end{equation}
+
+\subsection{Implementation Structure (Look-Up Table)}
+以上の計算プロセスは複雑であるため、シミュレーション実装においてはルックアップテーブル（LUT）として整理される。
+
+\begin{itemize}
+    \item \textbf{Input Parameters:}
+    \begin{itemize}
+        \item $\theta_p$: 電子のピッチ角
+        \item $v$: 電子の速度
+        \item $\alpha$: 観測者と磁力線のなす角（視線角）
+    \end{itemize}
+    \item \textbf{Process:}
+    上記の積分（$b$ 積分、$\phi$ 積分、ジャイロ平均 $\varphi$ 積分）を数値的に実行する。
+    \item \textbf{Output:}
+    \begin{itemize}
+        \item $P(\omega)$: 周波数ごとの放射パワー（スペクトル）
+    \end{itemize}
+\end{itemize}
+
+
+% \subsection{制動放射強度の微視的定式化}
+
+% \subsubsection{放射電場ベクトルと外積の幾何学}
+
+% 出発点は、加速度 $\dot{\bm{v}}$ を持つ電荷 $q$ が遠方 $R$ に作る放射電場 $\bm{E}_{\mathrm{rad}}$ の式である。
+
+% \begin{equation}
+%     \bm{E}_{\mathrm{rad}} = \frac{q}{c^2 R} \left[ \bm{n} \times (\bm{n} \times \dot{\bm{v}}) \right]
+% \end{equation}
+
+% ここで $\bm{n}$ は観測方向への単位ベクトルである。この式のベクトル三重積 $\bm{A} \times (\bm{B} \times \bm{C})$ の部分を詳細に解析する。
+
+% まず、内側の外積 $\bm{u} = \bm{n} \times \dot{\bm{v}}$ を考える。外積の定義より、ベクトル $\bm{u}$ の大きさは、$\bm{n}$ と $\dot{\bm{v}}$ のなす角を $\psi$ とすると以下のようになる。
+
+% \begin{equation}
+%     |\bm{u}| = |\bm{n}| |\dot{\bm{v}}| \sin\psi = 1 \cdot \dot{v} \sin\psi = \dot{v} \sin\psi
+% \end{equation}
+
+% このベクトル $\bm{u}$ の向きは、$\bm{n}$ と $\dot{\bm{v}}$ の両方に垂直である。
+
+% 次に、外側の外積 $\bm{n} \times \bm{u}$ を計算する。
+% $\bm{u}$ は定義上 $\bm{n}$ に垂直なベクトルであるため、$\bm{n}$ と $\bm{u}$ のなす角は $90^\circ (\pi/2)$ となる。したがって、三重積全体の大きさは以下のようになる。
+
+% \begin{equation}
+%     |\bm{n} \times (\bm{n} \times \dot{\bm{v}})| = |\bm{n} \times \bm{u}| = |\bm{n}| |\bm{u}| \sin(90^\circ)
+% \end{equation}
+
+% $\sin(90^\circ)=1$、および $|\bm{n}|=1$ を代入すると、
+
+% \begin{equation}
+%     |\bm{n} \times (\bm{n} \times \dot{\bm{v}})| = 1 \cdot (\dot{v} \sin\psi) \cdot 1 = \dot{v} \sin\psi
+% \end{equation}
+
+% よって、放射電場の大きさ $|\bm{E}_{\mathrm{rad}}|$ は以下のように求まる。
+
+% \begin{equation}
+%     |\bm{E}_{\mathrm{rad}}| = \frac{q}{c^2 R} \dot{v} \sin\psi
+% \end{equation}
+
+% 物理的には、これは「加速度ベクトルのうち、視線方向 $\bm{n}$ に垂直な射影成分だけが電磁波として放射される（電磁波は横波である）」ことを意味している。
+
+% \subsubsection{ポインティング・ベクトル（エネルギーフラックス）}
+
+% 単位時間・単位面積あたりに流れるエネルギー（ポインティング・ベクトル $\bm{S}$）の大きさ $S$ を計算する。CGSガウス単位系では以下の関係がある。
+
+% \begin{equation}
+%     S = \frac{c}{4\pi} |\bm{E}_{\mathrm{rad}}|^2
+% \end{equation}
+
+% 先ほど求めた電場の大きさを代入する。
+
+% \begin{equation}
+%     S = \frac{c}{4\pi} \left( \frac{q \dot{v} \sin\psi}{c^2 R} \right)^2
+% \end{equation}
+
+% これを展開して整理する。
+
+% \begin{equation}
+%     S = \frac{c}{4\pi} \frac{q^2 \dot{v}^2 \sin^2\psi}{c^4 R^2} = \frac{q^2 \dot{v}^2}{4\pi c^3 R^2} \sin^2\psi
+% \end{equation}
+
+% \subsubsection{単位立体角あたりの放射強度}
+
+% 最後に、観測点での単位面積あたりのエネルギー $S$ を、放射源からの「単位立体角あたりの放射エネルギー」 $\frac{dP}{d\Omega}$ に変換する。
+% 距離 $R$ における球面上の微小面積 $dA$ と微小立体角 $d\Omega$ の関係は $dA = R^2 d\Omega$ である。
+% したがって、放射されるパワー $P$ について以下の関係が成り立つ。
+
+% \begin{equation}
+%     dP = S \cdot dA = S \cdot (R^2 d\Omega)
+% \end{equation}
+
+% よって、
+
+% \begin{equation}
+%     \frac{dP}{d\Omega} = S \cdot R^2
+% \end{equation}
+
+% これに先ほどの $S$ の式を代入すると、距離 $R^2$ の項が約分されて消える（逆二乗則による相殺）。
+
+% \begin{equation}
+%     \frac{dP}{d\Omega} = \left( \frac{q^2 \dot{v}^2}{4\pi c^3 R^2} \sin^2\psi \right) \cdot R^2
+% \end{equation}
+
+% 最終的に、以下の公式が得られる。
+
+% \begin{equation}
+%     \frac{dP}{d\Omega} = \frac{q^2 \dot{v}^2}{4\pi c^3} \sin^2\psi
+% \end{equation}
+
+% この式は、電気双極子放射が加速度ベクトルに対して垂直な方向（$\psi = 90^\circ$）で最大となり、平行な方向（$\psi = 0^\circ, 180^\circ$）ではゼロになることを示している。
+
+% \subsubsection{単位立体角・単位周波数あたりの放射スペクトル}
+
+% 前節で求めた放射強度は時間領域の瞬時値である。観測される軟X線スペクトルを議論するためには、これを周波数領域へ変換する必要がある。ここでは、電場強度のフーリエ変換を用いて、単位周波数・単位立体角あたりの放射エネルギー $\frac{dW}{d\omega d\Omega}$ を厳密に導出する。
+
+% まず、電気双極子放射の電場 $\bm{E}(t)$ のフーリエ変換 $\hat{\bm{E}}(\omega)$ を以下のように定義する。
+% \begin{equation}
+%     \hat{\bm{E}}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \bm{E}(t) e^{i\omega t} dt
+% \end{equation}
+% これより、時間領域の電場は逆変換で表される。
+% \begin{equation}
+%     \bm{E}(t) = \int_{-\infty}^{\infty} \hat{\bm{E}}(\omega) e^{-i\omega t} d\omega
+% \end{equation}
+
+% ある一方向（立体角 $d\Omega$）に放射される全エネルギー $d W$ は、ポインティング・ベクトル $S(t) = \frac{c}{4\pi}|\bm{E}(t)|^2$ の時間積分に面積要素 $dA = R^2 d\Omega$ を乗じたものである。
+% \begin{equation}
+%     \frac{dW}{d\Omega} = R^2 \int_{-\infty}^{\infty} S(t) dt = \frac{c R^2}{4\pi} \int_{-\infty}^{\infty} |\bm{E}(t)|^2 dt
+% \end{equation}
+% ここで、パーセバルの等式（エネルギー保存則） $\int_{-\infty}^{\infty} |f(t)|^2 dt = 2\pi \int_{-\infty}^{\infty} |\hat{f}(\omega)|^2 d\omega$ を用いると、周波数領域での表現が得られる。ただし、物理的な周波数は正の値 $\omega > 0$ のみ考えるため、負の周波数成分を折り返して 2倍する。
+% \begin{equation}
+%     \frac{dW}{d\Omega} = \frac{c R^2}{4\pi} \cdot 4\pi \int_{0}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega = c R^2 \int_{0}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega
+% \end{equation}
+% したがって、単位周波数・単位立体角あたりの放射エネルギーは次式となる。
+% \begin{equation}
+%     \frac{dW}{d\omega d\Omega} = c R^2 |\hat{\bm{E}}(\omega)|^2
+% \end{equation}
+
+% 次に、$\hat{\bm{E}}(\omega)$ を双極子モーメント $\bm{d}(t)$ を用いて具体的に書き下す。
+% 遠方場における双極子放射の電場は、加速度 $\ddot{\bm{d}}(t)$ の視線方向への射影成分に比例する。
+% \begin{equation}
+%     \bm{E}(t) = \frac{\sin\theta}{c^2 R} \ddot{\bm{d}}(t)
+% \end{equation}
+% ここで $\theta$ は双極子モーメント（加速度ベクトル）と観測方向のなす角である。
+% この式のフーリエ変換を行う。双極子モーメント $\bm{d}(t)$ のフーリエ変換を $\hat{\bm{d}}(\omega)$ とすると、その2階微分 $\ddot{\bm{d}}(t)$ のフーリエ変換は $-\omega^2 \hat{\bm{d}}(\omega)$ となる。
+% \begin{align}
+%     \hat{\bm{E}}(\omega) &= \frac{\sin\theta}{c^2 R} \frac{1}{2\pi} \int_{-\infty}^{\infty} \ddot{\bm{d}}(t) e^{i\omega t} dt \\
+%     &= \frac{\sin\theta}{c^2 R} \left( -\omega^2 \hat{\bm{d}}(\omega) \right)
+% \end{align}
+
+% これを代入すると、双極子放射のスペクトル強度の基本式が得られる。
+% \begin{equation}
+%     \frac{dW}{d\omega d\Omega} = c R^2 \left| - \frac{\omega^2 \sin\theta}{c^2 R} \hat{\bm{d}}(\omega) \right|^2 = \frac{1}{c^3} \omega^4 |\hat{\bm{d}}(\omega)|^2 \sin^2\theta
+% \end{equation}
+
+% \subsubsection{単位立体角・単位周波数あたりの放射スペクトル}
+
+% 電気双極子放射のエネルギー強度スペクトルを考える。電場強度のフーリエ変換を以下のように定義する。
+% \begin{equation}
+%     \hat{E}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} E(t) e^{i\omega t} dt
+% \end{equation}
+% 同様に電気双極子モーメント $\bm{d}(t)$ のフーリエ変換を定義する。
+% \begin{equation}
+%     \hat{d}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} d(t) e^{i\omega t} dt
+% \end{equation}
+% ここで、$\ddot{d}(t)$ のフーリエ変換は部分積分により $-\omega^2 \hat{d}(\omega)$ となるため、放射電場の式（遠方場）を用いると、周波数領域の電場は次のように書ける。
+% \begin{equation}
+%     \hat{E}(\omega) = - \frac{\sin\theta}{c^2 R} \omega^2 \hat{d}(\omega)
+% \end{equation}
+% 単位周波数・単位立体角あたりの放射エネルギーは $\frac{dW}{d\omega d\Omega} = c R^2 |\hat{E}(\omega)|^2$ で与えられるため、上式を代入して以下の基本式を得る。
+% \begin{equation}
+%     \frac{dW}{d\omega d\Omega} = \frac{1}{c^3} \omega^4 |\hat{d}(\omega)|^2 \sin^2\theta
+% \end{equation}
+
+% 次に、衝突過程における $\omega^2 \hat{d}(\omega)$ を評価する。$\bm{d}(t) = -e \bm{r}(t)$ より $\ddot{\bm{d}} = -e \dot{\bm{v}}$ であるから、
+% \begin{equation}
+%     \omega^2 \hat{d}(\omega) = - \frac{1}{2\pi} \int_{-\infty}^{\infty} \ddot{d}(t) e^{i\omega t} dt = \frac{e}{2\pi} \int_{-\infty}^{\infty} \dot{v}(t) e^{i\omega t} dt
+% \end{equation}
+% 電子が原子核のクーロン場の影響を受ける時間スケール $\tau \equiv b/v$ に対し、興味のある周波数領域が $\omega \tau \ll 1$ （低周波極限）であるとすると、積分内の位相因子は $e^{i\omega t} \approx 1$ と近似できる。
+% このとき、積分は衝突による速度変化の垂直成分となる。運動方程式 $m \dot{v} = F_{\perp} = \frac{Z e^2}{R^2} \cos\phi$ （ここで $\phi$ は粒子位置の角度）を用いて積分変数を時間 $t$ から角度 $\phi$ に変換する（$dt = \frac{R}{v} \frac{d\phi}{\cos\phi} = \frac{b}{v} \frac{d\phi}{\cos^2\phi}$ 等の幾何学的関係を用いる）と、
+% \begin{align}
+%     \omega^2 \hat{d}(\omega) &\approx \frac{e}{2\pi} \int_{-\infty}^{\infty} \frac{Z e^2 \cos\phi}{m R^2} dt \\
+%     &= \frac{Z e^3}{2\pi m} \int_{-\infty}^{\infty} \frac{\cos\phi}{R^2} dt \\
+%     &= \frac{Z e^3}{2 \pi v b m} \int_{-\pi/2}^{\pi/2} \cos\phi d\phi \\
+%     &= \frac{Z e^3}{\pi v b m}
+% \end{align}
+% となる。これを代入すると、インパクトパラメータ $b$ で衝突した単一電子からの放射強度は以下となる。
+% \begin{equation}
+%     \frac{dW(b)}{d\omega d\Omega} = \frac{1}{c^3} \left( \frac{Z e^3}{\pi v b m} \right)^2 \sin^2\theta = \frac{Z^2 e^6 \sin^2\theta}{\pi^2 c^3 m^2 v^2 b^2}
+% \end{equation}
+
+% 最後に、プラズマ全体からの放射（Emissivity）を求める。
+% 電子密度 $n_e$、イオン密度 $n_i$ のプラズマ中で、電子が一様な速さ $v$ を持っていると仮定して、単位体積・単位時間・単位周波数・単位立体角あたりの放射エネルギー $\frac{d W}{d\omega dt dV d\Omega}$ を考える。
+% 一つのイオンに対して、インパクトパラメータ $b \sim b+db$ の間を単位時間あたり通過する電子の数は $n_e v \cdot 2\pi b db$ であることを用いて積分を行う。
+
+% \begin{align}
+%     \frac{d W}{d\omega dt dV d\Omega} &= n_i \int_{b_{min}}^{b_{max}} \left( \frac{dW(b)}{d\omega d\Omega} \right) (n_e v 2\pi b db) \\
+%     &= 2\pi n_e n_i v \int_{b_{min}}^{b_{max}} \left( \frac{Z^2 e^6 \sin^2\theta}{\pi^2 c^3 m^2 v^2 b^2} \right) b db \\
+%     &= \frac{2 n_e n_i Z^2 e^6 \sin^2\theta}{\pi c^3 m^2 v} \int_{b_{min}}^{b_{max}} \frac{db}{b} \\
+%     &= \frac{2 e^6}{\pi c^3 m^2 v} n_e n_i Z^2 \sin^2\theta \ln\left( \frac{b_{max}}{b_{min}} \right)
+% \end{align}
+
+% ここで、Gaunt係数の定義 $g_{ff} = \frac{\sqrt{3}}{\pi} \ln(b_{max}/b_{min})$ を用いて対数項を書き換えると、最終的に以下の式が得られる。
+
+% \begin{equation}
+%     \frac{d W}{d\omega dt dV d\Omega} = \frac{2 e^6}{\sqrt{3} c^3 m^2 v} n_e n_i Z^2 g_{ff} \sin^2\theta
+% \end{equation}
+
+
+% \subsubsection{Gaunt係数 $g_{ff}$ の定義と厳密計算}
+
+% \begin{equation}
+%     g_{ff} = \frac{\sqrt{3}}{\pi} \ln\left( \frac{b_{\max}}{b_{\min}} \right)
+% \end{equation}
+% ここで $b$ は電子がイオンの横を通り過ぎる際の距離を表す。
+
+% \subsubsubsection{$b_{\max}$（断熱限界）}
+% 電子が通り過ぎる時間 $b/v$ が、光の振動周期 $1/\omega$ よりも短い場合のみ放射が起きる。この限界距離を $b_{\max}$ とする。
+% \begin{equation}
+%     b_{\max} = \frac{v}{\omega} 
+% \end{equation}
+
+% \subsubsubsection{$b_{\min}$（量子限界と古典限界）}
+
+% 制動放射の計算において、電子はイオンに対して無限に近づくことはできず、物理的な最小接近距離 $b_{\min}$ が存在する。この距離は、量子力学的制約と古典力学的制約のうち、より制限の厳しい（値が大きい）方によって決定される。
+
+% \begin{equation}
+%     b_{\min} = \max\left( \underbrace{\frac{\hbar}{m_e v}}_{\text{量子論的限界}}, \quad \underbrace{\frac{Z e^2}{4\pi\varepsilon_0 m_e v^2}}_{\text{古典論的限界}} \right)
+% \end{equation}
+
+% ここで、各項の物理的意味は以下の通りである。
+
+% \begin{itemize}
+%     \item \textbf{量子論的限界}（第一項）: \\
+%     電子は点粒子ではなく波の性質を持つ。ハイゼンベルクの不確定性原理（$\Delta x \Delta p \gtrsim \hbar$）により、運動量 $p \approx m_e v$ を持つ電子の位置はド・ブロイ波長程度の広がりを持つため、これ以上イオンに局在して近づくことはできない。高速な電子（高温領域）で支配的となる項である。
+    
+%     \item \textbf{古典論的限界}（第二項）: \\
+%     古典力学的に、電子の運動エネルギーがクーロン相互作用によるポテンシャルエネルギーと同程度になる距離（ランダウ長）である。これより内側では、電子は強い静電力によって軌道を大きく曲げられるため、直進近似が成立しなくなる。低速な電子（低温領域）で支配的となる項である。
+% \end{itemize}
+
+% 本コードでは、この $b_{\max}$ および $b_{\min}$ を物理定数からステップごとに計算し、その比の対数を取ることで Gaunt factor $g_{ff}$ を求めている。
+
+
+% % \subsubsection{多重衝突による巨視的放射強度（単位体積・単位時間あたり）}
+
+% % 実際のプラズマ中では、多数の電子とイオンが存在し、それらが連続的に衝突することで放射が生じる。
+% % 電子密度 $n_e$、イオン密度 $n_i$ のプラズマを考える。速度 $v$ を持つ1個の電子が、単位時間あたりに衝突パラメータ $b \sim b+db$ の範囲でイオンと衝突する回数は $n_i v \cdot 2\pi b db$ である。
+
+% % したがって、単位体積・単位時間・単位周波数・単位立体角あたりの放射エネルギー $\frac{d W}{d\omega dt dV d\Omega}$ は、単一衝突からの放射を全衝突パラメータについて積分することで求められる。
+
+% % \begin{equation}
+% %     \frac{d W}{d\omega dt dV d\Omega} = n_e n_i v \int_{b_{min}}^{b_{max}} \left( \frac{dW}{d\omega d\Omega} \right)_{\text{single}} 2\pi b db
+% % \end{equation}
+
+% % これに先ほどの単一衝突の式を代入する。
+% % \begin{equation}
+% %     \frac{d W}{d\omega dt dV d\Omega} \approx n_e n_i v (2\pi) \int_{b_{min}}^{b_{max}} \left( \frac{Z^2 e^6 \sin^2\theta}{\pi^2 c^3 m^2 v^2 b^2} \right) b db
+% % \end{equation}
+
+% % 定数項を積分の外に出し、衝突パラメータ $b$ に関する積分 $\int (1/b) db = \ln b$ を実行する。
+% % \begin{equation}
+% %     = \frac{2 n_e n_i Z^2 e^6 \sin^2\theta}{\pi c^3 m^2 v} \int_{b_{min}}^{b_{max}} \frac{1}{b} db
+% % \end{equation}
+% % \begin{equation}
+% %     = \frac{2 n_e n_i Z^2 e^6 \sin^2\theta}{\pi c^3 m^2 v} \ln\left( \frac{b_{max}}{b_{min}} \right)
+% % \end{equation}
+
+% % ここで、Gaunt係数 $g_{ff}$ の定義式 $g_{ff} = \frac{\sqrt{3}}{\pi} \ln(b_{max}/b_{min})$ を用いて書き換える。
+% % \begin{equation}
+% %     \ln\left( \frac{b_{max}}{b_{min}} \right) = \frac{\pi}{\sqrt{3}} g_{ff}
+% % \end{equation}
+
+% % これを代入すると、最終的に以下の表式が得られる。
+
+% % \begin{equation}
+% %     \frac{d W}{d\omega dt dV d\Omega} = \frac{2 e^6}{\sqrt{3} c^3 m^2 v} n_e n_i Z^2 g_{ff} \sin^2\theta
+% % \end{equation}
+
+% % この式は、微視的な衝突パラメータ積分を経て得られた、プラズマからの制動放射強度の厳密な角度依存性を示している。
+% % ここで $\theta$ は「加速度ベクトルと観測方向のなす角」であり、次節で述べる平均化操作により、電子の速度ベクトルを用いた表現へと変換される。
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+% \subsubsection{放射スペクトルの一般導出}
+
+% ある観測点において観測される放射エネルギー $W$ の周波数スペクトルを導出する。
+% 時間領域における放射の総エネルギー $W$ は、ポインティング・ベクトル $S(t) = \frac{c}{4\pi} |\bm{E}(t)|^2$ を全時間および全立体角で積分したものである。
+
+% \begin{equation}
+%     W = \int_{4\pi} d\Omega \int_{-\infty}^{\infty} dt \frac{c R^2}{4\pi} |\bm{E}(t)|^2
+% \end{equation}
+
+% ここで、電場 $\bm{E}(t)$ のフーリエ変換 $\hat{\bm{E}}(\omega)$ を以下のように定義する。
+% \begin{equation}
+%     \hat{\bm{E}}(\omega) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \bm{E}(t) e^{i\omega t} dt
+% \end{equation}
+% これより、逆変換は $\bm{E}(t) = \int_{-\infty}^{\infty} \hat{\bm{E}}(\omega) e^{-i\omega t} d\omega$ となる。
+
+% パーセバルの等式（エネルギー保存則）を用いると、時間積分は周波数積分に書き換えられる。
+% \begin{equation}
+%     \int_{-\infty}^{\infty} |\bm{E}(t)|^2 dt = 2\pi \int_{-\infty}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega
+% \end{equation}
+% 物理的な放射においては正の周波数成分のみを考えるため、$\omega > 0$ の範囲で積分を折り返して 2倍すると、
+% \begin{equation}
+%     \int_{-\infty}^{\infty} |\bm{E}(t)|^2 dt = 4\pi \int_{0}^{\infty} |\hat{\bm{E}}(\omega)|^2 d\omega
+% \end{equation}
+% となる。これをエネルギーの式に代入すると、以下のようになる。
+% \begin{equation}
+%     W = \int_{4\pi} d\Omega \int_{0}^{\infty} d\omega \, c R^2 |\hat{\bm{E}}(\omega)|^2
+% \end{equation}
+% したがって、単位立体角・単位周波数あたりの放射エネルギーは次式で与えられる。
+% \begin{equation}
+%     \frac{dW}{d\omega d\Omega} = c R^2 |\hat{\bm{E}}(\omega)|^2
+%     \label{eq:spectral_energy_def}
+% \end{equation}
+
+% 次に、非相対論的な電子の運動による双極子放射（Larmorの公式の拡張）を考える。遠方場における放射電場 $\bm{E}(t)$ は、加速度 $\dot{\bm{v}}(t)$ の視線方向への射影成分に比例する（$\bm{n}$ は観測方向の単位ベクトル）。
+% \begin{equation}
+%     \bm{E}(t) = \frac{e}{c^2 R} \bm{n} \times (\bm{n} \times \dot{\bm{v}}(t))
+% \end{equation}
+% この式のフーリエ変換をとると、時間依存するのは加速度 $\dot{\bm{v}}(t)$ のみであるため、
+% \begin{equation}
+%     \hat{\bm{E}}(\omega) = \frac{e}{c^2 R} \bm{n} \times \left( \bm{n} \times \int_{-\infty}^{\infty} \dot{\bm{v}}(t) e^{i\omega t} dt \right)
+% \end{equation}
+% となる。加速度のフーリエ変換成分を $\hat{\dot{\bm{v}}}(\omega) = \frac{1}{2\pi} \int \dot{\bm{v}}(t) e^{i\omega t} dt$ と定義すれば、
+% \begin{equation}
+%     \hat{\bm{E}}(\omega) = \frac{2\pi e}{c^2 R} \bm{n} \times (\bm{n} \times \hat{\dot{\bm{v}}}(\omega))
+% \end{equation}
+% である。
+% ベクトルの大きさについて $|\bm{n} \times (\bm{n} \times \bm{A})| = |\bm{A}| \sin\Theta$ （$\Theta$ は $\bm{A}$ と $\bm{n}$ のなす角）であることを用いて、式(\ref{eq:spectral_energy_def})に代入すると、以下の関係が得られる。
+
+% \begin{equation}
+%     \frac{dW}{d\omega d\Omega} = \frac{e^2}{4\pi^2 c^3} \left| \int_{-\infty}^{\infty} \dot{\bm{v}}(t) e^{i\omega t} dt \right|^2 \sin^2\Theta
+% \end{equation}
+
+% これを全立体角で積分（$\int \sin^2\Theta d\Omega = 8\pi/3$）して方向依存性を平均化すると、全放射エネルギーのスペクトル強度は加速度のフーリエ成分の二乗に比例することが示される。
+
+% \begin{equation}
+%     \frac{dW}{d\omega} \propto \left| \int_{-\infty}^{\infty} \dot{\bm{v}}(t) e^{i\omega t} dt \right|^2
+% \end{equation}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \subsection{放射の角度依存性（異方性）の厳密導出}
+
+% 前節で導出した放射強度式において、角度依存項 $\sin^2\theta$ は、電子の\textbf{加速度ベクトル}と観測方向のなす角であった。
+% しかし、実際のシミュレーションにおいて既知の変数は電子の\textbf{速度ベクトル}である。
+% ここでは、多重衝突過程における加速度方向のランダム性を考慮した平均化を行い、速度ベクトルに対する角度依存性を導出する。
+
+% \subsubsection{問題設定}
+% 電子が速度 $\bm{v}$ で直進しており、周囲にランダムに分布するイオンと衝突（散乱）して制動放射を出す状況を考える。計算の簡略化のため、以下のように座標系を設定する。
+
+% \begin{enumerate}
+%     \item \textbf{電子の速度 $\bm{v}$:} $z$軸方向の単位ベクトルとする。
+%     \begin{equation}
+%         \hat{\bm{v}} = (0, 0, 1)
+%     \end{equation}
+    
+%     \item \textbf{観測者の方向 $\bm{n}$:} 任意の方向の単位ベクトル。
+%     \begin{equation}
+%         \bm{n} = (n_x, n_y, n_z)
+%     \end{equation}
+    
+%     \item \textbf{有効加速度 $\bm{a}$ の定義と物理的妥当性（定量的評価）:} 
+%     本研究で対象とする軟X線領域（Soft X-ray）の放射は、主にイオンの近傍を通過する際の微小角散乱（遠距離衝突）から生じる。
+%     制動放射のスペクトル強度は、加速度 $\dot{\bm{v}}(t)$ のフーリエ変換の二乗に比例する。
+%     \begin{equation}
+%         \frac{dW}{d\omega} \propto \left| \int_{-\infty}^{\infty} \dot{\bm{v}}(t) e^{i\omega t} dt \right|^2
+%     \end{equation}
+
+%     ここで、衝突時間 $\tau \sim b/v$ と観測角周波数 $\omega$ の間に $\omega \tau \ll 1$ が成り立つ低周波領域（$b < b_{\max}$）を考える。
+%     このとき、位相因子を $e^{i\omega t} \approx 1 + i\omega t$ とテイラー展開し、各方向成分の寄与を定量的に評価する。
+
+%     \begin{enumerate}
+%         \item \textbf{進行方向（縦方向）成分 $\dot{v}_{\parallel}(t)$:} 
+%         電子は接近時に加速され、離脱時に減速されるため、$\dot{v}_{\parallel}(t)$ は時間 $t=0$（最接近）に対して\textbf{奇関数}となる。
+%         したがって、第0次項（単なる時間積分）は対称性により完全に消失する。
+%         \begin{equation}
+%             \int_{-\infty}^{\infty} \dot{v}_{\parallel}(t) \cdot 1 \, dt = 0
+%         \end{equation}
+%         残るのは第1次項（$i\omega t$）との積であるが、これは $\omega \tau$ のオーダーで抑制される。
+%         \begin{equation}
+%             \left| \int_{-\infty}^{\infty} \dot{v}_{\parallel}(t) \cdot (i\omega t) \, dt \right| \propto \omega \tau \cdot |\Delta v_{\perp}|
+%         \end{equation}
+
+%         \item \textbf{垂直方向（横方向）成分 $\dot{v}_{\perp}(t)$:} 
+%         一方、垂直方向の加速度は常にイオンに向かう方向に作用するため、\textbf{偶関数}となる。
+%         したがって、第0次項は消失せず、有限の速度変化 $\Delta v_{\perp}$ として支配的に残る。
+%         \begin{equation}
+%             \int_{-\infty}^{\infty} \dot{v}_{\perp}(t) \cdot 1 \, dt = \Delta v_{\perp} = \frac{2Ze^2}{mvb}
+%         \end{equation}
+%     \end{enumerate}
+
+%     放射強度は振幅の二乗に比例するため、縦方向成分と横方向成分の強度比は $(\omega \tau)^2$ となる。
+%     条件 $\omega \tau \ll 1$ の下では、縦方向成分の寄与は無視できるほど小さい。
+
+%     以上の理由から、放射強度に対して支配的な寄与をするのは、時間的に相殺されない「進行方向と垂直な成分（横方向）」の加速度のみとなる。
+%     この有効加速度ベクトルは $z$軸（電子の速度ベクトル）に垂直な $xy$平面内に局在し、その向き（方位角 $\phi$）は衝突のランダム性により $0 \sim 2\pi$ で一様に分布すると近似できる。
+%     したがって、計算に用いる加速度方向の単位ベクトル $\hat{\bm{a}}$ は以下のように定義される。
+
+%     \begin{equation}
+%         \hat{\bm{a}}(\phi) = (\cos\phi, \sin\phi, 0)
+%     \end{equation}
+% \end{enumerate}
+
+% \subsubsection{衝突による加速度方向の平均化}
+
+% 一つの電子が散らばった複数の原子核の近くを通り、クーロン力によって曲げられる際、観測される放射強度はあらゆる衝突方向 $\phi$ についての平均値となる。
+
+% 前節の式より、加速度方向 $\hat{\bm{a}}$ に対する放射強度は $\sin^2\theta = 1 - (\hat{\bm{a}} \cdot \bm{n})^2$ に比例する。
+% これを全方位角 $\phi$ について積分し、平均化を行う。
+
+% \begin{equation}
+%     \left. \frac{d W}{d\omega dt dV d\Omega} \right|_{\text{avg}} = \frac{1}{2\pi} \int_0^{2\pi} \left( \frac{d W}{d\omega dt dV d\Omega} \right)_{\text{single}} d\phi
+% \end{equation}
+
+% 定数係数部分を $C = \frac{2 e^6}{\sqrt{3} c^3 m^2 v} n_e n_i Z^2 g_{ff}$ と置くと、積分は次のように書ける。
+
+% \begin{align}
+%     \left. \frac{d W}{d\omega dt dV d\Omega} \right|_{\text{avg}} &= \frac{1}{2\pi} \int_0^{2\pi} C \sin^2\theta \, d\phi \\
+%     &= \frac{C}{2\pi} \int_0^{2\pi} \left\{ 1 - (\hat{\bm{a}}(\phi) \cdot \bm{n})^2 \right\} d\phi \\
+%     &= C \left\{ 1 - \frac{1}{2\pi} \int_0^{2\pi} (\hat{\bm{a}}(\phi) \cdot \bm{n})^2 d\phi \right\}
+% \end{align}
+
+% ここで、積分項内の内積の二乗 $(\hat{\bm{a}} \cdot \bm{n})^2$ を計算する。
+% \begin{equation}
+%     (\hat{\bm{a}} \cdot \bm{n})^2 = (n_x \cos\phi + n_y \sin\phi)^2 = n_x^2 \cos^2\phi + 2 n_x n_y \cos\phi \sin\phi + n_y^2 \sin^2\phi
+% \end{equation}
+
+% これを $0$ から $2\pi$ まで積分する。三角関数の積分公式 $\int_0^{2\pi} \cos^2\phi d\phi = \pi, \int_0^{2\pi} \sin^2\phi d\phi = \pi, \int_0^{2\pi} \cos\phi \sin\phi d\phi = 0$ を用いると、
+% \begin{equation}
+%     \frac{1}{2\pi} \int_0^{2\pi} (\hat{\bm{a}} \cdot \bm{n})^2 d\phi = \frac{1}{2\pi} (n_x^2 \pi + n_y^2 \pi) = \frac{1}{2} (n_x^2 + n_y^2)
+% \end{equation}
+
+% ここで、単位ベクトルの性質 $n_x^2 + n_y^2 + n_z^2 = 1$ より、横方向成分の和を $z$成分（速度方向成分）で書き換える。
+% \begin{equation}
+%     n_x^2 + n_y^2 = 1 - n_z^2
+% \end{equation}
+% 定義より $n_z$ は電子の速度単位ベクトル $\hat{\bm{v}} = (0,0,1)$ と観測方向 $\bm{n}$ の内積 $(\hat{\bm{v}} \cdot \bm{n})$ そのものである。
+% したがって、平均化された内積項は以下のようになる。
+% \begin{equation}
+%     \frac{1}{2\pi} \int_0^{2\pi} (\hat{\bm{a}} \cdot \bm{n})^2 d\phi = \frac{1}{2} \{ 1 - (\hat{\bm{v}} \cdot \bm{n})^2 \}
+% \end{equation}
+
+% これを元の式の $\{\dots\}$ 内に戻す。
+
+% \begin{align}
+%     \text{角度因子} &= 1 - \frac{1}{2} \{ 1 - (\hat{\bm{v}} \cdot \bm{n})^2 \} \\
+%     &= \frac{1}{2} + \frac{1}{2} (\hat{\bm{v}} \cdot \bm{n})^2 \\
+%     &= \frac{1}{2} \{ 1 + (\hat{\bm{v}} \cdot \bm{n})^2 \}
+% \end{align}
+
+% 係数 $C$ を展開し、この因子 $\frac{1}{2} \{ 1 + (\hat{\bm{v}} \cdot \bm{n})^2 \}$ を掛けると、最終的な放射強度の式が得られる。
+
+% \begin{equation}
+%     \frac{d W}{d\omega dt dV d\Omega} = \frac{1}{\sqrt{3}\pi} \frac{e^6}{c^3 m^2 v} n_e n_i Z^2 g_{ff} \left\{ 1 + (\hat{\bm{v}} \cdot \bm{n})^2 \right\}
+% \end{equation}
+
+% この式により、プラズマからの制動放射強度は、電子の速度ベクトル $\bm{v}$ と観測方向 $\bm{n}$ の内積を用いて $1 + (\hat{\bm{v}} \cdot \bm{n})^2$ に比例することが導かれた。
+
+% \subsubsection{ジャイロ回転による平均化（Gyro-Averaging）}
+
+% 実際のプラズマ中では、電子は磁力線に巻き付くように旋回運動（ジャイロ運動）を行っている。
+% 軟X線計測の時間スケール（マイクロ秒オーダー）は、電子のジャイロ周期（ナノ秒オーダー）に比べて十分に長いため、観測される放射強度はジャイロ位相 $\varphi_{gyro}$ について平均化されたものとなる。
+
+% 前節の式で導出した通り、放射強度は $1 + (\hat{\bm{v}} \cdot \bm{n})^2$ に比例する。ここで、電子の速度ベクトル $\hat{\bm{v}}$ は磁力線の周りを回転しているため、時間とともに変化する。この回転による平均化を計算する。
+
+% 計算を簡単にするため、局所的な座標系を以下のように設定する。
+% \begin{itemize}
+%     \item \textbf{磁場方向 $\bm{b}$:} $z$軸方向とする。$\bm{b} = (0, 0, 1)$
+%     \item \textbf{観測方向 $\bm{n}$:} 磁場と角度 $\Theta$ をなす方向とする。一般性を失わず、$xz$平面内に取ることができる。
+%     \begin{equation}
+%         \bm{n} = (\sin\Theta, 0, \cos\Theta)
+%     \end{equation}
+%     \item \textbf{電子の速度方向 $\hat{\bm{v}}$:} 磁力線に対するピッチ角を $\alpha$、ジャイロ位相を $\varphi$ とすると、次のように表される。
+%     \begin{equation}
+%         \hat{\bm{v}}(\varphi) = (\sin\alpha \cos\varphi, \sin\alpha \sin\varphi, \cos\alpha)
+%     \end{equation}
+% \end{itemize}
+
+% まず、速度ベクトルと観測方向の内積 $\hat{\bm{v}} \cdot \bm{n}$ を計算する。
+% \begin{align}
+%     \hat{\bm{v}} \cdot \bm{n} &= (\sin\alpha \cos\varphi) \cdot \sin\Theta + (\sin\alpha \sin\varphi) \cdot 0 + (\cos\alpha) \cdot \cos\Theta \\
+%     &= \sin\alpha \cos\varphi \sin\Theta + \cos\alpha \cos\Theta
+% \end{align}
+
+% 次に、放射強度に寄与する二乗項 $(\hat{\bm{v}} \cdot \bm{n})^2$ を計算する。
+% \begin{align}
+%     (\hat{\bm{v}} \cdot \bm{n})^2 &= (\sin\alpha \sin\Theta \cos\varphi + \cos\alpha \cos\Theta)^2 \\
+%     &= \sin^2\alpha \sin^2\Theta \cos^2\varphi + \cos^2\alpha \cos^2\Theta + 2 \sin\alpha \sin\Theta \cos\alpha \cos\Theta \cos\varphi
+% \end{align}
+
+% これをジャイロ位相 $\varphi$ について $0$ から $2\pi$ まで積分し、平均化を行う。
+% \begin{equation}
+%     \langle (\hat{\bm{v}} \cdot \bm{n})^2 \rangle_{gyro} = \frac{1}{2\pi} \int_0^{2\pi} (\hat{\bm{v}}(\varphi) \cdot \bm{n})^2 d\varphi
+% \end{equation}
+
+% 積分の各項を評価する。
+% \begin{itemize}
+%     \item 第1項: $\frac{1}{2\pi} \int_0^{2\pi} \cos^2\varphi d\varphi = \frac{1}{2}$
+%     \item 第2項: $\varphi$ に依存しない定数項なので、そのまま残る。
+%     \item 第3項: $\frac{1}{2\pi} \int_0^{2\pi} \cos\varphi d\varphi = 0$ （振動項のため消滅）
+% \end{itemize}
+
+% したがって、平均値は以下のようになる。
+% \begin{equation}
+%     \langle (\hat{\bm{v}} \cdot \bm{n})^2 \rangle_{gyro} = \frac{1}{2} \sin^2\alpha \sin^2\Theta + \cos^2\alpha \cos^2\Theta
+% \end{equation}
+
+% % 最終的に、ジャイロ平均された放射強度の角度因子（Shape Factor）は次式で与えられる。
+
+% % \begin{align}
+% %     \text{Shape Factor} &\propto 1 + \langle (\hat{\bm{v}} \cdot \bm{n})^2 \rangle_{gyro} \\
+% %     &= 1 + \left( \cos^2\alpha \cos^2\Theta + \frac{1}{2} \sin^2\alpha \sin^2\Theta \right)
+% %     \label{eq:gyro_averaged_shape}
+% % \end{align}
+
+% % この式は、ピッチ角 $\alpha$ を持つ電子群からの放射が、観測角度 $\Theta$ に対してどのような強度分布を持つかを厳密に記述した解析解である。
+% % 本シミュレーションでは、PIC粒子データから得られる各電子のピッチ角 $\alpha_i$ に対してこの式を適用し、その総和を取ることで、非熱的な速度分布を持つプラズマからの異方性放射を再現する。
+
+% ゆえに、ジャイロ平均された角度因子（形状因子）は次式となる。
+% \begin{equation}
+%     \langle 1 + (\hat{\bm{v}} \cdot \bm{n})^2 \rangle_{gyro} = 1 + \cos^2\alpha \cos^2\Theta + \frac{1}{2} \sin^2\alpha \sin^2\Theta
+% \end{equation}
+
+% これを強度係数 $C = \frac{e^6 Z^2 n_e n_i g_{ff}}{\sqrt{3}\pi c^3 m^2 v}$ と掛け合わせることで、最終的な単位体積・単位時間・単位周波数・単位立体角あたりの放射強度式が得られる。
+
+% \begin{equation}
+%     \frac{dW}{d\omega dt dV d\Omega} = \frac{e^6 Z^2 n_e n_i g_{ff}}{\sqrt{3}\pi c^3 m^2 v} \left( 1 + \cos^2\alpha \cos^2\Theta + \frac{1}{2}\sin^2\alpha \sin^2\Theta \right)
+% \end{equation}
+
+% ここで、$\alpha$ は電子のピッチ角（$\tan\alpha = v_{\perp}/v_{\parallel}$）、$\Theta$ は磁力線と視線のなす角（観測角度）、$v$ は電子の速度である。
+% 本シミュレーションでは、PIC粒子データから得られる個々の電子についてこの式を適用し、その総和をとることで、非熱的かつ異方的な軟X線放射分布を厳密に計算する。
+
+
+
+
+% \section{粒子データに基づく角度付きファントムの生成}
+
+% 本シミュレーションでは、粒子シミュレーション（PIC）から得られる電子データを用い、空間座標 $(R, Z)$ および観測角度 $\Theta$ の3次元空間において定義される\textbf{「角度付きファントム（Angular Phantom）」}を生成する手法を採用した。
+
+% \subsection{角度付きファントムの定義}
+% 角度付きファントム $\mathcal{E}(R, Z, \Theta)$ は、空間上の点 $(R, Z)$ において、磁力線に対して角度 $\Theta$ の方向から観測した際の放射強度を表す3次元配列である。
+% この配列は、PICシミュレーションにおける超粒子群の寄与を、グリッドおよび角度ビンに対して積算（Splatting）することで構築される。
+
+% \subsection{計算アルゴリズム}
+% 具体的な構築手順は以下の通りである。
+
+% \subsubsection{1. 粒子ごとの放射強度計算（スペクトル積分とフォトンカウンティング）}
+% 第 $i$ 番目の電子（速度 $v_i$、ピッチ角 $\alpha_i$）からの放射寄与を計算する。
+% 本実験では検出器としてMCP（マイクロチャンネルプレート）を使用しているため、計測される信号は入射エネルギー総量ではなく「入射光子数」に比例する。また、プラズマと検出器の間には金属フィルタが存在し、特定のエネルギー帯域のみが透過する。
+
+% したがって、粒子 $i$ が生成する実効的な信号強度 $I_i(\Theta)$ は、制動放射のエネルギー強度スペクトル $\frac{dW}{dE}$ に対し、光子エネルギー $E = \hbar\omega$ での除算（光子数換算）とフィルタ透過率 $T(E)$ を乗じ、エネルギー積分を行ったものとなる。
+
+% \begin{equation}
+%     I_i(\Theta) = C \cdot n_e n_i Z^2 \cdot \underbrace{\left[ \int_{E_{\min}}^{E_{\max}} \frac{T(E)}{E} \cdot \frac{g_{ff}(v_i, E)}{v_i} \, dE \right]}_{\text{スペクトル積分項（光子数換算）}} \times \underbrace{\left[ 1 + \cos^2\alpha_i \cos^2\Theta + \frac{1}{2}\sin^2\alpha_i \sin^2\Theta \right]}_{\text{幾何学的形状因子}}
+% \end{equation}
+
+% ここで、
+% \begin{itemize}
+%     \item $E$: 光子エネルギー ($E = \hbar\omega$)。
+%     \item $T(E)$: 金属フィルタのエネルギー透過率曲線。
+%     \item $1/E$: エネルギーフラックスを光子数フラックスに変換するための重み（$N_{photon} = W / E$）。
+%     \item $g_{ff}(v_i, E)$: 電子速度 $v_i$ と光子エネルギー $E$ に依存するGaunt係数。
+%     \item $C$: 物理定数を含む比例係数。
+% \end{itemize}
+
+% この式を用いることで、電子の速度分布（高温・低温）とフィルタのカットオフ特性の相互作用（例えば、高温ビーム成分のみがフィルタを突き抜けて観測される効果など）を自動的に、かつ物理的に正しく再現することができる。
+
+% \subsubsection{2. 空間・角度グリッドへの集約（角度付きファントムの構築）}
+
+% 前項で求めた粒子ごとの放射強度 $I_i(\Theta)$ は、個々の電子の位置における離散的な値である。
+% これを視線積分シミュレーションに適用可能な連続場として扱うため、空間グリッド $(R_k, Z_k)$ および角度グリッド $\Theta_j$ を定義し、各グリッドセルに含まれる全粒子の寄与を総和（Superposition）する。
+
+% 具体的には、角度付きファントム $\mathcal{E}(R_k, Z_k, \Theta_j)$ は、その空間セル内に存在するすべての粒子 $i$ について、角度 $\Theta_j$ 方向への放射強度を積算したものとして定義される。
+
+% \begin{equation}
+%     \mathcal{E}(R_k, Z_k, \Theta_j) = \frac{1}{\Delta V_k} \sum_{i \in \text{cell}_k} I_i(\Theta_j)
+% \end{equation}
+
+% ここで $\Delta V_k$ はグリッドセルの体積である（規格化定数として機能する）。
+% この操作により、PICシミュレーションによる膨大な粒子群の微視的な情報は、非熱的な速度分布や異方性を保持したまま、巨視的な放射源分布データ（3次元配列）へと変換される。
+
+% \section{視線積分の数値計算アルゴリズム}
+
+% 生成された角度付きファントム $\mathcal{E}(R, Z, \Theta)$ を用いて、視線積分（Forward Projection）を行う。
+
+% \subsection{積分公式}
+% 観測される輝度 $S$ は、視線 $L$ に沿った放射強度の線積分であるが、本手法では放射強度が「その地点での局所的な観測角度 $\Theta_{\mathrm{local}}$」に依存する。
+
+% \begin{equation}
+%     S = \int_{L} \mathcal{E}(R, Z, \Theta_{\mathrm{local}}(\bm{r})) \, dl
+% \end{equation}
+
+% 離散化された計算式は以下のようになる。
+
+% \begin{equation}
+%     S \approx \sum_{k=1}^{N} \mathcal{E}(R_k, Z_k, \Theta_k) \cdot \Delta l_k
+% \end{equation}
+
+% \subsection{計算手順}
+% \begin{enumerate}
+%     \item \textbf{局所磁場の取得と回転:}
+%     視線上の点 $\bm{r}_k$ における磁場ベクトル $\bm{B}_{\mathrm{cyl}}$ を取得し、トロイダル角 $\phi_k$ に応じて実験室直交座標系 $\bm{B}_{\mathrm{xyz}}$ へ回転変換する。平衡コード等から得られる磁場データ $\bm{B}_{\mathrm{eq}}$ は、通常、円筒座標系の成分 $(B_R, B_T, B_Z)$ で与えられる。
+%     一方、視線ベクトル $\bm{n}_{\mathrm{LOS}}$ は実験室直交座標系 $(x, y, z)$ で定義されている。両者のなす角を計算するためには、磁場ベクトルを直交座標系へ変換する必要がある。
+
+%     点 $\bm{r}_k$ におけるトロイダル角を $\phi_k$ とすると、円筒座標基底から直交座標基底への変換行列（$z$軸周りの回転行列） $\mathcal{R}_z(\phi_k)$ は以下となる。
+%     \begin{equation}
+%         \mathcal{R}_z(\phi_k) = 
+%         \begin{pmatrix}
+%             \cos\phi_k & -\sin\phi_k & 0 \\
+%             \sin\phi_k & \cos\phi_k & 0 \\
+%             0 & 0 & 1
+%         \end{pmatrix}
+%     \end{equation}
+
+%     ここで、計算効率化のため、三角関数を直接計算せず、座標値を用いて以下のように表現する。
+%     \begin{equation}
+%         \cos\phi_k = \frac{x_k}{R_k}, \quad \sin\phi_k = \frac{y_k}{R_k}
+%     \end{equation}
+
+%     これより、実験室座標系における磁場ベクトル $\bm{B}_{\mathrm{xyz}, k}$ は次のように計算される。
+%     \begin{equation}
+%         \bm{B}_{\mathrm{xyz}, k} = 
+%         \begin{pmatrix}
+%             B_{x,k} \\
+%             B_{y,k} \\
+%             B_{z,k}
+%         \end{pmatrix}
+%         =
+%         \begin{pmatrix}
+%             B_R \frac{x_k}{R_k} - B_T \frac{y_k}{R_k} \\
+%             B_R \frac{y_k}{R_k} + B_T \frac{x_k}{R_k} \\
+%             B_Z
+%         \end{pmatrix}
+%     \end{equation}
+%     これにより、視線がプラズマ中を通過する際に経験する「磁力線のねじれ（トロイダル・ポロイダル成分の変化）」が3次元的に正しく反映される。
+    
+%     \item \textbf{観測角度の算出:}
+%     変換された磁場ベクトル $\bm{B}_{\mathrm{xyz}}$ と視線ベクトル $\bm{n}_{\mathrm{LOS}}$ の内積から、その地点での観測角度 $\Theta_k$ を決定する。
+%     \begin{equation}
+%         \Theta_k = \arccos\left( \frac{\bm{B}_{\mathrm{xyz}} \cdot \bm{n}_{\mathrm{LOS}}}{|\bm{B}_{\mathrm{xyz}}|} \right)
+%     \end{equation}
+%     ここで、実際の視線は $y$ 成分（トロイダル成分）を持つが、ファントム生成時の角度 $\Theta$ は磁場に対する相対角度として定義されているため、幾何学的な矛盾は生じない。
+    
+%     \item \textbf{3次元補間:}
+%     座標 $(R_k, Z_k)$ および角度 $\Theta_k$ を用いて、角度付きファントム配列 $\mathcal{E}$ を3次元補間し、その地点からの放射寄与を取得する。
+% \end{enumerate}
+
+% \section{本シミュレーションにおける物理的仮定}
+% 本手法において導入された仮定を整理する。
+
+% \begin{itemize}
+%     \item \textbf{プラズマのトロイダル軸対称性:}
+%     トカマクプラズマの放射強度分布（ファントム）$\epsilon(R, Z, \phi)$ はトロイダル方向 $\phi$ に対して一様であると仮定する。すなわち、真の放射強度はポロイダル断面 $(R, Z)$ 上の関数 $\epsilon(R, Z)$ として定義される。
+%     \item \textbf{静磁場平衡・光学的薄さ:}
+%     磁場配位 $\mathbf{B}(R, Z)$ は外部の平衡コードから与えられたものであり、放射計測の時間スケールにおいては時間変化しないものとする。
+%     \item \textbf{光学的薄さ（Optically Thin）の近似:}
+%     プラズマは軟X線領域において光学的に薄いと仮定し、自己吸収（Self-absorption）を無視する。これにより、観測輝度 $S$ は視線 $L$ に沿った局所放射強度 $E(\mathbf{r})$ の単純な線積分として記述される。
+%     \item \textbf{微小角散乱（遠距離衝突）の支配:}
+%     軟X線放射への主要な寄与は、電子がイオン近傍を通過する際の微小角散乱（遠距離衝突）から生じると仮定する。この過程において、進行方向（縦方向）の加速度成分は時間的に相殺され、放射に寄与するのは進行方向に垂直な（横方向）成分のみであると近似する。
+%     \item \textbf{加速度方位のランダム性:}
+%     電子の速度ベクトル $\mathbf{v}$ に垂直な面内において、衝突による加速度ベクトル $\mathbf{a}$ の方位角 $\phi$ は $0$ から $2\pi$ の範囲で一様に分布すると仮定する。
+%     \item \textbf{電子のジャイロ運動:}
+%     電子は磁力線に沿って一定のピッチ角 $\alpha$ を保ちながら旋回運動（ジャイロ回転）を行うものとし、そのジャイロ位相 $\varphi_{gyro}$ について平均化を行うことで巨視的な放射異方性を評価する。
+%     \item \textbf{非相対論的電気双極子放射:}
+%     電子の速度 $v$ は光速 $c$ に比べて十分小さい（$v \ll c$）とし、放射電場 $\mathbf{E}_{rad}$ は加速度 $\dot{\mathbf{v}}$ の視線方向への射影成分に比例する双極子近似を用いる。
+%     \item \textbf{フィルタ入射角の無視（Normal Incidence Approximation）:}
+%     金属フィルタの透過率計算において、視線が検出器およびフィルタに入射する角度はすべて垂直（$0^{\circ}$）であると仮定する。
+%     視野周辺部において視線がフィルタを斜めに通過することによる「実効的な厚みの増大」およびそれに伴う「透過率低下・スペクトル硬化」の効果は、本体系の幾何学的配置では十分小さいとして無視する。
+% \end{itemize}
+
+% \section{結論}
+% 本研究では、PIC粒子データから直接生成された「角度付きファントム」を用いる順解析コードを開発した。
+% 物理的に厳密な放射角分布 $1+(\bm{v}\cdot\bm{n})^2$ とGaunt係数を粒子ごとに適用し、これを空間・角度グリッドに集約することで、複雑な非熱的分布を持つプラズマからの軟X線放射を第一原理的に再現することに成功した。
+% 従来の等方性再構成手法が抱えるアーチファクト（ゴースト）や定量的な誤差を、より現実的な条件下で厳しく評価することが可能となる。
+
+\end{document}

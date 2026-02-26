@@ -16,8 +16,8 @@ TARGETS = {
     "data/C10H8O4_1.0um.txt": "Mylar 1.0µm",
     "data/C10H8O4_2.0um.txt": "Mylar 2.0µm",
     "data/Ti_0.5um.txt": "Ti 0.5µm",
-    "data/C2F4_4.0um.txt": "Teflon 4.0µm",
-    "data/Zr_0.6um.txt": "Zr 0.6µm"
+    "data/C2F4_4.0um.txt": "Teflon 4.0µm"
+    # "data/Zr_0.6um.txt": "Zr 0.6µm"
 }
 
 def main():

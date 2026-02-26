@@ -22,7 +22,8 @@ save_filepath = "/Users/shohgookazaki/Library/CloudStorage/GoogleDrive-shohgo-ok
 % 研究室内にいる場合のファイルパス
 % filepath = "//NIFS/experiment/results/MachProbe/";
 % 研究室外のファイルパス
-filepath = "/Users/shohgookazaki/Documents/UTokyo/OnoTanabeLab/koala/home/pub/mnt/data/TripleProbe";
+% filepath = "/Users/shohgookazaki/Documents/UTokyo/OnoTanabeLab/koala/home/pub/mnt/data/TripleProbe";
+filepath = "/Users/shohgookazaki/Library/CloudStorage/GoogleDrive-shohgo-okazaki@g.ecc.u-tokyo.ac.jp/My Drive/OnoLab/data/ElectroStatic/triple_probe/raw_data";
 
 filename = strcat(filepath, '/', num2str(date), '/ES_', num2str(date), shotnum, '.csv');
 
@@ -30,8 +31,8 @@ filename = strcat(filepath, '/', num2str(date), '/ES_', num2str(date), shotnum, 
 test = readmatrix(filename);
 index_start = 4500;
 index_end = 7500;
-V2 = 30; % 奇数のやつを入れる
-V3 = 15; % 偶数のやつを入れる
+V2 = 40;%30; % 奇数のやつを入れる
+V3 = 20;%15; % 偶数のやつを入れる
 
 % if you use H gas. The A is 1.00.
 % A = 1.00; % atomic weight
@@ -216,6 +217,163 @@ grid on
 mkdir(strcat(save_filepath, '/', num2str(date), '/figure/triple_probe'));
 saveas(gcf, strcat(save_filepath, '/', num2str(date), '/figure/triple_probe/', shotnum, '_', num2str(index_start), '-', num2str(index_end), 'us'), 'png');
 fprintf("saved your file %s", shotnum)
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ランキスト数 (Lundquist Number) の計算
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 注意: "Rankist" は一般的ではないため、プラズマ物理で一般的なルンドキスト数(S)として計算します。
+% S = tau_R / tau_A = (mu_0 * L * V_A) / eta
+
+% --- ユーザー設定パラメータ (環境に合わせて変更してください) ---
+B_field = 0.004;   % 磁場強度 [T] (例: 0.1 T)
+L_char  = 0.1;  % 代表長さ [m] (例: プラズマ半径やシート幅 5cm)
+lnLambda = 10;   % クーロン対数 (通常 10-15 程度)
+Z_eff = 1;       % 実効電荷数
+
+% --- 定数定義 ---
+mu0 = 4 * pi * 1e-7; % 真空の透磁率
+
+% 1. 温度を eV 単位に変換 (Spitzer抵抗率の計算用)
+% 既存コードの Te_values は Kelvin です
+Te_eV = Te_values / K2ev; 
+
+% 2. アルベン速度 (V_A) の計算
+% V_A = B / sqrt(mu0 * ni * mi)
+rho_mass = ne_values * mi; % 質量密度 (ni ~ ne と仮定)
+Va_values = B_field ./ sqrt(mu0 * rho_mass);
+
+% 3. Spitzer 抵抗率 (eta) の計算
+% eta_parallel approx 5.2e-5 * Z * lnLambda / Te[eV]^(3/2) [Ohm m]
+% Teが極端に低い、またはNaNの場合は計算エラーになるため注意
+eta_values = (5.2e-5 * Z_eff * lnLambda) ./ (Te_eV .^ 1.5);
+
+% 4. ルンドキスト数 (S) の計算
+% S = mu0 * L * Va / eta
+S_values = (mu0 * L_char .* Va_values) ./ eta_values;
+
+% 異常値の処理 (NaN や Inf, 負の値を排除)
+S_values(isinf(S_values) | S_values < 0) = NaN;
+
+% --- プロット (新規Figure) ---
+figure;
+scatter(time, S_values, 5, 'filled');
+title(['Lundquist Number (S) : B=' num2str(B_field) 'T, L=' num2str(L_char) 'm']);
+xlabel('Time [\mus]');
+ylabel('Lundquist Number S');
+xlim([450, 500]); % 時間軸は既存コードに合わせる
+grid on;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 電子熱圧力 (Electron Thermal Pressure) の計算
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 目的: ショック形成の証拠となる圧力ジャンプ(Delta P)を確認する
+% 式: P_e = n_e * k_B * T_e [Pa]
+
+% Te_values は既存コードで [K] になっています
+% ne_values は [m^-3] です
+% kb は [J/K] です
+
+% 1. 圧力計算 [Pa]
+Pe_values = ne_values .* kb .* Te_values;
+
+% 2. 異常値の除去 (負の値やNaN)
+Pe_values(Pe_values < 0) = NaN;
+
+% --- プロット (新規Figure) ---
+figure('Name', 'Electron Thermal Pressure');
+plot(time, Pe_values, 'LineWidth', 1.5, 'Color', [0.85 0.33 0.1]); % 赤茶色っぽい色
+title(['Electron Thermal Pressure P_e : Shot ' num2str(shotnum)]);
+xlabel('Time [\mus]');
+ylabel('Electron Pressure [Pa]');
+xlim([450, 500]); % 既存のプロット範囲に合わせる
+grid on;
+
+% --- 簡易解析: 圧力上昇量の表示 ---
+% ベースライン（立ち上がり前）とピークの差分を表示
+% ※ 時間範囲は波形を見て適宜調整してください
+try
+    % 仮に460us付近をベース、470-490usをピーク領域と仮定
+    base_idx = (time >= 455 & time <= 465);
+    peak_idx = (time >= 465 & time <= 490);
+    
+    if any(base_idx) && any(peak_idx)
+        P_base = mean(Pe_values(base_idx), 'omitnan');
+        P_peak = max(Pe_values(peak_idx), [], 'omitnan');
+        Delta_P = P_peak - P_base;
+        
+        fprintf('--- Electron Pressure Analysis ---\n');
+        fprintf('Base Pressure (approx): %.2f Pa\n', P_base);
+        fprintf('Peak Pressure:          %.2f Pa\n', P_peak);
+        fprintf('Pressure Increase (dP): %.2f Pa\n', Delta_P);
+        fprintf('Compression Ratio:      %.2f\n', P_peak / P_base);
+        fprintf('----------------------------------\n');
+    end
+catch
+    disp('圧力の自動解析に失敗しました（時間範囲等がデータと合わない可能性があります）');
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ドライサー電場 (Dreicer Field) の計算
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 目的: Runaway加速が起こりうるか判定する (E_rec > E_D ?)
+% 式: E_D = (n_e * e^3 * lnLambda) / (4 * pi * eps0^2 * k_B * T_e)
+% 簡略式 (Te in eV): E_D approx 3.1e-13 * n_e * lnLambda / Te[eV] [V/m]
+
+% --- 定数 ---
+lnLambda_Dreicer = 10; % クーロン対数（通常10程度）
+
+% 1. Te を eV に変換 (既存のTe_valuesはKelvin)
+Te_eV_for_Ed = Te_values / K2ev;
+
+% 2. ドライサー電場計算 [V/m]
+% Teが0に近いと発散するので、極小値でクリップするかNaN処理
+valid_Te_mask = (Te_eV_for_Ed > 0.1); % 0.1eV以下は計算しない
+
+Ed_values = nan(size(Te_values));
+Ed_values(valid_Te_mask) = 2.6e-17 * ne_values(valid_Te_mask) * lnLambda_Dreicer ./ Te_eV_for_Ed(valid_Te_mask);
+
+% 3. プロット作成
+figure('Name', 'Dreicer Field Check');
+hold on;
+
+% 左軸: ドライサー電場
+disp(max(Ed_values))
+yyaxis left
+plot(time, Ed_values, 'LineWidth', 1.5, 'Color', 'b');
+ylabel('Dreicer Field E_D [V/m]');
+set(gca, 'YColor', 'b');
+% ylim([0, 1000]); % 予想される範囲に合わせて調整してください
+
+% 右軸: 参考としての密度 (ne)
+yyaxis right
+plot(time, ne_values, '--', 'LineWidth', 1.0, 'Color', [0.5 0.5 0.5]);
+ylabel('Density n_e [m^{-3}]');
+set(gca, 'YColor', [0.2 0.2 0.2]);
+
+% --- 閾値ライン (ユーザー定義の再結合電場 E_rec) ---
+% 観測された/見積もった再結合電場 (例: 200 V/m)
+E_rec_estimate = 200; 
+yline(E_rec_estimate, 'r-', ['E_{rec} ~ ' num2str(E_rec_estimate) ' V/m'], 'LineWidth', 2);
+
+title(['Dreicer Field E_D vs Time (Shot ' num2str(shotnum) ')']);
+xlabel('Time [\mus]');
+xlim([450, 500]);
+grid on;
+hold off;
+
+% --- Runaway 判定 ---
+% E_D < E_rec となる領域があるかチェック
+runaway_indices = (Ed_values < E_rec_estimate);
+if any(runaway_indices)
+    fprintf('!!! Runaway Condition Met (E_rec > E_D) !!!\n');
+    fprintf('Possible Runaway Times: %.1f - %.1f us\n', min(time(runaway_indices)), max(time(runaway_indices)));
+else
+    fprintf('Runaway condition NOT met with E_rec = %.1f V/m\n', E_rec_estimate);
+end
 
 
 

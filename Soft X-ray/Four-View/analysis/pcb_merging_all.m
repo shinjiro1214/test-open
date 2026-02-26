@@ -23,9 +23,9 @@ area = 1; %1: xpoint, 2: downstream inward
 % chargelist = [30; 28; 26; 24; 20];
 
 % 250206 Case-O
-% datelist = [250206, 250206, 250206, 250206];
-% IDXlistlist = [3:7;8:11 13;14 16:19;20 21 23 NaN NaN];% shot 2, 12, 15, 22は変
-% chargelist = [30; 28; 26; 24];
+datelist = [250206, 250206, 250206, 250206];
+IDXlistlist = [3:7;8:11 13;14 16:19;20 21 23 NaN NaN];% shot 2, 12, 15, 22は変
+chargelist = [30; 28; 26; 24];
 
 
 %エラー回避

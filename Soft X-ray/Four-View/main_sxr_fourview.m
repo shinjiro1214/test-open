@@ -4,7 +4,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%
 % clear
 % close all
-clearvars -except date IDXlist doSave doFilter doNLR ReconMethod
+clearvars -except date IDXlist doSave doFilter doNLR ReconMethod Reset
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
 addpath '/Users/shohgookazaki/Documents/matlab/common';
@@ -90,7 +90,7 @@ elseif ~isempty(a039)% a039入力の場合
 end
 %-------------------------------------------------%
 
-PCB.trange=400:800;%【input】計算時間範囲
+PCB.trange=400:600;%【input】計算時間範囲
 PCB.n=50; %【input】rz方向のメッシュ数
 
 t = 470;
@@ -102,6 +102,27 @@ SXR.show_localmax = false;
 
 % NIFSの軟X線データをドライブにコピーする
 copyFolderIfNotExist(strcat(getenv('SXR_IMAGE_DIR'),'/',num2str(date)), strcat(getenv('NIFS_path'),'/',num2str(date)));
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 10);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
 
 for i=1:n_data
     disp(strcat('(',num2str(i),'/',num2str(n_data),')'));
@@ -117,10 +138,12 @@ for i=1:n_data
     TF=TFlist(i);
     SXR.start = startlist(i);
     SXR.interval = intervallist(i);
-    % [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_280ch(PCB,pathname);
+    % [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_200ch(PCB,pathname);
     [PCBdata.grid2D,PCBdata.data2D] = process_PCBdata_280ch(PCB,pathname); %process_PCBdata_200ch.mに行く
     SXR.date = date;
     SXR.shot = IDXlist(i);
     SXR.SXRfilename = strcat(getenv('SXR_IMAGE_DIR'),'/',num2str(date),'/shot',num2str(SXR.shot,'%03i'),'.tif');
-    plot_sxr_multi(PCBdata,SXR,PCB);
+    % SXR.SXRfilename = strcat('/Users/shohgookazaki/Documents/UTokyo/OnoTanabeLab/koala/home/pub/mnt/data/X-ray/',num2str(date),'/shot',num2str(SXR.shot,'%03i'),'.tif');
+    % plot_sxr_multi(PCBdata,SXR,PCB);
+    plot_save_sxr(PCBdata,SXR,PCB);
 end

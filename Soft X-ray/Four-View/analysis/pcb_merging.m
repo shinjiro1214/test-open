@@ -72,7 +72,7 @@ PCB.xpointdata = xpointdata;
 PCB.trange = 400:600;
 PCB.n = 40;
 PCB.start = 450; 
-PCB.end = 495;
+PCB.end = 490;
 FIG.start = 460;
 FIG.end = 500;
 
@@ -236,8 +236,8 @@ if true
         ax1 = axes('Position', ax_pos, 'YColor', 'k', 'Box', 'off', 'Color', 'none'); hold(ax1, 'on');
         if xaxis == 2
             fill_y = [-1e9 1e9]; 
-            patch([475 483 483 475], [fill_y(1) fill_y(1) fill_y(2) fill_y(2)], ...
-                  [0.85 0.92 1], 'EdgeColor', 'none', 'Parent', ax1, 'HandleVisibility', 'off');
+            % patch([475 483 483 475], [fill_y(1) fill_y(1) fill_y(2) fill_y(2)], ...
+            %       [0.85 0.92 1], 'EdgeColor', 'none', 'Parent', ax1, 'HandleVisibility', 'off');
         end
         plot_shaded_error(x_plot, y1, e1, [0.6 0.6 0.6], 0.3, ax1);
         plot(ax1, x_plot, y1, '.-k', 'LineWidth', 1.2, 'MarkerSize', 10);
@@ -301,8 +301,8 @@ if true
         if xaxis == 2
              x_plot = PCB.trange;
              yl = [-1e9 1e9];
-             patch([475 483 483 475], [yl(1) yl(1) yl(2) yl(2)], ...
-                  [0.85 0.92 1], 'EdgeColor', 'none');
+            %  patch([475 483 483 475], [yl(1) yl(1) yl(2) yl(2)], ...
+            %       [0.85 0.92 1], 'EdgeColor', 'none');
              set(gca, 'Layer', 'top'); 
              hold on;
              xlim([PCB.start PCB.end]);

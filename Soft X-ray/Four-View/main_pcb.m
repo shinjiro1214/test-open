@@ -9,6 +9,9 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%並列じゃないコード%%%%%%%%%%%%%%%%%
 [PCB, pathname] = get_psb_data();
+
+% Google SpreadsheetのIDとエクスポートURLを構築
+    
 for i=1:PCB.n_data
     % dtacq_num=dtacqlist;
     PCB.date = PCB.alldate(i);
@@ -35,25 +38,28 @@ for i=1:PCB.n_data
         elseif ~PCB.doCheck
             fprintf('Processing Shot: %d, Type: %s\n', PCB.shot(1), PCB.dataType); % 進捗表示用
             % profile on
+            % [grid2D,data2D] = process_PCBdata_280ch(PCB,pathname);
+
             plot_psi(PCB, pathname);
+
+
             % profile off
             % profile viewer
         end
     end
 
     % [B_r,B_t,B_rt,b] = get_guide_field_ratio2(PCB,pathname);
-    % disp(B_r);
-    % disp(B_rt);
-    % disp(b)
 
-    % disp(B_t) 
+    
+    % [B_reconnection] = get_B_rec_FRC(PCB,pathname);
+    % fprintf('Shot %d: B_reconnection = %.3e T\n', PCB.shot(1), B_reconnection);
 
 end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%% 並列プールが起動していなければ起動（PCのコア数分だけワーカーが立ち上がります）
+% %%%%%%%%%%%%%%%%%%%%%%%%%% 並列%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % if isempty(gcp('nocreate'))
 %     parpool; 
 % end

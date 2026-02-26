@@ -38,34 +38,34 @@ for m=1:16 %図示する時間
     subplot(4,4,m)
     switch PCB.dataType
         case 'psi'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),100,'LineStyle','none');
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.psi(:,:,i),100,'LineStyle','none');
             % pcolor(grid2D.zq, grid2D.rq, data2D.psi(:,:,i));
             % shading interp;
 
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.psi(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.psi(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
             
             clim([-1e-2,1e-2]);
             dataTypeName = 'psi';
             colorLabel = 'Zpsi (Wb)';
         case 'Bz'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none');
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bz(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bz(:,:,i),30,'LineStyle','none');
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bz(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
 
             clim([-0.1,0.1]);
             dataTypeName = 'Bz';
             colorLabel = 'B_z (T)';
         case 'Bt'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),30,'LineStyle','none');
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bt(:,:,i),30,'LineStyle','none');
             % pcolor(grid2D.zq, grid2D.rq, data2D.Bt(:,:,i));
             % shading interp;
 
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bt(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bt(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
 
             % clim([0,0.3]);%/ST
             clim([-0.05,0.05]);%Spheromak
@@ -73,56 +73,68 @@ for m=1:16 %図示する時間
             colorLabel = 'B_t (T)';
             % disp(max(max(data2D.Bt(:,:,i))))
         case 'Jt'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),30,'LineStyle','none');
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Jt(:,:,i),30,'LineStyle','none');
 
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Jt(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Jt(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
             
-            clim([-0.1e7,0.1e7]);
+            clim([-0.3e6,0.3e6]);
             dataTypeName = 'Jt';
             colorLabel = 'J_t (A/m^2)';
         case 'Et'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),100,'LineStyle','none');
-            pcolor(grid2D.zq, grid2D.rq, data2D.Et(:,:,i));
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Et(:,:,i),100,'LineStyle','none');
+            % pcolor(grid2D.zq, grid2D.rq, data2D.Et(:,:,i));
             shading interp;
             % clim([-8e-4,8e-4]);
             clim([-2e2 2e2]);
             dataTypeName = 'Et';
             colorLabel = 'E_t (V/m)';
         case  'Br'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Br(:,:,i),30,'LineStyle','none');
 
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Br(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Br(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
             
             clim([-0.07,0.07]);
             dataTypeName = 'Br';
             colorLabel = 'B_r (T)';
         case  'lBl'
-            % contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bl(:,:,i),20,'LineStyle','none'); 
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Bl(:,:,i),20,'LineStyle','none'); 
             
-            imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bl(:,:,i));
-            set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
-            shading flat; % 念のため
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), data2D.Bl(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
 
             clim([0,0.1]);
             dataTypeName = 'lBl';
             % disp(min(min(data2D.Bl(:,:,i))))
             colorLabel = 'B_l (T)';
-        case  'gradB_r'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.gradB_r(:,:,i),20,'LineStyle','none'); 
-            clim([-1,1]);
-            dataTypeName = 'gradB_r';
-            disp(min(min(data2D.gradB_r(:,:,i))))
-            colorLabel = 'gradB_r (T/m)';
-        case  'gradB_z'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.gradB_z(:,:,i),20,'LineStyle','none'); 
-            clim([-1,1]);
-            dataTypeName = 'gradB_z';
-            disp(min(min(data2D.gradB_z(:,:,i))))
-            colorLabel = 'gradB_z (T/m)';
+        case 'Brt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Brt(:,:,i),20,'LineStyle','none'); 
+            Brt(:,:,i)=sqrt(data2D.Bt(:,:,i).^2+data2D.Br(:,:,i).^2);
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), Brt(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
+
+            clim([0,0.1]);
+            dataTypeName = 'Brt';
+            % disp(min(min(data2D.Brt(:,:,i))))
+            colorLabel = 'Brt (T)';
+        case 'JtEt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JtEt(:,:,i),20,'LineStyle','none'); 
+            JtEt(:,:,i)     = data2D.Jt(:,:,i).*data2D.Et(:,:,i);
+            
+            % imagesc(grid2D.zq(1,:), grid2D.rq(:,1), JtEt(:,:,i));
+            % set(gca, 'YDir', 'normal'); % 上下反転を防ぐ
+            % shading flat; % 念のため
+            disp(max(max(JtEt(:,:,i))))
+
+            clim([-1e6,1e6]);
+            dataTypeName = 'JtEt';
+            % disp(min(min(data2D.JtEt(:,:,i))))
+            colorLabel = 'JtEt (A·V/m^3)';
         case  'gradB'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.gradB(:,:,i),20,'LineStyle','none'); 
             % clim([0,0.1]);
@@ -183,6 +195,23 @@ for m=1:16 %図示する時間
             dataTypeName = 'dBdt magnitude';
             colorLabel = 'dBdt magnitude (T/s)';
             disp(max(max(data2D.dBdt_magnitude(:,:,i))))
+        case 'dpsi_dt'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.dpsi_dt(:,:,i),20,'LineStyle','none'); 
+            clim([-3e3,3e3]);disp(min(min(data2D.dpsi_dt(:,:,i))))
+            dataTypeName = 'dpsi dt';
+            colorLabel = 'dpsi dt (Wb/s)';
+        case 'magnetic_rec_pressure'
+            mu0 = 4*pi*1e-7; % 真空の透磁率
+            magnetic_rec_pressure(:,:,i) = ((data2D.Br(:,:,i)).^2 + (data2D.Bz(:,:,i)).^2) / (2 * mu0);
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),magnetic_rec_pressure(:,:,i),20,'LineStyle','none'); 
+            clim([0,3e2]);
+            dataTypeName = 'magnetic rec pressure';
+            colorLabel = 'magnetic rec pressure (Pa)';
+        case 'magnetic_pressure'
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.magnetic_pressure(:,:,i),20,'LineStyle','none'); 
+            clim([0,5e2]); disp(max(max(data2D.magnetic_pressure(:,:,i))))
+            dataTypeName = 'magnetic pressure';
+            colorLabel = 'magnetic pressure (Pa)';
         case  'B parallel'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.B_parallel(:,:,i),20,'LineStyle','none'); 
             clim([0,0.01]);
@@ -204,35 +233,16 @@ for m=1:16 %図示する時間
             dataTypeName = 'Bt_th';
             colorLabel = 'Bt_th　(T)';
         case 'Lamor'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Lamor(:,:,i),20,'LineStyle','none'); 
+            me = 9.11e-31; %電子質量
+            v_pe = 1e6; %垂直速度仮定 この時3eV。1e5m/sの時は0.03eV。1e7の時は300eV。
+            q = 1.6e-19; %電子素量
+            Lamor(:,:,i) = me*v_pe/q./data2D.Bl(:,:,i);
+
+            contourf(grid2D.zq(1,:),grid2D.rq(:,1),Lamor(:,:,i),20,'LineStyle','none'); 
             clim([0,1e-2]);
-            disp(max(max(data2D.Lamor(:,:,i))))
+            disp(max(max(Lamor(:,:,i))))
             dataTypeName = 'Lamor radius';
             colorLabel = 'Lamor Radius(m)';
-        case'JxBr'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBr(:,:,i),20,'LineStyle','none'); 
-            clim([-2e4,2e4]);
-            disp(max(max(data2D.JxBr(:,:,i))))
-            dataTypeName = 'JxBr';
-            colorLabel = 'JxBr(N/m^3)';
-        case'JxBt'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBt(:,:,i),20,'LineStyle','none'); 
-            clim([0,1e-2]);
-            disp(max(max(data2D.JxBt(:,:,i))))
-            dataTypeName = 'JxBt';
-            colorLabel = 'JxBt(N/m^3)';
-        case'JxBz'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.JxBz(:,:,i),20,'LineStyle','none'); 
-            clim([0,1e-2]);
-            disp(max(max(data2D.JxBz(:,:,i))))
-            dataTypeName = 'JxBz';
-            colorLabel = 'JxBz(N/m^3)';
-        case'absJxB'
-            contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.absJxB(:,:,i),20,'LineStyle','none'); 
-            clim([0,1e5]);
-            disp(max(max(data2D.absJxB(:,:,i))))
-            dataTypeName = 'absJxB';
-            colorLabel = 'absJxB(N/m^3)';
         case'Vcurvature'
             contourf(grid2D.zq(1,:),grid2D.rq(:,1),data2D.Vcurvature(:,:,i),20,'LineStyle','none'); 
             clim([0,1e-2]);

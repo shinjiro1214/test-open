@@ -22,7 +22,8 @@ if exist('parametercheck', 'file') ~= 2 || exist('get_distribution', 'file') ~= 
 end
 
 % --- 2. Load Experimental Data ---
-date_target = 251220; shot_idx = 8; time_target = 480;
+date_target = 251220; shot_idx = 8; time_target = 480;  %異極性スフェロマック合体
+% date_target = 251217; shot_idx = 9; time_target = 458; %ST合体
 fprintf('--- 1. Loading Exp Data (Shot%d @ %dus) ---\n', shot_idx, time_target);
 
 DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';
@@ -100,7 +101,7 @@ Geom.N_g = N_g; Geom.DR = (rmax-rmin)/N_grid; Geom.DZ = (zmax-zmin)/N_grid;
 
 
 % -------------------------------------------------------------------------
-% [CRITICAL FIX] Anisotropy Logic
+% Anisotropy Logic
 % -------------------------------------------------------------------------
 fprintf('    Generating Physics Emission Table (Normalized)...\n');
 Phys.E_para = 80.0; % [eV]
@@ -114,8 +115,8 @@ catch
     error('Failed to load 1umAl.txt.');
 end
 
-% Pre-calculate Emission Table
-angle_lut = linspace(0, 180, 181);
+% Pre-calculate Emission Table 視線が磁力線とどれくらい角度があったらどれくらい放射強度が変わるかの計算式を出している。
+angle_lut = linspace(0, 180, 181); % 視線と磁力線の角度
 intensity_lut = zeros(size(angle_lut));
 for i = 1:length(angle_lut)
     intensity_lut(i) = calculate_python_model_emission(angle_lut(i), Phys, F_Trans);
@@ -123,7 +124,7 @@ end
 
 % intensity_lut = ones(size(angle_lut)); % 全角度で強度1.0
 
-% --- 正規化 (重要) ---
+% --- 正規化  ---
 % ファントム値がすでに「放射強度」なので、ここでの係数は0～1の相対値にする
 max_val = max(intensity_lut);
 if max_val > 0
@@ -134,11 +135,11 @@ Phys.LUT_Angle = angle_lut;
 Phys.LUT_Intensity = intensity_lut;
 F_Emission_LUT = griddedInterpolant(Phys.LUT_Angle, Phys.LUT_Intensity, 'linear', 'nearest');
 
-% figure; 
-% plot(Phys.LUT_Angle, Phys.LUT_Intensity, 'LineWidth', 2);
-% title('Anisotropy Factor (LUT)');
-% xlabel('Angle from B-field [deg]'); ylabel('Intensity Factor');
-% grid on;
+figure; 
+plot(Phys.LUT_Angle, Phys.LUT_Intensity, 'LineWidth', 2);
+title('Anisotropy Factor (LUT)');
+xlabel('Angle from B-field [deg]'); ylabel('Intensity Factor');
+grid on;
 
 
 
@@ -334,10 +335,10 @@ function [L_iso, S_obs] = Compute_Projection_Normalized(l_struct, G, P, F_E, F_B
                 
                 % 5. Coordinate Transform
                 inv_r = 1 ./ p_r_a;
-                cp = p_x_a .* inv_r; 
-                sp = p_y_a .* inv_r;
+                cp = p_x_a .* inv_r; % cos(phi) = x/r
+                sp = p_y_a .* inv_r; % sin(phi) = y/r
                 
-                Bx = br .* cp - bt .* sp;
+                Bx = br .* cp - bt .* sp; %円等座標Brtzから直交座標Bxyzへの回転
                 By = br .* sp + bt .* cp;
                 Bz = bz;
                 
@@ -380,49 +381,130 @@ function [L_iso, S_obs] = Compute_Projection_Normalized(l_struct, G, P, F_E, F_B
 end
 
 function I_integ = calculate_python_model_emission(theta_deg, Phys, F_Trans)
-    m_e_eV = 510998.95; Z_Ar = 1.0;
-    v_para = Phys.E_para; v_perp = Phys.E_perp;
-    E_kin = v_para + v_perp;
+    % ---------------------------------------------------------------------
+    % Textbook Model with Explicit Impact Parameters (b_max, b_min)
+    % 
+    % 物理モデル:
+    %   g_ff = (sqrt(3)/pi) * ln(b_max / b_min)
+    % 
+    %   b_max = v / omega  (断熱限界: これ以上遠いと放射しない)
+    %   b_min = h_bar / (m*v) (量子限界: 不確定性原理による最小距離)
+    %           or Ze^2 / (m*v^2) (古典限界) の大きい方
+    % ---------------------------------------------------------------------
     
-    pitch_angle = atan2(sqrt(v_perp), sqrt(v_para));
-    gamma = 1.0 + E_kin / m_e_eV;
-    beta = sqrt(1.0 - 1.0/gamma^2); if beta < 1e-5, beta = 1e-5; end
+    % --- 物理定数 (SI単位) ---
+    h_bar = 1.0545718e-34;  % ディラック定数 [J·s]
+    m_e   = 9.10938356e-31; % 電子質量 [kg]
+    e_c   = 1.60217663e-19; % 電気素量 [C]
+    eps0  = 8.8541878e-12;  % 真空の誘電率 [F/m]
     
+    % eV -> Joule 変換係数
+    eV2J = 1.60217663e-19;
+    
+    % --- Electron Kinematics ---
+    E_para = Phys.E_para; 
+    E_perp = Phys.E_perp;
+    E_kin_eV = E_para + E_perp; 
+    E_kin_J  = E_kin_eV * eV2J; % ジュール単位
+    
+    % 速度 v の計算 (非相対論で十分だが精度のため相対論を使用)
+    mc2_J = m_e * (2.9979e8)^2;
+    gamma = 1.0 + E_kin_J / mc2_J;
+    beta  = sqrt(1.0 - 1.0/gamma^2);
+    if beta < 1e-5, beta = 1e-5; end
+    
+    v_electron = beta * 2.9979e8; % 電子の速度 [m/s]
+    
+    % Pitch Angle
+    pitch_angle = atan2(sqrt(E_perp), sqrt(E_para));
+    
+    % --- Geometry ---
     theta_rad = deg2rad(theta_deg);
     n_obs = [sin(theta_rad), 0, cos(theta_rad)];
-    gyro_phases = linspace(0, 2*pi, 36);
+    gyro_phases = linspace(0, 2*pi, 36); 
     
-    h_nu_list = linspace(10, E_kin-1, 50); 
+    % --- Spectral Integration ---
+    h_nu_list = linspace(10, E_kin_eV*0.99, 50); 
     if isempty(h_nu_list), I_integ = 0; return; end
     d_h_nu = h_nu_list(2) - h_nu_list(1);
     
     total_val = 0;
+    
     for k = 1:length(h_nu_list)
-        hv = h_nu_list(k);
-        T_filter = F_Trans(hv);
+        hv_eV = h_nu_list(k);
+        hv_J  = hv_eV * eV2J; % 光子エネルギー [J]
+        
+        T_filter = F_Trans(hv_eV);
         if T_filter <= 0, continue; end
         
-        nu_ratio = hv / E_kin;
-        g_ff = (sqrt(3)/pi) * log(4.0/nu_ratio); if g_ff < 1.0, g_ff = 1.0; end
+        % === b_max, b_min の直接計算 ===
         
-        % Spectral Weight
-        I_scale = (Z_Ar^2 / beta^2) * g_ff * (1/hv);
+        % 1. 角振動数 omega [rad/s]
+        % E = h_bar * omega  =>  omega = E / h_bar
+        omega = hv_J / h_bar;
         
-        if nu_ratio < 0, P = 0; elseif nu_ratio > 1, P = 1; else, P = nu_ratio * (1.35 - 0.35 * nu_ratio); end
+        % 2. b_max (Interaction Range / Adiabatic Limit)
+        % 電子が通り過ぎる時間 (b/v) が 振動周期 (1/omega) より短い範囲
+        b_max = v_electron / omega;
         
-        sum_I_gyro = 0;
+        % 3. b_min (Closest Approach)
+        % 量子力学的な限界 (de Broglie wavelength)
+        b_qm = h_bar / (m_e * v_electron);
+        
+        % 古典的な限界 (Classical distance of closest approach)
+        % Coulomb potential energy ~ Kinetic energy
+        Z = 1;
+        b_cl = (Z * e_c^2) / (4 * pi * eps0 * m_e * v_electron^2);
+        
+        % 実際には「不確定性原理」か「反発力」のどちらか大きい方で止まる
+        b_min = max(b_qm, b_cl);
+        
+        % 4. ガント係数の計算
+        % 対数の中身 (Impact Parameter Ratio)
+        lambda_b = b_max / b_min;
+        
+        % 対数が負にならないようクリップ
+        if lambda_b < 1.0, lambda_b = 1.0; end
+        
+        % 画像の式: g_ff = (sqrt(3)/pi) * ln(b_max/b_min)
+        g_ff = (sqrt(3)/pi) * log(lambda_b);
+        
+        % 教科書の "～1のオーダー" に従い下限処理
+        % if g_ff < 1.0, g_ff = 1.0; end
+        
+        
+        % === 放射強度 (Intensity) ===
+        % (1/v) * g_ff * (光子数換算 1/hv)
+        I_scale = (1.0 / v_electron) * g_ff * (1.0 / hv_eV);
+        
+        % --- Angular Distribution (双極子放射) ---
+        sum_sigma = 0;
         for ip = 1:length(gyro_phases)
             phi = gyro_phases(ip);
-            v_dir = [sin(pitch_angle)*cos(phi), sin(pitch_angle)*sin(phi), cos(pitch_angle)];
-            cos_psi = dot(n_obs, v_dir);
-            beaming = 1.0 / (1.0 - beta * cos_psi)^2;
-            sin2 = 1.0 - cos_psi^2;
-            shape = P * sin2 + (1.0 - P) * 1.0;
-            sum_I_gyro = sum_I_gyro + shape * beaming;
+            % n_i = [sin(pitch_angle)*cos(phi), sin(pitch_angle)*sin(phi), cos(pitch_angle)];
+            % cos_Theta = dot(n_i, n_obs);
+            % sum_sigma = sum_sigma + (1.0 - cos_Theta^2);
+
+            % 1. 電子の速度ベクトル (v_hat)
+            % ジャイロ回転(phi)とピッチ角(pitch_angle)から決定
+            v_hat = [sin(pitch_angle)*cos(phi), sin(pitch_angle)*sin(phi), cos(pitch_angle)];
+
+            % 2. 観測方向との内積 (cos_Theta)
+            v_dot_n = dot(v_hat, n_obs);
+
+            % 3. イオンの位置確率に基づく厳密計算
+            % 「速度に垂直なあらゆる方向の加速度」について sin^2(角) を積分した結果
+            % 結果は必ず (1 + cos^2(速度との角)) に比例します。
+            current_sigma = 1.0 + v_dot_n^2;
+
+            sum_sigma = sum_sigma + current_sigma;
         end
-        avg_shape = sum_I_gyro / length(gyro_phases);
-        total_val = total_val + avg_shape * I_scale * T_filter * d_h_nu;
+        avg_shape = sum_sigma / length(gyro_phases);
+        
+        % 積分
+        total_val = total_val + I_scale * avg_shape * T_filter * d_h_nu;
     end
+    
     I_integ = total_val;
 end
 

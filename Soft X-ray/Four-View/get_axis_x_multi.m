@@ -41,6 +41,7 @@ axisCandidate = islocalmax(psiRidge,'MaxNumExtrema',2); %1*40*401 logical
 magAxisList.r = NaN(2,numel(trange));
 magAxisList.z = NaN(2,numel(trange));
 magAxisList.psi = NaN(2,numel(trange));
+magAxisList.Brt = NaN(2,numel(trange));
 xPointList.r = NaN(1,numel(trange));
 xPointList.z = NaN(1,numel(trange));
 xPointList.psi = NaN(1,numel(trange));
@@ -67,6 +68,7 @@ for i=1:numel(trange)
         magAxisList.r(:,i) = rqList(psiRidgeIdx_t(axisCandidate_t));
         magAxisList.z(:,i) = zqList(psiRidgeIdx_t(axisCandidate_t));
         magAxisList.psi(:,i) = psi(psiRidgeIdx_t(axisCandidate_t));
+        magAxisList.Brt(:,i) = sqrt(Bt(psiRidgeIdx_t(axisCandidate_t)).^2+data2D.Br(psiRidgeIdx_t(axisCandidate_t)).^2);
         % M_x = psiRidge_t(find(axisCandidate_t,1):find(axisCandidate_t,1,'last'));
         % I_x = psiRidgeIdx_t(find(axisCandidate_t,1):find(axisCandidate_t,1,'last'));
         % TF_x = islocalmin(M_x,'MaxNumExtrema',1);
@@ -108,6 +110,8 @@ for i=1:numel(trange)
         magAxisList.r(:,i) = NaN;
         magAxisList.z(:,i) = NaN;
         magAxisList.psi(:,i) = NaN;
+        magAxisList.Brt(:,i) = NaN;
+        
     end
     if any(ismember(xPointList.r(i),rLim))
         xPointList.r(i) = NaN;
@@ -124,6 +128,7 @@ for i=1:numel(trange)
         magAxisList.r(smallAxis,i) = magAxisList.r(maxAxis,i);
         magAxisList.z(smallAxis,i) = magAxisList.z(maxAxis,i);
         magAxisList.psi(smallAxis,i) = magAxisList.psi(maxAxis,i);
+        magAxisList.Brt(smallAxis,i) = magAxisList.Brt(maxAxis,i);
     end
 end
 

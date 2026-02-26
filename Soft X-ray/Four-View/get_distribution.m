@@ -213,6 +213,7 @@ elseif ReconMethod == 2
 
     EE = reshape(E.',sqrt(K),sqrt(K));
 elseif ReconMethod == 1 % 最小フィッシャー
+    disp('calculating MFI')
     tic
     gamma = 10^(lg_gamma(gamma_index));
     C = Laplacian(sqrt(K)-1);
@@ -245,7 +246,7 @@ elseif ReconMethod == 1 % 最小フィッシャー
     toc
 
 elseif ReconMethod == 0
-    disp('calculating MFI')
+    disp('calculating TP')
     for i=1:K
         if M>K
             v_1 = [v(i,:) zeros(1,M-K)];

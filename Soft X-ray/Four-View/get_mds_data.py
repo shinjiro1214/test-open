@@ -25,6 +25,7 @@ import scipy.io
 
 # --- 設定 ---
 MDS_SERVER = '192.168.1.140'
+# MDS_SERVER = 'localhost:8000'
 POST_SAMPLES = 1000
 
 def fetch_channels_batch(conn, ch_num, post_samples):
@@ -108,6 +109,11 @@ def get_mds_data(dtacq_num, shot, tfshot):
                 print("Warning: TF shot fetch failed. Proceeding without subtraction.")
             
         return rawdata_wTF, rawdata_woTF
+    except Exception as e:
+        # 標準エラー出力に書き出す（MATLABがキャッチしやすい）
+        sys.stderr.write(f"Error in Python Script (Shot: {shot}):\n")
+        traceback.print_exc(file=sys.stderr) 
+        return None, None
 
     except Exception as e:
         print(f"MDSplus Connection/Tree Error: {e}")

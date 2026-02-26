@@ -1,0 +1,228 @@
+% close all
+
+% ガイド磁場スキャンのレシピ
+% Te=10;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
+% Te=10;ne=repelem(5e19,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+% Te=10;ne=repelem(1e20,4);Et=[270 330 390  450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+% x_data = [4.5583    5.2295    6.4095    7.6048];
+% Te=2:2:8;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/10;legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};
+% Te=50;ne=repelem(5e19,4);Et=[270 330 390 450];GFR=Et/5;
+
+% Te=10;ne=repelem(5e19,4);Et=[200 300 400 500];GFR=Et/5;
+% Te=10;ne=repelem(5e19,3);Et=[200 400 600];GFR=Et/4;
+
+% % 時間発展のレシピ
+% % Te=10;ne=[2e20 2e20 5e19];Et=[120 240 360];GFR=repelem(50,3);
+% Te=10;ne=[2e20 2e20 2e20];Et=[120 240 360];GFR=repelem(50,3);
+% % Te=10;ne=[2e20 1e20 5e19];Et=[240 240 240];GFR=repelem(50,3);
+% legendList = {'Thermal','t=465us','t=468us','t=470us'};
+% x_data = [465, 468, 470];
+
+% % 時間発展のレシピ（ダブルプローブ）
+% Te=18;ne=[7.5e18 1.2e19 1.5e19];Et=[120 240 360];GFR=repelem(50,3);
+% legendList = {'Thermal','t=465us','t=468us','t=470us'};
+% x_data = [465, 468, 470];
+
+% 位置のレシピ（下流）
+% Te=5;ne=[3e20 2e20 1e20];Et=[100 100 200];GFR=[10 15 20];
+Te=50;ne=[3e20 2e20 1e20];Et=[100 200 300];GFR=[10 15 20];
+% Te=10;ne=[3e20 2e20 1e20];Et=[100 200 300];GFR=repelem(23,3);
+% Te=10;% Et=[50 100 300];
+% GFR=[20 25 30];
+% GFR=repelem(10,3);
+legendList = {'Thermal','r=0.150m','r=0.175m','r=0.200m'};
+x_data = [0.15 0.175 0.2];
+
+% % ガイド磁場スキャンのレシピ（下流）
+% Te=10;ne=repelem(1e20,4);Et=[320 280 240 200];GFR=[4, 6, 8, 20];
+% legendList = {'Thermal','GFR = 4.5','GFR = 5.5','GFR = 6.5','GFR = 7.5'};x_data = 4.5:7.5;
+
+% % 時間のレシピ（下流）
+% Te=5;ne=[6e19 1e20 3e20];Et=[10 50 100];GFR=[10 10 10];
+% legendList = {'Thermal','r=0.150m','r=0.175m','r=0.200m'};
+% x_data = [0.15 0.175 0.2];
+
+% Te = 10; %[eV]
+% Te = 100; %[eV
+% Te = 300; %[eV]
+
+% ne = [3e20, 5e19]; %[m^-3]
+% ne = [1e20, 5e19]; %[m^-3]
+% ne = [3e19, 5e18]; %[m^-3]
+% ne = repelem(5e19, 3);
+% ne = repelem(5e18, 3);
+
+% Et = [270, 330]; %[V/m]
+% Et = [300, 400]; %[V/m]
+% Et = [200, 400]; %[V/m]
+% Et = repelem(400, 4); %[V/m]
+% Et = [200 400 600]; %[V/m]
+
+% GFR = [50,50];
+% GFR = [50,100,150];
+
+h = 6.63e-34; %プランク定数
+e = 1.602176634e-19; %C
+me = 9.1093837015e-31;
+e0 = 8.85e-12;
+
+lambdaD = sqrt(e0.*e.*Te./(e^2.*ne));
+Lambda = 4*pi*ne.*lambdaD.^3;
+% v_Te = sqrt(3*e*Te/me);
+v_Te = sqrt(e*Te/me);
+E_D = e^3*ne.*log(Lambda)./(4*pi*e0^2*me*v_Te.^2);
+E_D_Bellan = 0.43*e^3*ne.*log(Lambda)./(8*pi*e0^2*e*Te);
+
+% f = 1e14:1e14:1e17; %計算する波長帯
+% E = 1:1000;
+E=1:250;
+f = e * E ./ h;
+
+num_particle = 1e5;
+
+v_e = zeros(num_particle,numel(ne));
+eps_rad = zeros(numel(ne),numel(f));
+I_rad = zeros(4,numel(ne));
+
+for i = 1:numel(ne)
+    v_e(:,i) = get_electron_acceleration(num_particle,Te,ne(i),Et(i),GFR(i),false);
+    % v_e(:,i) = get_electron_acceleration(num_particle,Te(i),ne(i),Et(i),GFR(i),false);
+    eps_rad(i,:) = get_bremsstrahlung_spectrum(v_e(:,i),f,false);
+    % I_rad(:,i) = get_filtered_intensity(eps_rad(i,:), f);
+end
+v_e_th = get_electron_acceleration(num_particle,Te(1),ne(1),0,0,false);
+% v_e_th = get_electron_acceleration(num_particle,Te(1),ne(1),10,100,false);
+% v_e_th = repelem(mean(v_e_th),num_particle).';
+eps_rad_th = get_bremsstrahlung_spectrum(v_e_th,f,false);
+% I_rad_th = get_filtered_intensity(eps_rad_th, f);
+
+v_e_th = repelem(mean((abs(v_e_th))),num_particle).';
+eps_rad(1,:) = get_bremsstrahlung_spectrum(v_e_th,f,false);
+
+% 速度分布のプロット
+figure;
+v_e_th(v_e_th>2e7)=2e7;[N, edges] = histcounts(v_e_th,'BinWidth',1e5);
+semilogy(edges(2:end), N,'k-','LineWidth',2);
+hold on;
+for i = 1:numel(ne)
+    v = v_e(:,i);
+    v(v>2e7) = 2e7;
+    [N, edges] = histcounts(v,'BinWidth',1e5);
+    N(N==0) = 0.1;
+    semilogy(edges(2:end), N,'LineWidth',2);
+    % if i == 1
+    %     hold on;
+    % end
+end
+xlabel('Electron velocity [m/s]');
+ylabel('Number of particles');
+legend(legendList,'Location','northeast');
+ax = gca;
+ax.FontSize = 18;
+xlim([0 1.5e7]);
+ylim([1 1e4]);
+title('Electron velocity distribution');
+
+% % 電流計算
+% I_e = sum(v_e);I_e_th = sum(v_e_th);
+% % I_e = (I_e - I_e_th) * e * 1e20 / num_particle;
+% % I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^3);
+% I_e = I_e * e * 1e20 / (num_particle * 2.5 * 10^2);
+% % TF = 2.5:0.5:4;
+% GFR = 4.5:7.5;
+% figure;plot(GFR,I_e,'o-','LineWidth',3);
+% xlabel('Guide field ratio');ylabel('Toroidal current density [A/m^3]');
+% ax=gca;ax.FontSize=18;xlim([4 8]);
+
+% エネルギー分布のプロット
+k_e = zeros(size(v_e));
+figure;
+k_th = 0.5*me*v_e_th.^2./e;[N, edges] = histcounts(k_th,'BinWidth',1);
+semilogy(edges(2:end), N,'k-','LineWidth',2);
+hold on;
+for i = 1:numel(ne)
+    v = v_e(:,i);
+    v(v>2e7) = 2e7;
+    k = 0.5*me*v.^2./e;
+    k_e(:,i) = k;
+    [N, edges] = histcounts(k,'BinWidth',1);
+    semilogy(edges(2:end), N,'LineWidth',2);
+    % if i == 1
+    %     hold on;
+    % end
+end
+xlabel('Electron energy [eV]');
+ylabel('Number of particles');
+legend(legendList,'Location','northeast');
+ax = gca;
+ax.FontSize = 18;
+xlim([0 500]);
+title('Electron energy distribution');
+
+% % エネルギーの増加を計算
+% K_e=sum(k_e);K_th=sum(k_th);
+% K = [K_th, K_e];
+% TF = [0, 2.5:0.5:4];
+% figure;plot(TF,K,'LineWidth',3);
+% xlabel('TF voltage [kV]');ylabel('Electron kinetic energy');
+% ax=gca;ax.FontSize=18;%xlim([2.3 4.2]);
+
+% 制動放射スペクトルのプロット
+figure;
+% yyaxis left
+loglog(E,eps_rad_th/sum(eps_rad_th),'k-','LineWidth',2);hold on;
+for i = 1:numel(ne)
+    eps_plot = eps_rad(i,:)/sum(eps_rad(i,:));
+    loglog(E,eps_plot,'LineWidth',2);
+    % if i == 1
+    %     hold on;
+    % end
+end
+% loglog(E,eps_rad_th/sum(eps_rad_th),'k-','LineWidth',2);
+xlabel('Photon energy [eV]');
+ylabel('Emissivity [a.u.]');
+ax = gca;
+ax.FontSize = 18;
+title('Bremsstrahlung spectrum');
+
+% yyaxis right
+% set(gca, 'YScale', 'log');  % 明示的に右y軸を対数に
+% set(gca, 'XScale', 'log');  % x軸も対数に（loglogに対応）
+% T = readmatrix('/Users/shinjirotakeda/Library/CloudStorage/OneDrive-TheUniversityofTokyo/研究資料/フィルタ/Filters_231107.xlsx');
+% T(:,3) = T(:,3) * 3;
+% T(T<=1e-2) = 1e-2;
+% for i = 2:4
+%     plot(T(:,1),T(:,i),'LineWidth',2);
+%     if i==2
+%         hold on;
+%     end
+% end
+% % xlabel('Photon energy [eV]');
+% ylabel('Transmittance');
+
+xlim([10 250]);
+legend(legendList,'Location','northeast');
+% legend({legendList{2:end},'Al 1um','Al 2.5um','Mylar 1um'},'Location','northeast');
+ax = gca;
+ax.FontSize = 18;
+
+% % 発光強度のプロット
+% figure;hold on;
+% I_plot = zeros(numel(ne),2);
+% for i = 1:numel(ne)
+%     I = I_rad(:,i);
+%     I = I./I(2);
+%     % I = I([1,3]);
+%     % plot(I,'LineWidth',2);
+%     I_plot(i,:) = I([1,3]);
+% end
+
+% % I_plot = I_plot./I_plot(1,:);
+% plot(x_data,I_plot(:,1)/max(I_plot(:,1)),'o-','LineWidth',2);
+% plot(x_data,I_plot(:,2)/max(I_plot(:,2)),'o-','LineWidth',2);
+% % plot(I_plot,'o-','LineWidth',2);
+% ylabel('Intensity [a.u.]');%xlabel('Photon energy [eV]');
+% legend({'Low energy','High energy'},'Location','southeast')
+% % yticks([]);xticks([]);
+% % ylim([0 inf]);
+% ax = gca;ax.FontSize = 18;

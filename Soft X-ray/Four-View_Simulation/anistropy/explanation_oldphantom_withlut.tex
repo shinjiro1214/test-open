@@ -1,0 +1,513 @@
+\documentclass[a4paper,11pt]{bxjsarticle} % エンジン自動判定
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{physics} % 微分・ブラケット記法用
+\usepackage{geometry}
+\makeatletter
+\newcommand{\subsubsubsection}{\@startsection{paragraph}{4}{\z@}%
+  {1.0\Cvs \@plus.5\Cdp \@minus.2\Cdp}%
+  {.1\Cvs \@plus.3\Cdp}%
+  {\reset@font\sffamily\normalsize}
+}
+\makeatother
+\setcounter{secnumdepth}{4}
+
+\geometry{left=25mm,right=25mm,top=30mm,bottom=30mm}
+
+\title{異方性を考慮した軟X線放射のシミュレーションと\\等方性仮定に基づく再構成手法の検証}
+\author{TS-6 Experiment Group}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本研究の目的は、現実のプラズマが持つ「見る角度によって明るさが変わる性質（異方性）」を厳密に計算する順解析を行い、そのデータを従来の「どの角度から見ても同じ明るさと仮定する手法（等方性再構成）」で解析した際に生じる誤差を定量化することにある。
+\end{abstract}
+
+\section{現状の問題点：等方性の仮定}
+従来のトモグラフィ手法では、計算を簡単にするために\textbf{「プラズマの光源は、どの方向から見ても同じ明るさで光る（等方性）」}という仮定を置いている。
+しかし、実際のプラズマ中では、電子が磁力線に沿ってビーム状に走っている場合など、\textbf{「見る角度によって明るさが異なる（異方性）」}現象が発生する。
+この異方性を無視して無理やり画像を復元すると、実際には存在しない構造（ゴースト）が現れたり、温度を見誤ったりする危険性がある。
+
+本コードは、この「異方性がある現実」をコンピュータ上で完全再現し、既存の解析手法がどれくらい通用するのか（あるいは間違えるのか）をテストするためのものである。
+
+\section{物理モデルの基礎}
+
+ここでは、プラズマから軟X線が出る微視的なメカニズムを解説する。
+
+% \subsection{電気双極子放射（Electric Dipole Radiation）}
+% 電荷 $q$ を持つ粒子（電子）が非相対論的な速度 $v \ll c$ で運動しており、加速度 $\dot{\bm{v}}$ を持っているとする。古典電磁気学（Larmorの公式の導出過程）によれば、この粒子から遠方 $R$ の地点に形成される放射電場 $\bm{E}_{\mathrm{rad}}$ は以下で与えられる。
+
+% \begin{equation}
+%     \bm{E}_{\mathrm{rad}}(t) = \frac{q}{c^2 R} \left[ \bm{n} \times (\bm{n} \times \dot{\bm{v}}) \right]
+% \end{equation}
+% ここで $\bm{n}$ は粒子から観測点へ向かう単位ベクトル、$c$ は光速である。
+
+% 単位時間・単位立体角あたりに放射されるエネルギー（放射強度）$\frac{dP}{d\Omega}$ は、ポインティング・ベクトル $\bm{S} = \frac{c}{4\pi} |\bm{E}_{\mathrm{rad}}|^2 \bm{n}$ の大きさ $S$ に距離の2乗 $R^2$ を乗じることで求まる（CGSガウス単位系）。
+
+% \begin{equation}
+%     \frac{dP}{d\Omega} = R^2 (\bm{S} \cdot \bm{n}) = \frac{c}{4\pi} R^2 |\bm{E}_{\mathrm{rad}}|^2
+% \end{equation}
+
+% ここで、ベクトル三重積の大きさ $|\bm{n} \times (\bm{n} \times \dot{\bm{v}})| = |\dot{\bm{v}}| \sin\psi$ （$\psi$ は加速度 $\dot{\bm{v}}$ と観測方向 $\bm{n}$ のなす角）を用いると、最終的な放射強度の角度分布が得られる。
+
+% \begin{equation}
+%     \frac{dP}{d\Omega} = \frac{q^2 \dot{v}^2}{4\pi c^3} \sin^2\psi
+%     \label{eq:dipole_exact}
+% \end{equation}
+
+% この式(\ref{eq:dipole_exact})は、放射強度が加速度の大きさの2乗に比例し、**加速度ベクトルと観測方向のなす角の正弦（sine）の2乗に比例する**ことを示している。
+% 物理的には、**「加速度ベクトルの方向（$\psi=0, \pi$）には放射が出ず、加速度と垂直な方向（$\psi=\pi/2$）で放射が最大になる（ドーナツ型の放射パターン）」**という性質を表している。
+
+\subsection{電気双極子放射の角度分布}
+
+以下に、放射電場の式から放射強度の角度分布 $\frac{dP}{d\Omega} \propto \sin^2\psi$ が得られるまでの過程を記述します。
+
+\subsubsection{放射電場ベクトルと外積の幾何学}
+
+出発点は、加速度 $\dot{\bm{v}}$ を持つ電荷 $q$ が遠方 $R$ に作る放射電場 $\bm{E}_{\mathrm{rad}}$ の式です。
+
+\begin{equation}
+    \bm{E}_{\mathrm{rad}} = \frac{q}{c^2 R} \left[ \bm{n} \times (\bm{n} \times \dot{\bm{v}}) \right]
+\end{equation}
+
+ここで $\bm{n}$ は観測方向への単位ベクトルです。この式のベクトル三重積 $\bm{A} \times (\bm{B} \times \bm{C})$ の部分を詳細に解析します。
+
+まず、内側の外積 $\bm{u} = \bm{n} \times \dot{\bm{v}}$ を考えます。外積の定義より、ベクトル $\bm{u}$ の大きさは、$\bm{n}$ と $\dot{\bm{v}}$ のなす角を $\psi$ とすると以下のようになります。
+
+\begin{equation}
+    |\bm{u}| = |\bm{n}| |\dot{\bm{v}}| \sin\psi = 1 \cdot \dot{v} \sin\psi = \dot{v} \sin\psi
+\end{equation}
+
+このベクトル $\bm{u}$ の向きは、$\bm{n}$ と $\dot{\bm{v}}$ の両方に垂直です。
+
+次に、外側の外積 $\bm{n} \times \bm{u}$ を計算します。
+$\bm{u}$ は定義上 $\bm{n}$ に垂直なベクトルであるため、$\bm{n}$ と $\bm{u}$ のなす角は $90^\circ (\pi/2)$ となります。したがって、三重積全体の大きさは以下のようになります。
+
+\begin{equation}
+    |\bm{n} \times (\bm{n} \times \dot{\bm{v}})| = |\bm{n} \times \bm{u}| = |\bm{n}| |\bm{u}| \sin(90^\circ)
+\end{equation}
+
+$\sin(90^\circ)=1$、および $|\bm{n}|=1$ を代入すると、
+
+\begin{equation}
+    |\bm{n} \times (\bm{n} \times \dot{\bm{v}})| = 1 \cdot (\dot{v} \sin\psi) \cdot 1 = \dot{v} \sin\psi
+\end{equation}
+
+よって、放射電場の大きさ $|\bm{E}_{\mathrm{rad}}|$ は以下のように求まります。
+
+\begin{equation}
+    |\bm{E}_{\mathrm{rad}}| = \frac{q}{c^2 R} \dot{v} \sin\psi
+\end{equation}
+
+物理的には、これは「加速度ベクトルのうち、視線方向 $\bm{n}$ に垂直な射影成分だけが電磁波として放射される（電磁波は横波である）」ことを意味しています。
+
+\subsubsection{ポインティング・ベクトル（エネルギーフラックス）}
+
+単位時間・単位面積あたりに流れるエネルギー（ポインティング・ベクトル $\bm{S}$）の大きさ $S$ を計算します。CGSガウス単位系では以下の関係があります。
+
+\begin{equation}
+    S = \frac{c}{4\pi} |\bm{E}_{\mathrm{rad}}|^2
+\end{equation}
+
+先ほど求めた電場の大きさを代入します。
+
+\begin{equation}
+    S = \frac{c}{4\pi} \left( \frac{q \dot{v} \sin\psi}{c^2 R} \right)^2
+\end{equation}
+
+これを展開して整理します。
+
+\begin{equation}
+    S = \frac{c}{4\pi} \frac{q^2 \dot{v}^2 \sin^2\psi}{c^4 R^2} = \frac{q^2 \dot{v}^2}{4\pi c^3 R^2} \sin^2\psi
+\end{equation}
+
+\subsubsection{単位立体角あたりの放射強度}
+
+最後に、観測点での単位面積あたりのエネルギー $S$ を、放射源からの「単位立体角あたりの放射エネルギー」 $\frac{dP}{d\Omega}$ に変換します。
+距離 $R$ における球面上の微小面積 $dA$ と微小立体角 $d\Omega$ の関係は $dA = R^2 d\Omega$ です。
+したがって、放射されるパワー $P$ について以下の関係が成り立ちます。
+
+\begin{equation}
+    dP = S \cdot dA = S \cdot (R^2 d\Omega)
+\end{equation}
+
+よって、
+
+\begin{equation}
+    \frac{dP}{d\Omega} = S \cdot R^2
+\end{equation}
+
+これに先ほどの $S$ の式を代入すると、距離 $R^2$ の項が約分されて消えます（逆二乗則による相殺）。
+
+\begin{equation}
+    \frac{dP}{d\Omega} = \left( \frac{q^2 \dot{v}^2}{4\pi c^3 R^2} \sin^2\psi \right) \cdot R^2
+\end{equation}
+
+最終的に、以下の公式が得られます。
+
+\begin{equation}
+    \frac{dP}{d\Omega} = \frac{q^2 \dot{v}^2}{4\pi c^3} \sin^2\psi
+\end{equation}
+
+この式は、電気双極子放射が加速度ベクトルに対して垂直な方向（$\psi = 90^\circ$）で最大となり、平行な方向（$\psi = 0^\circ, 180^\circ$）ではゼロになることを示しています。
+
+\subsection{放射の角度依存性（異方性）の厳密導出}
+
+% コードで使用している角度因子 $1 + (\bm{v} \cdot \bm{n})^2$ の数理的根拠を、ごまかしなく導出する。
+
+\subsubsection{問題設定}
+電子が速度 $\bm{v}$ で直進しており、周囲にランダムに分布するイオンと衝突（散乱）して制動放射を出す状況を考える。
+
+\begin{enumerate}
+    \item \textbf{電子の速度 $\bm{v}$:} $z$軸方向の単位ベクトルとする。
+    \begin{equation}
+        \bm{v} = (0, 0, 1)
+    \end{equation}
+    
+    \item \textbf{観測者の方向 $\bm{n}$:} 任意の方向の単位ベクトル。
+    \begin{equation}
+        \bm{n} = (n_x, n_y, n_z)
+    \end{equation}
+    
+    \item \textbf{有効加速度 $\bm{a}$:} 
+    本研究で対象とする軟X線領域（Soft X-ray）の放射は、主にイオンの近傍を通過する際の微小角散乱（遠距離衝突）から生じる。
+    このような衝突では、電子の軌道偏向は小さく、進行方向（縦方向）の加速度成分は接近・離脱の過程で時間的に相殺される。
+    
+    したがって、放射強度に支配的な寄与をするのは、時間的に相殺されない「進行方向と垂直な成分（横方向）」の加速度のみとなる。この加速度ベクトルは $z$軸に垂直な $xy$平面内にあり、その向き（方位角 $\phi$）は $0 \sim 2\pi$ で一様に分布すると近似できる。
+    \begin{equation}
+        \bm{a}(\phi) \propto (\cos\phi, \sin\phi, 0)
+    \end{equation}
+\end{enumerate}
+
+\subsubsection{平均化計算}
+双極子放射の式(\ref{eq:dipole_exact})より、放射強度は $\sin^2\psi = 1 - (\bm{a} \cdot \bm{n})^2$ に比例する。
+我々は、あらゆる衝突方向 $\phi$ についての平均的な明るさを知りたい。
+
+まず、内積の2乗を計算する。
+\begin{equation}
+    (\bm{a}(\phi) \cdot \bm{n})^2 = (n_x \cos\phi + n_y \sin\phi)^2 = n_x^2 \cos^2\phi + 2n_x n_y \cos\phi \sin\phi + n_y^2 \sin^2\phi
+\end{equation}
+
+これを $\phi$ について $0$ から $2\pi$ まで積分し、平均（$2\pi$で割る）をとる。
+\begin{equation}
+    \text{平均} = \frac{1}{2\pi} \int_0^{2\pi} (\bm{a} \cdot \bm{n})^2 d\phi
+\end{equation}
+三角関数の積分公式 $\int \cos^2\phi d\phi = \pi, \int \sin^2\phi d\phi = \pi, \int \cos\phi\sin\phi d\phi = 0$ を用いると：
+\begin{equation}
+    \text{平均} = \frac{1}{2\pi} (n_x^2 \pi + n_y^2 \pi) = \frac{1}{2}(n_x^2 + n_y^2)
+\end{equation}
+ここで、単位ベクトルの性質 $n_x^2 + n_y^2 + n_z^2 = 1$ より $n_x^2 + n_y^2 = 1 - n_z^2$ を代入する。
+\begin{equation}
+    \text{平均} = \frac{1}{2}(1 - n_z^2)
+\end{equation}
+
+最後に、放射強度 $1 - (\bm{a} \cdot \bm{n})^2$ の全体平均を求める。
+\begin{equation}
+    \langle P \rangle \propto 1 - \frac{1}{2}(1 - n_z^2) = \frac{1}{2} + \frac{1}{2}n_z^2 \propto 1 + n_z^2
+\end{equation}
+$n_z$ は速度ベクトルと観測方向の内積 $(\bm{v} \cdot \bm{n})$ そのものであるため、最終的に以下の関係式が得られる。
+\begin{equation}
+    \text{放射強度} \propto 1 + (\bm{v} \cdot \bm{n})^2
+\end{equation}
+
+\subsection{放射スペクトル強度の計算（Gaunt係数）}
+
+放射の「量（強さ）」を決める式について記述する。
+
+\subsection{強度の基本式}
+単一の電子・イオン衝突から出るエネルギー強度スペクトルは以下で与えられる。
+\begin{equation}
+    \frac{dW}{d\omega dt} = \frac{16\pi e^6 n_e n_i Z^2}{3\sqrt{3} c^3 m^2 v} g_{ff}
+\end{equation}
+ここで $g_{ff}$ は Gaunt係数と呼ばれる量子力学的補正項である。
+
+本シミュレーションの検出器は、エネルギーそのものではなく「光子の数」をカウントする。光子1個のエネルギーは $\hbar\omega$ なので、検出信号 $I$ はエネルギー強度を $\hbar\omega$ で割ったものに比例する。また、プラズマの電子・イオン密度分布（$n_e n_i Z^2$）に相当する絶対強度は、空間的なファントム $\varepsilon(R, Z)$ によって定義される。そのため、LUT（ルックアップテーブル）の計算においては密度項を省略し、代わりにエネルギーや速度に依存するスペクトル形状因子のみを計算する。具体的には、制動放射の物理スケーリング（$\propto 1/v$）、量子補正（$g_{ff}$）、および光子数換算（$\propto 1/\hbar\omega$）を考慮し、さらにフィルタ透過率 $T(\hbar\omega)$ を乗じてエネルギー積分を行う。したがって、LUTには実質的に $\frac{1}{v \cdot \hbar\omega}$ に比例する項が含まれている。
+\begin{equation}
+    I \propto \frac{1}{\hbar\omega} \frac{dW}{d\omega dt} \propto \frac{1}{v \cdot \hbar\omega} g_{ff}
+\end{equation}
+
+\subsubsection{Gaunt係数 $g_{ff}$ の定義と厳密計算}
+
+\begin{equation}
+    g_{ff} = \frac{\sqrt{3}}{\pi} \ln\left( \frac{b_{\max}}{b_{\min}} \right)
+\end{equation}
+ここで $b$ は電子がイオンの横を通り過ぎる際の距離を表す。
+
+\subsubsubsection{$b_{\max}$（断熱限界）}
+電子が通り過ぎる時間 $b/v$ が、光の振動周期 $1/\omega$ よりも短い場合のみ放射が起きる。この限界距離を $b_{\max}$ とする。
+\begin{equation}
+    b_{\max} = \frac{v}{\omega} 
+\end{equation}
+
+\subsubsubsection{$b_{\min}$（量子限界と古典限界）}
+
+制動放射の計算において、電子はイオンに対して無限に近づくことはできず、物理的な最小接近距離 $b_{\min}$ が存在する。この距離は、量子力学的制約と古典力学的制約のうち、より制限の厳しい（値が大きい）方によって決定される。
+
+\begin{equation}
+    b_{\min} = \max\left( \underbrace{\frac{\hbar}{m_e v}}_{\text{量子論的限界}}, \quad \underbrace{\frac{Z e^2}{4\pi\varepsilon_0 m_e v^2}}_{\text{古典論的限界}} \right)
+\end{equation}
+
+ここで、各項の物理的意味は以下の通りである。
+
+\begin{itemize}
+    \item \textbf{量子論的限界}（第一項）: \\
+    電子は点粒子ではなく波の性質を持つ。ハイゼンベルクの不確定性原理（$\Delta x \Delta p \gtrsim \hbar$）により、運動量 $p \approx m_e v$ を持つ電子の位置はド・ブロイ波長程度の広がりを持つため、これ以上イオンに局在して近づくことはできない。高速な電子（高温領域）で支配的となる項である。
+    
+    \item \textbf{古典論的限界}（第二項）: \\
+    古典力学的に、電子の運動エネルギーがクーロン相互作用によるポテンシャルエネルギーと同程度になる距離（ランダウ長）である。これより内側では、電子は強い静電力によって軌道を大きく曲げられるため、直進近似が成立しなくなる。低速な電子（低温領域）で支配的となる項である。
+\end{itemize}
+
+本コードでは、この $b_{\max}$ および $b_{\min}$ を物理定数からステップごとに計算し、その比の対数を取ることで Gaunt factor $g_{ff}$ を求めている。
+
+\section{異方性ルックアップテーブル (LUT) の構築}
+
+本シミュレーションでは計算の高速化を図るため、視線積分を行う毎に放射強度を計算するのではなく、視線と磁力線のなす巨視的な角度 $\Theta_{\mathrm{global}}$ に依存する放射強度係数 $\mathcal{F}(\Theta_{\mathrm{global}})$ を事前に算出し、ルックアップテーブル (LUT) として実装している。
+
+この係数 $\mathcal{F}$ は、以下の3つの物理的要因をエネルギー空間および角度空間において積分・平均化することで導出される。
+
+\begin{enumerate}
+    \item \textbf{幾何学的異方性:} イオン衝突によって生じる電子加速度ベクトルの角度分布（前節での導出結果）と電子の磁力線周りの旋回運動に伴う、方位角方向の幾何学的平均化。
+    \item \textbf{分光特性:} 制動放射の発生スペクトル強度、および検出器の光子計数応答（$1/h\nu$）。
+    \item \textbf{フィルタ特性:} 観測に用いる金属フィルタのエネルギー透過率。
+\end{enumerate}
+
+以下に、LUT生成における具体的な数値積分手順を示す。
+\subsection{計算アルゴリズム}
+
+磁力線（$z$軸）と視線ベクトルのなす巨視的な角度を $\Theta_{\mathrm{global}}$ とする（$0^\circ$ から $180^\circ$ まで離散化）。各角度に対し、以下の積分計算を実行する。ここでは、被積分関数を「フィルタ」、「分光特性」、「幾何学的異方性」の3つの独立した項に分離して記述する。
+
+\begin{equation}
+    \mathcal{F}(\Theta_{\mathrm{global}}) = \int_{h\nu_{\min}}^{h\nu_{\max}} d(h\nu) \, \underbrace{T(h\nu)}_{\text{フィルタ}} \cdot \underbrace{I_{\mathrm{spec}}(h\nu)}_{\text{分光特性}} \cdot \underbrace{\mathcal{A}(\Theta_{\mathrm{global}})}_{\text{幾何学的異方性}}
+\end{equation}
+
+各項の定義と計算手順は以下の通りである。
+
+\subsubsection{1. 幾何学的異方性因子 $\mathcal{A}(\Theta_{\mathrm{global}})$}
+この項は、視線と磁場構造の幾何学的な配置のみに依存し、光子エネルギーには依存しない。
+電子の速度ベクトル $\hat{\bm{v}}$ は、ピッチ角 $\alpha$ を一定として磁力線周りを回転するため、ジャイロ位相 $\varphi_{\mathrm{gyro}}$ の関数となる。
+\begin{equation}
+    \hat{\bm{v}}(\varphi_{\mathrm{gyro}}) = (\sin\alpha \cos\varphi_{\mathrm{gyro}}, \, \sin\alpha \sin\varphi_{\mathrm{gyro}}, \, \cos\alpha)
+\end{equation}
+一方、観測方向ベクトル $\bm{n}$ は $\Theta_{\mathrm{global}}$ によって固定される。
+\begin{equation}
+    \bm{n} = (\sin\Theta_{\mathrm{global}}, \, 0, \, \cos\Theta_{\mathrm{global}})
+\end{equation}
+前節で導出した角度因子 $1 + (\hat{\bm{v}} \cdot \bm{n})^2$ をジャイロ位相について平均化し、異方性因子 $\mathcal{A}$ を算出する。
+\begin{equation}
+    \mathcal{A}(\Theta_{\mathrm{global}}) = \frac{1}{2\pi} \int_{0}^{2\pi} d\varphi_{\mathrm{gyro}} \left[ 1 + \left( \hat{\bm{v}}(\varphi_{\mathrm{gyro}}) \cdot \bm{n} \right)^2 \right]
+\end{equation}
+
+\subsubsection{2. 分光特性 $I_{\mathrm{spec}}(h\nu)$ とフィルタ $T(h\nu)$}
+次に、光子エネルギー $h\nu$ に依存する項を計算する。分光特性 $I_{\mathrm{spec}}$ は、発生強度と検出器の応答特性を統合したものである。
+\begin{equation}
+    I_{\mathrm{spec}}(h\nu) = \frac{g_{ff}(v, h\nu)}{h\nu \cdot v}
+\end{equation}
+この式の構成要素は以下の通りである。
+\begin{itemize}
+    \item \textbf{発生効率 ($g_{ff}/v$):} ガント因子 $g_{ff}$ と、低速度域での相互作用時間の増大因子 $1/v$。
+    \item \textbf{検出器応答 ($1/h\nu$):} エネルギー束ではなく光子数を計測するため、光子エネルギーで除算。
+\end{itemize}
+これにフィルタ透過率 $T(h\nu)$ を掛け合わせ、最終的な離散化積分を行う。
+\begin{equation}
+    \mathcal{F}(\Theta_{\mathrm{global}}) \approx \mathcal{A}(\Theta_{\mathrm{global}}) \cdot \sum_{k} \Delta(h\nu)_k \cdot T(h\nu_k) \cdot I_{\mathrm{spec}}(h\nu_k)
+\end{equation}
+
+\subsection{LUTの正規化}
+最終的に得られた配列 $\mathcal{F}(\Theta_{\mathrm{global}})$ は、最大値が $1.0$ となるように正規化され、視線積分コード内での補間に使用される。
+\begin{equation}
+    \mathcal{F}_{\mathrm{norm}}(\Theta) = \frac{\mathcal{F}(\Theta)}{\max_{\Theta'} \mathcal{F}(\Theta')}
+\end{equation}
+これにより、ファントムの絶対値（放射強度）と、角度による相対的な明るさの変化（異方性形状）を分離して取り扱うことが可能となる。
+
+\section{視線積分の数値計算アルゴリズム}
+
+本節では、前節までに導出した物理モデルを、実際のコンピュータシミュレーション上でどのように実装しているかを詳述する。
+連続的な物理量を離散的な数値データとして取り扱い、3次元的な幾何学整合性を保ちながら積分を実行する手順を示す。
+
+\subsection{連続式から離散和への変換}
+
+観測される輝度 $S$ は、視線 $L$ に沿った放射強度 $E(\bm{r})$ の線積分で定義される。
+\begin{equation}
+    S = \int_{L} E(\bm{r}) \, dl
+\end{equation}
+ここで、局所的な放射強度 $E(\bm{r})$ は、プラズマの空間分布（ファントム） $\varepsilon(\bm{r})$ と、その地点での磁場に対する視線角度依存性（異方性係数） $\mathcal{F}(\Theta)$ の積として表される。
+\begin{equation}
+    E(\bm{r}) = \varepsilon(\bm{r}) \cdot \mathcal{F}(\Theta(\bm{r}))
+\end{equation}
+
+数値計算において、この積分は有限個の区間によるリーマン和（Riemann Sum）として近似される。視線 $L$ を $N$ 個の微小要素に分割し、第 $k$ 番目の点の位置ベクトルを $\bm{r}_k = (x_k, y_k, z_k)$、区間長を $\Delta l_k$ とすると、輝度 $S$ は次式で算出される。
+
+\begin{equation}
+    S \approx \sum_{k=1}^{N} \varepsilon(\bm{r}_k) \cdot \mathcal{F}(\Theta_k) \cdot \Delta l_k
+\end{equation}
+
+以下、各項の具体的な計算手順を述べる。
+
+\subsection{ステップ1: 物理パラメータに基づく空間分布（ファントム）の導出}
+トカマクプラズマはトロイダル方向（$\phi$方向）に軸対称であると仮定する。本研究では、シミュレーションの物理的整合性を高めるため、放射強度分布 $\varepsilon(R, Z)$ を直接的に仮定する従来のヒューリスティックな手法を廃止し、以下の3つの基礎物理量の空間分布から第一原理的に導出する手法を採用した。
+
+\begin{enumerate}
+    \item 電子密度分布 $n_e(R, Z)$
+    \item 電子の磁場平行方向エネルギー分布 $E_{\parallel}(R, Z)$
+    \item 電子の磁場垂直方向エネルギー分布 $E_{\perp}(R, Z)$
+\end{enumerate}
+
+具体的には、各物理量に対し中心がピークとなるガウス分布状のプロファイルを定義する。その上で、各地点 $(R, Z)$ における局所的な制動放射強度（等方成分のベース値）$\varepsilon_{base}$ を、前節で述べた Gaunt 係数 $g_{ff}$ を含む厳密な物理式に基づいて算出する。まず、局所的な電子速度 $v$ は全運動エネルギー $E_{total} = E_{\parallel} + E_{\perp}$ より求められる。
+
+\begin{equation}
+    v(R, Z) = \sqrt{\frac{2(E_{\parallel}(R, Z) + E_{\perp}(R, Z))}{m_e}}
+\end{equation}
+この速度 $v$ と電子密度 $n_e$ を用いて、制動放射による単位体積あたりの発光強度は以下のように評価される。
+\begin{equation}
+    \varepsilon_{base}(R, Z) \propto \frac{n_e(R, Z)^2}{v(R, Z)} \cdot g_{ff}(v, \omega)
+\end{equation}
+ここで、Gaunt 係数 $g_{ff}$ は、衝突径数の断熱限界 $b_{max} = v/\omega$ と、量子・古典限界 $b_{min}$ の比の対数として、場所ごとの速度に応じて厳密に計算される。最終的に得られた分布 $\varepsilon_{base}$ を、再構成のターゲットとするために最大値が 5.0 となるように正規化し、真のファントム $\varepsilon_{true}(R, Z)$ として定義する。これにより、高温領域（高速）における相互作用時間の減少や量子補正の効果、および密度自乗特性が反映された、現実的な軟X線発光分布が得られる。
+
+
+\subsection{ステップ2: 局所磁場ベクトルの3次元回転}
+平衡コード等から得られる磁場データ $\bm{B}_{\mathrm{eq}}$ は、通常、円筒座標系の成分 $(B_R, B_T, B_Z)$ で与えられる。
+一方、視線ベクトル $\bm{n}_{\mathrm{LOS}}$ は実験室直交座標系 $(x, y, z)$ で定義されている。両者のなす角を計算するためには、磁場ベクトルを直交座標系へ変換する必要がある。
+
+点 $\bm{r}_k$ におけるトロイダル角を $\phi_k$ とすると、円筒座標基底から直交座標基底への変換行列（$z$軸周りの回転行列） $\mathcal{R}_z(\phi_k)$ は以下となる。
+\begin{equation}
+    \mathcal{R}_z(\phi_k) = 
+    \begin{pmatrix}
+        \cos\phi_k & -\sin\phi_k & 0 \\
+        \sin\phi_k & \cos\phi_k & 0 \\
+        0 & 0 & 1
+    \end{pmatrix}
+\end{equation}
+
+ここで、計算効率化のため、三角関数を直接計算せず、座標値を用いて以下のように表現する。
+\begin{equation}
+    \cos\phi_k = \frac{x_k}{R_k}, \quad \sin\phi_k = \frac{y_k}{R_k}
+\end{equation}
+
+これより、実験室座標系における磁場ベクトル $\bm{B}_{\mathrm{xyz}, k}$ は次のように計算される。
+\begin{equation}
+    \bm{B}_{\mathrm{xyz}, k} = 
+    \begin{pmatrix}
+        B_{x,k} \\
+        B_{y,k} \\
+        B_{z,k}
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        B_R \frac{x_k}{R_k} - B_T \frac{y_k}{R_k} \\
+        B_R \frac{y_k}{R_k} + B_T \frac{x_k}{R_k} \\
+        B_Z
+    \end{pmatrix}
+\end{equation}
+これにより、視線がプラズマ中を通過する際に経験する「磁力線のねじれ（トロイダル・ポロイダル成分の変化）」が3次元的に正しく反映される。
+
+\subsection{ステップ3: 交差角と異方性係数の算出}
+視線の単位ベクトル $\bm{n}_{\mathrm{LOS}}$ と、変換された局所磁場ベクトル $\bm{B}_{\mathrm{xyz}, k}$ の内積をとることで、その点における視線と磁力線のなす角 $\Theta_k$ の余弦（cosine）を得る。
+
+\begin{equation}
+    \cos\Theta_k = \frac{\bm{B}_{\mathrm{xyz}, k} \cdot \bm{n}_{\mathrm{LOS}}}{|\bm{B}_{\mathrm{xyz}, k}|}
+\end{equation}
+
+前節で導出した通り、非相対論的制動放射の角度依存性は $1+\cos^2\Theta$ に比例する。また、Gaunt係数を含めたエネルギー積分値は事前にルックアップテーブル（LUT）として計算されている。
+コードでは、$\cos\Theta_k$ から角度（degree）を算出し、LUTを参照して異方性係数 $\mathcal{F}_k$ を決定する。
+
+\begin{equation}
+    \mathcal{F}_k = \mathrm{LUT}(\arccos(\cos\Theta_k))
+\end{equation}
+
+\subsection{ステップ4: 総和（数値積分）}
+以上の手順で求めた各要素を乗算し、視線上の全点について総和をとることで、最終的な観測輝度 $S$ が得られる。
+
+\begin{equation}
+    S \approx \sum_{k=1}^{N} \underbrace{\varepsilon(R_k, Z_k)}_{\text{強度}} \times \underbrace{\mathcal{F}(\Theta_k)}_{\text{異方性}} \times \underbrace{\Delta l_k}_{\text{光路長}}
+\end{equation}
+
+本アルゴリズムにより、トロイダル対称性を前提とするファントム定義と、3次元的な広がりを持つ視線および磁場構造の相互作用を、幾何学的矛盾なく厳密に評価することが可能となる。
+
+\section{本シミュレーションにおける物理的仮定}
+本研究における順解析シミュレーション、および異方性ルックアップテーブル（LUT）の構築において導入した物理的・幾何学的仮定を以下に列挙する。
+
+\subsection{幾何学的および構造的仮定}
+\begin{itemize}
+    \item \textbf{プラズマのトロイダル軸対称性:}
+    トカマクプラズマの放射強度分布（ファントム）$\epsilon(R, Z, \phi)$ はトロイダル方向 $\phi$ に対して一様であると仮定する。すなわち、真の放射強度はポロイダル断面 $(R, Z)$ 上の関数 $\epsilon(R, Z)$ として定義される。
+    
+    \item \textbf{静磁場平衡（Static Equilibrium）:}
+    磁場配位 $\mathbf{B}(R, Z)$ は外部の平衡コードから与えられたものであり、放射計測の時間スケールにおいては時間変化しないものとする。
+    
+    \item \textbf{光学的薄さ（Optically Thin）の近似:}
+    プラズマは軟X線領域において光学的に薄いと仮定し、自己吸収（Self-absorption）を無視する。これにより、観測輝度 $S$ は視線 $L$ に沿った局所放射強度 $E(\mathbf{r})$ の単純な線積分として記述される。
+    \begin{equation}
+        S = \int_{L} E(\mathbf{r}) \, dl
+    \end{equation}
+\end{itemize}
+
+\subsection{粒子ダイナミクスに関する仮定}
+\begin{itemize}
+    \item \textbf{微小角散乱（遠距離衝突）の支配:}
+    軟X線放射への主要な寄与は、電子がイオン近傍を通過する際の微小角散乱（遠距離衝突）から生じると仮定する。この過程において、進行方向（縦方向）の加速度成分は時間的に相殺され、放射に寄与するのは進行方向に垂直な（横方向）成分のみであると近似する。
+    
+    \item \textbf{加速度方位のランダム性:}
+    電子の速度ベクトル $\mathbf{v}$ に垂直な面内において、衝突による加速度ベクトル $\mathbf{a}$ の方位角 $\phi$ は $0$ から $2\pi$ の範囲で一様に分布すると仮定する。
+    
+    \item \textbf{電子のジャイロ運動:}
+    電子は磁力線に沿って一定のピッチ角 $\alpha$ を保ちながら旋回運動（ジャイロ回転）を行うものとし、そのジャイロ位相 $\varphi_{gyro}$ について平均化を行うことで巨視的な放射異方性を評価する。
+\end{itemize}
+
+\subsection{放射過程および計測モデル}
+\begin{itemize}
+    \item \textbf{非相対論的電気双極子放射:}
+    電子の速度 $v$ は光速 $c$ に比べて十分小さい（$v \ll c$）とし、放射電場 $\mathbf{E}_{rad}$ は加速度 $\dot{\mathbf{v}}$ の視線方向への射影成分に比例する双極子近似を用いる。
+    
+    \item \textbf{放射強度の角度依存性:}
+    上記仮定（微小角散乱および双極子放射）より、単一電子からの放射強度の角度依存性は、電子の速度単位ベクトル $\hat{\mathbf{v}}$ と観測方向単位ベクトル $\mathbf{n}$ を用いて次式に従うものとする。
+    \begin{equation}
+        P(\Theta) \propto 1 + (\hat{\mathbf{v}} \cdot \mathbf{n})^2
+    \end{equation}
+    
+    \item \textbf{量子補正（Gaunt係数）:}
+    制動放射スペクトル強度は古典論に量子力学的補正項であるGaunt係数 $g_{ff}$ を乗じることで評価する。$g_{ff}$ は衝突径数の断熱限界 $b_{max}$ と量子限界 $b_{min}$ の比の対数として算出する。
+    
+    \item \textbf{フォトンカウンティング計測:}
+    検出器はエネルギーフラックスではなく光子数を計測すると仮定する。したがって、エネルギー $W$ の強度スペクトルに対し、光子エネルギー $\hbar\omega$ で除算した重み付けを行う。
+    \begin{equation}
+        I \propto \frac{1}{\hbar\omega} \frac{dW}{d\omega dt}
+    \end{equation}
+\end{itemize}
+
+\subsection{数値実装およびモデル化における追加的仮定}
+前節の物理モデルを計算機上に実装するにあたり、計算コストの削減および逆問題の定式化のために以下の追加的な仮定を導入した。
+
+\begin{itemize}
+    \item \textbf{ファントム値の定義とLUTの正規化（Maximum Intensity Reference）:}
+    空間分布関数（ファントム）$\epsilon(R,Z)$ の値は、放射強度の絶対値そのものではなく、「その地点における放射が最も強くなる角度（最適角）から観測した際の強度」として定義する。
+    これに伴い、異方性ルックアップテーブル（LUT）$\mathcal{F}(\Theta)$ は、その最大値が $1.0$ となるように正規化して使用する。
+    \begin{equation}
+        \mathcal{F}_{norm}(\Theta) = \frac{\mathcal{F}(\Theta)}{\max_{\Theta'} \mathcal{F}(\Theta')}
+    \end{equation}
+    これにより、観測される放射強度 $S$ は、局所的な最大強度 $\epsilon$ と、観測角度による減衰係数 $\mathcal{F}_{norm}$（$0 < \mathcal{F}_{norm} \le 1$）の積として記述される。
+    
+    \item \textbf{ピッチ角分布の空間一様性（Global Anisotropy Assumption）:}
+    プラズマ中の電子速度分布の異方性（平行エネルギー $E_{\parallel}$ と垂直エネルギー $E_{\perp}$ の比率、すなわちピッチ角分布）は、プラズマ全域において空間的に一定であると仮定する。
+    実際には、強磁場側（インボード側）への移動に伴い磁気モーメント保存則（$\mu = m v_{\perp}^2 / 2B = \text{const}$）によって $v_{\perp}$ 成分が増加するミラー効果が存在するが、本シミュレーションでは計算の簡略化のため、この空間依存性を無視する。
+    
+    \item \textbf{単色エネルギー近似（Mono-energetic Approximation）:}
+    放射に寄与する電子は、熱的な広がり（マクスウェル分布）を持たず、代表的な平行・垂直エネルギー（例：$E_{\parallel}=80\,\text{eV}, E_{\perp}=10\,\text{eV}$）を持つ単一のビーム状分布に従うと仮定する。
+    実際のプラズマでは速度分布の広がりに応じてスペクトル幅が生じるが、本モデルでは代表的な特性エネルギーにおける $1/v$ 依存性とGaunt係数を用いて放射特性を代表させる。
+    
+    \item \textbf{フィルタ入射角の無視（Normal Incidence Approximation）:}
+    金属フィルタの透過率計算において、視線が検出器およびフィルタに入射する角度はすべて垂直（$0^{\circ}$）であると仮定する。
+    視野周辺部において視線がフィルタを斜めに通過することによる「実効的な厚みの増大」およびそれに伴う「透過率低下・スペクトル硬化」の効果は、本体系の幾何学的配置では十分小さいとして無視する。
+    
+    \item \textbf{磁場の局所線形近似:}
+    離散的な平衡磁場データから視線上の任意点の磁場ベクトルを算出する際、最近接格子点間の線形補間（Linear Interpolation）を用いる。磁気リコネクション点（X点）近傍や磁気軸付近において磁場方向が急激に変化する場合でも、格子内の磁場変化は線形であると近似する。
+\end{itemize}
+
+\section{結論}
+以上の物理モデル（異方性角度因子 $1+(\bm{v}\cdot\bm{n})^2$ および 厳密Gaunt係数）を実装した順解析コードを用いることで、トロイダルプラズマにおける軟X線放射分布を第一原理的に再現できる。
+この「正解データ」を用いて等方性再構成をテストすることで、再構成画像の信頼性を科学的に評価することが可能となる。
+
+\end{document}
