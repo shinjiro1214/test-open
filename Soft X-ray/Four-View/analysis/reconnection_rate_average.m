@@ -1,6 +1,4 @@
-clearvars -except date IDXlist times
-
-clearvars -except date IDXlist doSave doFilter doNLR
+clearvars -except date IDXlist doSave doFilter doNLR times
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open'/'Soft X-ray'/Four-View; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
@@ -16,7 +14,10 @@ pathname.woTFdata=getenv('woTFdata_path');%rawdata（TFoffset引いた）の保�
 pathname.rawdata=getenv('rawdata_path');%dtacqのrawdataの保管場所
 pathname.pre_processed_directory_path=getenv('pre_processed_directory_path');
 
-
+% 260226 case-i
+% 2   5   6   7   8   9  10  11  12  14  15  16  17  18  19  20  21  22  23  24  25
+% 260226 case-o
+% 29  30  31  32  33  35  36  37  38  39  40  41  44  45  46 48  49
 %%%%実験オペレーションの取得
 prompt = {'Date:','Shot number:','times:'};
 definput = {'','',''};
@@ -82,6 +83,27 @@ PCB.restart = 0;
 
 % 全ショットのmerging_ratioを格納するための配列
 all_merging_ratios = zeros(n_data, numel(times));
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 30);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
 
 for i = 1:n_data
     % 各ショットのデータ取得

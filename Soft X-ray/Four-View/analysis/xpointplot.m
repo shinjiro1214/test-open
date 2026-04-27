@@ -79,8 +79,8 @@ function all_means = xpointplot(grid2D, data2D, PCB)
             
             data = (Et_val / Jt_val) * 1e3;
             
-        elseif PCB.xpointdata == 3 %dB/dt
-            data =data2D.dBdt_magnitude(row,col,pcb_tidx);
+        elseif PCB.xpointdata == 3 %B_pressure
+            data =data2D.B_pressure(row,col,pcb_tidx);
         elseif PCB.xpointdata == 4 %dEt/dt
             data = dEt_dt_grid(row, col, pcb_tidx);
         elseif PCB.xpointdata == 5 %Jt (周辺0.05の最小値)

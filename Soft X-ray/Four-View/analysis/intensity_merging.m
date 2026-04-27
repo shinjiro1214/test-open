@@ -1,7 +1,6 @@
-clearvars -except date IDXlist times xaxis
 
 addpath '/Users/shohgookazaki/Documents/matlab/common';
-clearvars -except date IDXlist Area
+clearvars -except date IDXlist Area times xaxis
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment'; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open'/'Soft X-ray'/Four-View; %getMDSdata.mとcoeff200ch.xlsxのあるフォルダへのパス
 
@@ -50,9 +49,9 @@ IDXlist = str2num(cell2mat(answer(2)));
 xaxis = str2num(cell2mat(answer(3))); 
 
 Area = [1 2 3]; % ,'Area(1:X点近傍、2:下流内側、3:下流外側):'
-times = 400:550;
-SXR.doFilter = 0;
-SXR.ReconMethod = 2;
+times = 400:0.5:550;
+SXR.doFilter = 1;
+SXR.ReconMethod = 1;
 ESP.date = date;
 ESP.shotlist = [41:42, 54:57, 60:64];
 ESP.probe = 1; % 1: Someyasan, 2: Uebosan
@@ -86,6 +85,27 @@ ESP.PCBshot = [shot_a039, shot_a040];
 PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=50; %【input】rz方向のメッシュ数
 PCB.restart = 0;
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 10);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
 
 % figure;hold on
 % xlabel('time [us]');ylabel('Merging ratio [%]');
@@ -218,14 +238,26 @@ for a = 1:3% ,'Area(1:X点近傍、2:下流内側、3:下流外側):'
         elseif SXR.area == 3
             area = 'outward downstream';
         end
-        if i == 1
-            filter = '1um Al';
-        elseif i == 2
-            filter = '2.5um Al';
-        elseif i == 3
-            filter = '2um Mylar';
-        elseif i == 4
-            filter = '1um Mylar';
+        if PCB.date <= 260131
+            if i == 1
+                filter = '1um Al';
+            elseif i == 2
+                filter = '2.5um Al';
+            elseif i == 3
+                filter = '2um Mylar';
+            elseif i == 4
+                filter = '1um Mylar';
+            end
+        elseif  PCB.date >= 260201 && PCB.date <= 260227
+            if i == 1
+                filter = '1um Al';
+            elseif i == 2
+                filter = '4um Tf';
+            elseif i == 3
+                filter = '0.5um Ti';
+            elseif i == 4
+                filter = '1um Mylar';
+            end
         end
 
         % 平均値とエラーバー（標準誤差）のプロット
@@ -480,6 +512,7 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata,PCB)
         matrixPath = strcat(matrixFolder,'/',num2str(number),'.mat');
         load(matrixPath,'EE1','EE2','EE3','EE4');
         EE = cat(3,EE1,EE2,EE3,EE4);
+        
 
         index = pcbtimes == t;
 
@@ -487,7 +520,7 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata,PCB)
         z_space_SXR1 = linspace(zmin1,zmax1,size(EE,2));
         z_space_SXR2 = linspace(zmin2,zmax2,size(EE,2));
 
-        t_idx = find(data2D.trange==t);
+        t_idx = find(data2D.trange==round(t));
         [~,xPointList] = get_axis_x_multi(grid2D,data2D,PCB); %時間ごとの磁気軸、X点を検索
         
         z = xPointList.z(t_idx);
@@ -545,6 +578,7 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata,PCB)
             end
 
             % 対象範囲内の部分行列を抽出
+            EE(:,:,i) = imgaussfilt(EE(:,:,i), 1.5);
             sub_matrix = EE(SXRdata.r_xrange, SXRdata.z_xrange,i); % 範囲内の部分行列を抽出
             
             SXR.plot = 0;

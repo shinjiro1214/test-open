@@ -1,13 +1,13 @@
 clearvars -except date IDXlist doSave doFilter doNLR ReconMethod Reset
 
 % --- ユーザー設定 ---
-SXR.number = 3;
-target_shot_idx = 1;
+SXR.number = 3; % 1から8のうちどれか
+SXR.energy = 4; % フィルター
 SXR.doSave = 1;
-SXR.doFilter = 0;
-SXR.ReconMethod = 2;
+SXR.doFilter = 1;
+SXR.ReconMethod = 1;
 SXR.Reset = 0;
-SXR.directory = '/LF_MEM';
+SXR.directory = '/NLF_MFI';
 
 [PCB, pathname] = get_psb_data();
 
@@ -45,7 +45,7 @@ for i=1:PCB.n_data
             fprintf('Processing Shot: %d\n', PCB.shot(1));
             
             % データ取得
-            [p_pcb, p_sxr, r_pcb, r_sxr, save_dir] = plot_pcb_sxr_r(PCB, SXR, pathname);
+            [p_pcb, p_sxr, r_pcb, r_sxr, save_dir, SXR] = plot_pcb_sxr_r(PCB, SXR, pathname);
             
             % データを蓄積 (グリッドが変わらない前提で結合)
             if ~isempty(p_pcb) && ~isempty(p_sxr)
@@ -138,14 +138,14 @@ if ~isempty(history_PCB)
     if ~isempty(last_save_dir)
         parent_dir = fileparts(last_save_dir); 
         disp(parent_dir)
-        save_filename = fullfile(parent_dir, ['Average_ErrorBar_SXR_', num2str(SXR.number),'_shots.png']);
+        save_filename = fullfile(parent_dir, ['Average_ErrorBar_SXR_energy:', num2str(SXR.energy),'_number:', num2str(SXR.number), '_shots.png']);
         saveas(gcf, save_filename);
     end
 end
 
 
 % --- 関数定義 ---
-function [p_pcb_rel, p_sxr_rel, r_rel_PCB, r_rel_SXR, foldername_png] = plot_pcb_sxr_r(PCB, SXR, pathname)
+function [p_pcb_rel, p_sxr_rel, r_rel_PCB, r_rel_SXR, foldername_png, SXR] = plot_pcb_sxr_r(PCB, SXR, pathname)
     % 初期化
     p_pcb_rel = []; p_sxr_rel = []; r_rel_PCB = []; r_rel_SXR = []; foldername_png = '';
     
@@ -190,45 +190,94 @@ function [p_pcb_rel, p_sxr_rel, r_rel_PCB, r_rel_SXR, foldername_png] = plot_pcb
 
         load(parameterFile,'range');
         matrixPath = strcat(matrixFolder,'/',num2str(SXR.number),'.mat');
-        
+        disp(matrixPath)
         % ファイル存在確認を入れるとロバストになりますが、一旦そのまま
         load(matrixPath,'EE1','EE2','EE3','EE4');
         EE = cat(3,EE1,EE2,EE3,EE4);
 
-        t_target = (SXR.number-1)*interval + start;
+        SXR.t_target = (SXR.number-1)*interval + start;
+        disp(SXR.t_target)
+        
+        % range = range ./ 1000; % mm -> m 変換
+
+        % zmin2 = range(3); 
+        % zmax2 = range(4); 
+        % rmin  = range(5); 
+        % rmax  = range(6);
+        
+        % num_r_sxr = size(EE, 2);
+        % num_z_sxr = size(EE, 1);
+        % % r_space_SXR = linspace(rmin, rmax, num_r_sxr)'; % この変数は未使用、以下で定義
+        % z_space_SXR2 = linspace(zmax2, zmin2, num_z_sxr);
+        
+
+        % EE_target = imgaussfilt(EE(:,:,SXR.energy), 1);
+        % disp(max(max(EE_target)))
+
+        % [~, t_idx] = min(abs(data2D.trange - SXR.t_target));
+        
+        % % X点位置の取得
+        % [~, xPointList] = get_axis_x_multi(grid2D, data2D, PCB);
+        % r_xp = xPointList.r(t_idx);
+        % z_xp = xPointList.z(t_idx);
+
+        % if isnan(z_xp), target_z = 0; else, target_z = z_xp; end
+        
+        % % --- プロファイル抽出 ---
+        % [~, z_idx_pcb] = min(abs(grid2D.zq(:, 1) - target_z)); % ← 修正
+        % p_pcb_rel = data2D.Bt(:, z_idx_pcb, t_idx);
+        
+        % [~, z_idx_sxr] = min(abs(z_space_SXR2 - target_z));
+        % p_sxr_rel = EE_target(z_idx_sxr, :)';
+
+        % % --- 2. 比較・確認用プロット（自分がどこを切ったか可視化） ---
+        % % ※ループ内で毎回出すと重いので、doCheck=1の時などに組み込んでください
+        % figure('Name', 'Check Slice Line', 'Color', 'w');
+        % % SXRの2次元分布をプロット
+        % imagesc(linspace(rmin, rmax, num_r_sxr), z_space_SXR2, EE_target);
+        % set(gca, 'YDir', 'normal'); % 物理座標に合わせてZ軸を下から上へ
+        % hold on;
+        % % 抽出したラインとX点をプロットして比較
+        % yline(target_z, 'r-', 'LineWidth', 2, 'DisplayName', 'Extraction Line (target\_z)');
+        % plot(r_xp, z_xp, 'w+', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'X-point');
+        % xlabel('R (m)'); ylabel('Z (m)'); title('SXR 2D Profile & Extraction Line');
+        % legend('Location', 'best');
+        % colorbar;
+        
+        % % --- 相対座標 ---
+        % r_orig_PCB = grid2D.rq(:, 1);
+        % r_orig_SXR = linspace(range(5), range(6), size(EE_target, 2))';
         
         range = range ./ 1000; % mm -> m 変換
-
-        zmin2 = range(3); 
-        zmax2 = range(4); 
-        rmin  = range(5); 
-        rmax  = range(6);
         
-        num_r_sxr = size(EE, 1);
-        num_z_sxr = size(EE, 2);
-        % r_space_SXR = linspace(rmin, rmax, num_r_sxr)'; % この変数は未使用、以下で定義
+        zmin1 = range(1); zmax1 = range(2);
+        zmin2 = range(3); zmax2 = range(4); 
+        rmin  = range(5); rmax  = range(6);
+        
+        num_r_sxr = size(EE, 1); % [修正] 第1次元が r
+        num_z_sxr = size(EE, 2); % [修正] 第2次元が z
+        
+        % [修正] 昇順に統一し、条件分岐を追加
+        z_space_SXR1 = linspace(zmin1, zmax1, num_z_sxr);
         z_space_SXR2 = linspace(zmin2, zmax2, num_z_sxr);
         
-        EE1 = EE(:,:,1); 
+        if 241110 <= SXR.date && SXR.date <= 250206
+            if SXR.energy == 1
+                z_space_target = z_space_SXR2;
+            else
+                z_space_target = z_space_SXR1;
+            end
+        else
+            if SXR.energy <= 2
+                z_space_target = z_space_SXR2;
+            else
+                z_space_target = z_space_SXR1;
+            end
+        end
 
-        % --- 最大強度探索 (Z方向) ---
-        z_min_limit = -0.1;
-        z_max_limit = 0.1;
-        z_mask = (z_space_SXR2 >= z_min_limit) & (z_space_SXR2 <= z_max_limit);
-        
-        EE1_sub = EE1(:, z_mask); 
-        [~, linearIdx] = max(EE1_sub(:));
-        [~, sub_z_idx] = ind2sub(size(EE1_sub), linearIdx);
-            
-        actual_z_indices = find(z_mask);
-        max_z_idx_sxr = actual_z_indices(sub_z_idx);
-        target_z_val = z_space_SXR2(max_z_idx_sxr);
-        
-        profile_SXR = EE1(:, max_z_idx_sxr); 
-        
-        % PCBの時間・位置合わせ
-        [~, closest_z_idx_pcb] = min(abs(grid2D.zq(1,:) - target_z_val));
-        [~, t_idx] = min(abs(data2D.trange - t_target));
+        EE_target = imgaussfilt(EE(:,:,SXR.energy), 1.5);
+
+        [~, t_idx] = min(abs(data2D.trange - SXR.t_target));
         
         % X点位置の取得
         [~, xPointList] = get_axis_x_multi(grid2D, data2D, PCB);
@@ -241,16 +290,38 @@ function [p_pcb_rel, p_sxr_rel, r_rel_PCB, r_rel_SXR, foldername_png] = plot_pcb
         [~, z_idx_pcb] = min(abs(grid2D.zq(1,:) - target_z));
         p_pcb_rel = data2D.Bt(:, z_idx_pcb, t_idx);
         
+        [~, z_idx_sxr] = min(abs(z_space_target - target_z)); % [修正] 正しいz_spaceを使用
+        p_sxr_rel = EE_target(:, z_idx_sxr); % [修正] 列(z)を固定し、行(r)をすべて取り出す
+
+         % --- プロファイル抽出 ---
+        [~, z_idx_pcb] = min(abs(grid2D.zq(:, 1) - target_z)); % ← 修正
+        p_pcb_rel = data2D.Bt(:, z_idx_pcb, t_idx);
+        
         [~, z_idx_sxr] = min(abs(z_space_SXR2 - target_z));
-        p_sxr_rel = EE1(:, z_idx_sxr);
+        p_sxr_rel = EE_target(z_idx_sxr, :)';
+
+        % --- 2. 比較・確認用プロット（自分がどこを切ったか可視化） ---
+        % ※ループ内で毎回出すと重いので、doCheck=1の時などに組み込んでください
+        figure('Name', 'Check Slice Line', 'Color', 'w');
+        % SXRの2次元分布をプロット
+        imagesc(linspace(rmin, rmax, num_r_sxr), z_space_SXR2, EE_target);
+        set(gca, 'YDir', 'normal'); % 物理座標に合わせてZ軸を下から上へ
+        hold on;
+        % 抽出したラインとX点をプロットして比較
+        yline(target_z, 'r-', 'LineWidth', 2, 'DisplayName', 'Extraction Line (target\_z)');
+        plot(r_xp, z_xp, 'w+', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'X-point');
+        xlabel('R (m)'); ylabel('Z (m)'); title('SXR 2D Profile & Extraction Line');
+        legend('Location', 'best');
+        colorbar;
         
         % --- 相対座標 ---
         r_orig_PCB = grid2D.rq(:, 1);
-        r_orig_SXR = linspace(range(5), range(6), size(EE1,1))';
-        
+        r_orig_SXR = linspace(rmin, rmax, num_r_sxr)'; % [修正] サイズを num_r_sxr に合わせる
+
         if ~isnan(r_xp)
             r_rel_PCB = r_orig_PCB - r_xp;
             r_rel_SXR = r_orig_SXR - r_xp;
+            disp(r_xp)
         else
             return;
         end

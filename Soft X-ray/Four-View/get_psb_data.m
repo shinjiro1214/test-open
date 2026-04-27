@@ -69,13 +69,24 @@ function [PCB, pathname] = get_psb_data()
             T(1, :) = [];
         end
         n_data = numel(IDXlist); % 計測データ数
-        shotlist = [T.a039(IDXlist), T.a040(IDXlist)];
-        tfshotlist = [T.a039_TF(IDXlist), T.a040_TF(IDXlist)];
-        EFlist = T.EF_A_(IDXlist);
-        TFlist = T.TF_kV_(IDXlist);
+        [~, row_idx] = ismember(IDXlist, T.shot);
+        
+        shotlist = [T.a039(row_idx), T.a040(row_idx)];
+        tfshotlist = [T.a039_TF(row_idx), T.a040_TF(row_idx)];
+        EFlist = T.EF_A_(row_idx);
+        TFlist = T.TF_kV_(row_idx);
         dtacqlist = 39 .* ones(n_data, 1);
-        PCB.startlist = T.SXRStart(IDXlist);
-        PCB.intervallist = T.SXRInterval(IDXlist);
+        PCB.startlist = T.SXRStart(row_idx);
+        PCB.intervallist = T.SXRInterval(row_idx);
+
+
+        % shotlist = [T.a039(IDXlist), T.a040(IDXlist)];
+        % tfshotlist = [T.a039_TF(IDXlist), T.a040_TF(IDXlist)];
+        % EFlist = T.EF_A_(IDXlist);
+        % TFlist = T.TF_kV_(IDXlist);
+        % dtacqlist = 39 .* ones(n_data, 1);
+        % PCB.startlist = T.SXRStart(IDXlist);
+        % PCB.intervallist = T.SXRInterval(IDXlist);
         
     % elseif ~isempty(a039) ブロックは削除
         
@@ -87,8 +98,8 @@ function [PCB, pathname] = get_psb_data()
     PCB.n_data = n_data; %【input】計測データ数
     PCB.trange = 400:600; %【input】計算時間範囲
     PCB.n = 50; %【input】rz方向のメッシュ数
-    PCB.start = 60; % plot開始時間-400
-    PCB.dt = 4; % plot間隔時間
+    PCB.start = 65; % plot開始時間-400
+    PCB.dt = 3; % plot間隔時間
     
     all_data = zeros(n_data, numel(PCB.trange));
     all_merging_ratios = zeros(n_data, numel(PCB.trange));

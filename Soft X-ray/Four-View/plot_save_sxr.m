@@ -435,15 +435,31 @@ function plot_save_sxr(PCBdata,SXR,PCB)
     
         psi_mesh_z = grid2D.zq;
         psi_mesh_r = grid2D.rq;
-        t_idx = find(data2D.trange==t);
+        t_idx = find(data2D.trange==round(t));
         psi = data2D.psi(:,:,t_idx);
         Bz = data2D.Bz(:,:,t_idx);
         Br = data2D.Br(:,:,t_idx);
         Bp = sqrt(Bz.^2+Br.^2);
     
-        psi_min = min(min(psi));
-        psi_max = max(max(psi));
-        contour_layer = linspace(psi_min,psi_max,30);
+        % psi_min = min(min(psi));
+        % psi_max = max(max(psi));
+        % contour_layer = linspace(psi_min,psi_max,30);
+
+        if ~isempty(t_idx)
+            psi = data2D.psi(:,:,t_idx);
+            % 修正：allとomitnanでスカラーを確定させる
+            psi_min = min(psi, [], 'all', 'omitnan');
+            psi_max = max(psi, [], 'all', 'omitnan');
+            
+            if isfinite(psi_min) && isfinite(psi_max) && (psi_max > psi_min)
+                contour_layer = linspace(psi_min, psi_max, 30);
+            else
+                contour_layer = 30; % レイヤー数指定に切り替え
+            end
+        else
+            psi = NaN(size(psi_mesh_z));
+            contour_layer = 10;
+        end
     
         [SXR_mesh_z1,SXR_mesh_r] = meshgrid(z_space_SXR1_plot,r_space_SXR_plot);
         [SXR_mesh_z2,~] = meshgrid(z_space_SXR2_plot,r_space_SXR_plot);
@@ -478,6 +494,7 @@ function plot_save_sxr(PCBdata,SXR,PCB)
     
         positionList = [2,4,1,3];
         nameList = {'1um Al', '2.5um Al', '2um Mylar', '1um Mylar'};
+        plot_order = [1, 2, 4, 3]; 
         
         
         if PCB.date == 241110
@@ -489,13 +506,22 @@ function plot_save_sxr(PCBdata,SXR,PCB)
         elseif PCB.date == 250125
             cLimList = {[0 3], [0 3], [0 3],[0 5]};
         elseif PCB.date == 250205 || PCB.date == 250206
-            cLimList = {[0 10],[0 2],[0 5],[0 5]};
+            cLimList = {[0 10],[0 2],[0 5],[0 3]};
         elseif PCB.date >= 260216 && PCB.date <= 260220
             nameList = {'1um Al', '4um Tf', '0.5um Ti', '1um Mylar'};
-            cLimList = {[0 10], [0 10], [0 2], [0 5]};
-            if shot >= 10 && shot<= 15
-                cLimList = {[0 10], [0 2], [0 2], [0 2]};
-            end
+            cLimList = {[0 20], [0 15], [0 5], [0 20]};
+            % if shot >= 10 && shot<= 15
+            %     cLimList = {[0 10], [0 2], [0 2], [0 2]};
+            % end
+            plot_order = [1, 4, 3, 2]; 
+        elseif PCB.date == 260226
+            nameList = {'1um Al', '4um Tf', '0.5um Ti', '1um Mylar'};
+            cLimList = {[0 5], [0 5], [0 2], [0 2]};
+            plot_order = [1, 4, 3, 2]; 
+        elseif PCB.date == 260325 || PCB.date == 260331
+            nameList = {'1um Al', '0.6um Zr', '0.5um Ti', '1um Mylar'};
+            cLimList = {[0 75], [0 2], [0 10], [0 100]};
+            plot_order = [1, 2, 4, 3]; 
         else
             cLimList = {[0 10],[0 5],[0 5],[0 5]};
         end
@@ -513,12 +539,54 @@ function plot_save_sxr(PCBdata,SXR,PCB)
         History(t_idx_loop).xPoint_z = xPointList.z(t_idx);
         History(t_idx_loop).xPoint_r = xPointList.r(t_idx);
         % ---------------------------------------------
-    
+
+
+        if doFilter 
+            if ReconMethod == 0
+                directory = '/NLF_TP/';
+            elseif ReconMethod == 1
+                directory = '/NLF_MFI/';
+            elseif ReconMethod == 2
+                directory = '/NLF_MEM';
+            elseif ReconMethod == 3
+                directory = '/NLF_cGAN/';
+            elseif ReconMethod == 4
+                directory = '/NLF_GPT/';
+            end
+        elseif ~doFilter
+            if ReconMethod == 0
+                directory = '/LF_TP/';
+            elseif ReconMethod == 1
+                directory = '/LF_MFI/';
+            elseif ReconMethod == 2
+                directory = '/LF_MEM';
+            elseif ReconMethod == 3
+                directory = '/LF_cGAN/';
+            elseif ReconMethod == 4
+                directory = '/LF_GPT/';
+            end
+        end
+
+        pathname_png = getenv('SXR_RECONSTRUCTED_DIR');
+        pathname_fig = getenv('SXR_RECONSTRUCTED_FIG_DIR');
+        foldername_png = strcat(pathname_png,directory,'/',num2str(date),'/shot',num2str(shot));
+        foldername_fig = strcat(pathname_fig,directory,'/',num2str(date),'/shot',num2str(shot));
+        if exist(foldername_png,'dir') == 0
+            mkdir(foldername_png);
+        end
+        if exist(foldername_fig,'dir') == 0
+            mkdir(foldername_fig);
+        end
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%時間ごと細かくプロット%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % --- 既存の単一時間プロット (2x2) ---
         for i = 1:4
             p = positionList(i);
             subplot(2,2,p);
             cRange = cell2mat(cLimList(i));
+
+            % EE_q(:,:,i) = medfilt2(EE_q(:,:,i), [3 3]);
+            EE_q(:,:,i) = imgaussfilt(EE_q(:,:,i), 1.5);
 
 
 
@@ -543,6 +611,10 @@ function plot_save_sxr(PCBdata,SXR,PCB)
             hold off;
             if PCB.date == 250205 || PCB.date ==250206
                 ylim([0.1 0.3]);
+                xlim([-0.1 0.1]);
+            elseif PCB.date == 241110
+                ylim([0.1 0.3]);
+                xlim([-0.15 0.15]);
             end
             title(string(nameList(i)));
         end
@@ -551,47 +623,12 @@ function plot_save_sxr(PCBdata,SXR,PCB)
         drawnow;
         
         if doSave
-            pathname_png = getenv('SXR_RECONSTRUCTED_DIR');
-            pathname_fig = getenv('SXR_RECONSTRUCTED_FIG_DIR');
-            if doFilter 
-                if ReconMethod == 0
-                    directory = '/NLF_TP/';
-                elseif ReconMethod == 1
-                    directory = '/NLF_MFI/';
-                elseif ReconMethod == 2
-                    directory = '/NLF_MEM';
-                elseif ReconMethod == 3
-                    directory = '/NLF_cGAN/';
-                elseif ReconMethod == 4
-                    directory = '/NLF_GPT/';
-                end
-            elseif ~doFilter
-                if ReconMethod == 0
-                    directory = '/LF_TP/';
-                elseif ReconMethod == 1
-                    directory = '/LF_MFI/';
-                elseif ReconMethod == 2
-                    directory = '/LF_MEM';
-                elseif ReconMethod == 3
-                    directory = '/LF_cGAN/';
-                elseif ReconMethod == 4
-                    directory = '/LF_GPT/';
-                end
-            end
-
-            foldername_png = strcat(pathname_png,directory,'/',num2str(date),'/shot',num2str(shot));
-            foldername_fig = strcat(pathname_fig,directory,'/',num2str(date),'/shot',num2str(shot));
-            if exist(foldername_png,'dir') == 0
-                mkdir(foldername_png);
-            end
-            if exist(foldername_fig,'dir') == 0
-                mkdir(foldername_fig);
-            end
             filename_png = strcat('/shot',num2str(shot),'_',num2str(t),'us.png');
             filename_fig = strcat('/shot',num2str(shot),'_',num2str(t),'us.fig');
             saveas(gcf,strcat(foldername_png,filename_png));
             saveas(gcf,strcat(foldername_fig,filename_fig));
         end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end % Loop end (t)
 
     % =========================================================================
@@ -600,7 +637,8 @@ function plot_save_sxr(PCBdata,SXR,PCB)
     if doSave
         f_sum = figure('Name', ['Shot ' num2str(shot) ' Summary'], 'Units', 'normalized', 'Position', [0, 0, 1, 1], 'visible','off'); 
         
-        plot_order = [1, 2, 4, 3]; 
+
+        
         num_rows = 4;
         num_cols = 8;
         
@@ -617,9 +655,11 @@ function plot_save_sxr(PCBdata,SXR,PCB)
                 ax = subplot(num_rows, num_cols, idx);
                 
                 data_t = History(c_idx); 
+                EE_q(:,:,filter_id) = imgaussfilt(data_t.EE_q(:,:,filter_id), 1);
+
                 
                 % Contour plot
-                [~, h] = contourf(psi_mesh_z, psi_mesh_r, data_t.EE_q(:,:,filter_id), linspace(cRange(1),cRange(2),20));
+                [~, h] = contourf(psi_mesh_z, psi_mesh_r, EE_q(:,:,filter_id), linspace(cRange(1),cRange(2),20));
                 h.LineStyle = 'none';
                 colormap(ax, 'turbo');
                 clim(ax, cRange);
@@ -682,7 +722,11 @@ function plot_save_sxr(PCBdata,SXR,PCB)
         end
         
         sgtitle(['Shot ' num2str(shot) ' Summary (EE1, EE2, EE4, EE3)'], 'FontSize', 16, 'FontWeight', 'bold');
-        
+        pathname_png = getenv('SXR_RECONSTRUCTED_DIR');
+        foldername_png = strcat(pathname_png,directory,'/',num2str(date),'/summary/');
+        if exist(foldername_png,'dir') == 0
+            mkdir(foldername_png);
+        end
         summary_filename = strcat('/shot', num2str(shot), '_Summary.png');
         saveas(f_sum, strcat(foldername_png, summary_filename));
         close(f_sum);

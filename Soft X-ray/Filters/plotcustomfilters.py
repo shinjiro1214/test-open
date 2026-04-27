@@ -14,9 +14,9 @@ TARGETS = {
     "data/Al_1.0um.txt": "Al 1.0µm",
     "data/Al_2.5um.txt": "Al 2.5µm",
     "data/C10H8O4_1.0um.txt": "Mylar 1.0µm",
-    "data/C10H8O4_2.0um.txt": "Mylar 2.0µm",
-    "data/Ti_0.5um.txt": "Ti 0.5µm",
-    "data/C2F4_4.0um.txt": "Teflon 4.0µm"
+    "data/C10H8O4_2.0um.txt": "Mylar 2.0µm"
+    # "data/Ti_0.5um.txt": "Ti 0.5µm",
+    # "data/C2F4_4.0um.txt": "Teflon 4.0µm",
     # "data/Zr_0.6um.txt": "Zr 0.6µm"
 }
 
@@ -69,15 +69,25 @@ def main():
             yanchor="top",
             y=0.99,
             xanchor="left",
-            x=1.02
+            x=1.02,
+            font=dict(size=40)
         )
     )
     
     # X軸範囲設定 (0 - 1000 eV)
-    fig.update_xaxes(range=[0, 1000])
+    fig.update_xaxes(
+        range=[0, 400],
+        title_text ="Photon Energy (eV)",
+        title_font=dict(size=40),
+        tickfont=dict(size=30)
+    )
 
     # Y軸を対数表示にしたい場合はコメントアウトを外す
-    # fig.update_yaxes(type="log")
+    fig.update_yaxes(
+        title_text="Transmission",
+        title_font=dict(size=40),  # 軸タイトルのフォントサイズ
+        tickfont=dict(size=30)     # 目盛りのフォントサイズ
+    )
 
     fig.show()
 

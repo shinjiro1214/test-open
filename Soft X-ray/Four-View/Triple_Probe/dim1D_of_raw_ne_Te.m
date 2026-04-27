@@ -28,11 +28,12 @@ filepath = "/Users/shohgookazaki/Library/CloudStorage/GoogleDrive-shohgo-okazaki
 filename = strcat(filepath, '/', num2str(date), '/ES_', num2str(date), shotnum, '.csv');
 
 % ファイルの読み込み
+filename = char(strtrim(filename));
 test = readmatrix(filename);
 index_start = 4500;
 index_end = 7500;
-V2 = 40;%30; % 奇数のやつを入れる
-V3 = 20;%15; % 偶数のやつを入れる
+V2 = 30; % 奇数のやつを入れる
+V3 = 15; % 偶数のやつを入れる
 
 % if you use H gas. The A is 1.00.
 % A = 1.00; % atomic weight
@@ -183,6 +184,14 @@ fprintf('----------------------\n');
 
 % もし LHS が RHS の範囲外にあると、interp1 は NaN を返します。
 
+% 1次元プロットの直前で補間を適用 (一時変数に格納して元データは保持)
+Te_line = fillmissing(Te_values, 'linear');
+ne_line = fillmissing(ne_values, 'linear');
+
+% subplot(3,1,2) と subplot(3,1,3) の scatter を plot に変更
+
+
+
 % plot
 figure;
 sgtitle('Triple probe data of Ar ST')
@@ -193,26 +202,32 @@ plot(time, I2_values);
 plot(time, I3_values);
 legend({['I2 (V_p=', num2str(V2), 'V)'], ['I3 (V_p=', num2str(V3), 'V)']})
 ylabel('Probe current [A]')
-xlim([450, 500])
+xlim([475, 490])
 ylim([-1 5]);
 hold off
 grid on
 
+% subplot(3,1,2)
+% scatter(time, Te_values / K2ev, 5, "black");
+% % plot(time, Te_values/K2ev)
+% xlim([475, 490]);
+% ylim([0 20]);
+% ylabel('Te [eV]')
+% grid on
 subplot(3,1,2)
-scatter(time, Te_values / K2ev, 5, "black");
-% plot(time, Te_values/K2ev)
-xlim([450, 500]);
-ylim([0 40]);
-ylabel('Te [eV]')
-grid on
+plot(time, Te_line / K2ev, '-k', 'LineWidth', 1); % 補間済みデータを線でプロット
+xlim([475, 490]); ylim([0 20]); ylabel('Te [eV]'); grid on;
 
+% subplot(3,1,3)
+% scatter(time, ne_values, 3, "black");
+% xlim([475, 490]);
+% ylim([0 2e20]);
+% xlabel('time [us]')
+% ylabel('ne [m^{-3}]')
+% grid on
 subplot(3,1,3)
-scatter(time, ne_values, 3, "black");
-xlim([450, 500]);
-ylim([0 4e20]);
-xlabel('time [us]')
-ylabel('ne [m^{-3}]')
-grid on
+plot(time, ne_line, '-k', 'LineWidth', 1); % 補間済みデータを線でプロット
+xlim([475, 490]); ylim([0 2e20]); xlabel('time [us]'); ylabel('ne [m^{-3}]'); grid on;
 
 mkdir(strcat(save_filepath, '/', num2str(date), '/figure/triple_probe'));
 saveas(gcf, strcat(save_filepath, '/', num2str(date), '/figure/triple_probe/', shotnum, '_', num2str(index_start), '-', num2str(index_end), 'us'), 'png');
@@ -323,45 +338,332 @@ end
 % 式: E_D = (n_e * e^3 * lnLambda) / (4 * pi * eps0^2 * k_B * T_e)
 % 簡略式 (Te in eV): E_D approx 3.1e-13 * n_e * lnLambda / Te[eV] [V/m]
 
-% --- 定数 ---
-lnLambda_Dreicer = 10; % クーロン対数（通常10程度）
+% % --- 定数 ---
+% lnLambda_Dreicer = 10; % クーロン対数（通常10程度）
 
-% 1. Te を eV に変換 (既存のTe_valuesはKelvin)
-Te_eV_for_Ed = Te_values / K2ev;
+% % 1. Te を eV に変換 (既存のTe_valuesはKelvin)
+% Te_eV_for_Ed = Te_values / K2ev;
+
+% % 2. ドライサー電場計算 [V/m]
+% % Teが0に近いと発散するので、極小値でクリップするかNaN処理
+% valid_Te_mask = (Te_eV_for_Ed > 0.1); % 0.1eV以下は計算しない
+
+% Ed_values = nan(size(Te_values));
+% Ed_values(valid_Te_mask) = 2.6e-17 * ne_values(valid_Te_mask) * lnLambda_Dreicer ./ Te_eV_for_Ed(valid_Te_mask);
+
+eps0 = 8.85418781e-12; % 真空の誘電率 [F/m]
+
+% 1. 動的なクーロン対数 ln(Lambda) の計算
+% Te_valuesはKelvin。1160K(0.1eV)以下や密度0以下はエラー回避のため除外
+valid_mask = (Te_values > 1160) & (ne_values > 0); 
+
+lambda_D = nan(size(Te_values));
+% 資源節約: eps0 * kb 等の定数乗算をまとめても良いが、可読性のためそのままベクトル計算
+lambda_D(valid_mask) = sqrt((eps0 * kb .* Te_values(valid_mask)) ./ (ne_values(valid_mask) * q^2));
+
+Lambda = nan(size(Te_values));
+Lambda(valid_mask) = (4*pi/3) .* (lambda_D(valid_mask).^3) .* ne_values(valid_mask);
+lnLambda_dyn = log(Lambda);
 
 % 2. ドライサー電場計算 [V/m]
-% Teが0に近いと発散するので、極小値でクリップするかNaN処理
-valid_Te_mask = (Te_eV_for_Ed > 0.1); % 0.1eV以下は計算しない
-
+% 画像の式 m_e * v_Te^2 は標準理論の k_B * T_e に等しいため、直接 kb*Te を使用して計算コスト削減
+const_Ed = q^3 / (4 * pi * eps0^2 * kb); 
 Ed_values = nan(size(Te_values));
-Ed_values(valid_Te_mask) = 2.6e-17 * ne_values(valid_Te_mask) * lnLambda_Dreicer ./ Te_eV_for_Ed(valid_Te_mask);
+Ed_values(valid_mask) = const_Ed .* ne_values(valid_mask) .* lnLambda_dyn(valid_mask) ./ Te_values(valid_mask);
 
+%%%%%%%%%%%%%%%%%%Etを計算する
+addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment';
+addpath '/Users/shohgookazaki/Documents/GitHub/test-open/Soft X-ray/Four-View/';
+addpath '/Users/shohgookazaki/Documents/MATLAB/inputsdlg_v2.3.2'
+addpath '/Users/shohgookazaki/Documents/matlab/common';
+
+run define_path.m
+
+% --- 基本設定 ---
+doCheck = 0;
+dataType = 1;
+PCB.chtype = 1;
+
+
+shotnum = inputdlg(prompt, dlgtitle, dims, definput);
+shotnum = str2double(shotnum{1});
+IDXlist = shotnum;
+PCB.restart = 0;
+xaxis = 2;
+xpointdata = 1;
+
+PCB.xpointdata = xpointdata;
+
+% === プロット範囲設定 ===
+PCB.trange = 400:600;
+PCB.n = 40;
+PCB.start = 450; 
+PCB.end = 490;
+FIG.start = 460;
+FIG.end = 500;
+
+DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';
+T=getTS6log(DOCID);
+T=searchlog(T,'date',date);
+
+if isnan(T.shot(1))
+    T(1, :) = [];
+end
+
+n_data = numel(IDXlist);
+shotlist = [T.a039(IDXlist), T.a040(IDXlist)];
+tfshotlist = [T.a039_TF(IDXlist), T.a040_TF(IDXlist)];
+EFlist = T.EF_A_(IDXlist);
+TFlist = T.TF_kV_(IDXlist);
+
+% データ格納用
+all_data = zeros(n_data,numel(PCB.trange));
+all_merging_ratios = zeros(n_data, numel(PCB.trange));
+
+% Et/Jt計算用の一時保存配列
+all_data_Et_raw = zeros(n_data, numel(PCB.trange));
+all_data_Jt_raw = zeros(n_data, numel(PCB.trange));
+
+% 3種同時プロット用
+all_data_Et = zeros(n_data, numel(PCB.trange));
+all_data_Jt = zeros(n_data, numel(PCB.trange));
+all_data_Curv = zeros(n_data, numel(PCB.trange));
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+    url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 30);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
+
+% === データ処理ループ ===
+for i=1:n_data
+    PCB.date = date;
+    PCB.idx = IDXlist(i);
+    PCB.shot=shotlist(i,:);
+    PCB.tfshot=tfshotlist(i,:);
+    PCB.dataType = dataType;
+    if PCB.shot == PCB.tfshot
+        PCB.tfshot = [0,0];
+    end
+    PCB.i_EF=EFlist(i);
+    PCB.TF=TFlist(i);
+    
+    if doCheck
+        check_signal(PCB, pathname);
+    else
+        [grid2D, data2D] = process_PCBdata_280ch(PCB, pathname);
+        merging_ratio = get_merging_ratio(data2D, grid2D, PCB.trange);
+        
+        % --- データ取得 ---
+        if PCB.xpointdata == 2 % Et/Jt (Ratio of Averages)
+            % EtとJtを個別に取得
+            pcb_temp = PCB;
+            
+            % Et取得 (Option 1)
+            pcb_temp.xpointdata = 1;
+            all_data_Et_raw(i,:) = xpointplot(grid2D, data2D, pcb_temp);
+            
+            % Jt取得 (Option 5 -> 生の値)
+            pcb_temp.xpointdata = 5;
+            all_data_Jt_raw(i,:) = xpointplot(grid2D, data2D, pcb_temp);
+            
+            % ダミー
+            all_data(i,:) = all_data_Et_raw(i,:); 
+
+        elseif PCB.xpointdata == 7 % All (Et, Jt, Curv, Et/Jt)
+            pcb_temp = PCB; 
+            % 1. Et
+            pcb_temp.xpointdata = 1;
+            all_data_Et(i,:) = xpointplot(grid2D, data2D, pcb_temp);
+            % 2. Jt
+            pcb_temp.xpointdata = 5;
+            all_data_Jt(i,:) = xpointplot(grid2D, data2D, pcb_temp);
+            % 3. Curvature
+            pcb_temp.xpointdata = 6;
+            all_data_Curv(i,:) = xpointplot(grid2D, data2D, pcb_temp);
+            
+            all_data(i,:) = all_data_Et(i,:);
+        else
+            all_data(i,:) = xpointplot(grid2D, data2D, PCB);
+        end
+
+        mask = (PCB.trange >= FIG.start) & (PCB.trange <= FIG.end);
+        merging_ratio(~mask) = NaN; 
+        all_merging_ratios(i, :) = merging_ratio; 
+    end
+end
+
+if true
+    % === 統計処理 ===
+    qmerge = prctile(all_merging_ratios, [10 90],1);
+    iqrmerge = qmerge(2,:)-qmerge(1,:);
+    filtered_merge = all_merging_ratios;
+    filtered_merge(filtered_merge < qmerge(1,:)-1.5*iqrmerge | filtered_merge > qmerge(2,:)+1.5*iqrmerge) = NaN;
+    mean_merging_ratio = mean(filtered_merge, 1, 'omitnan');
+    stderr_merging_ratio = std(filtered_merge, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(filtered_merge), 1));
+    
+    if xpointdata == 2
+        % === Et/Jt (Ratio of Averages) ===
+        mean_Et_raw = mean(all_data_Et_raw, 1, 'omitnan');
+        mean_Jt_raw = mean(all_data_Jt_raw, 1, 'omitnan');
+        
+        all_mean_data = (mean_Et_raw ./ mean_Jt_raw) * 1e3;
+        
+        % 誤差伝播
+        ste_Et = std(all_data_Et_raw, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data_Et_raw), 1));
+        ste_Jt = std(all_data_Jt_raw, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data_Jt_raw), 1));
+        
+        rel_err_Et = ste_Et ./ abs(mean_Et_raw);
+        rel_err_Jt = ste_Jt ./ abs(mean_Jt_raw);
+        stderr_mean = abs(all_mean_data) .* sqrt(rel_err_Et.^2 + rel_err_Jt.^2);
+        
+    elseif xpointdata == 7
+        % === All Plot (Et, Jt, Curv, Et/Jt) ===
+        mean_Et = mean(all_data_Et, 1, 'omitnan');
+        mean_Jt = mean(all_data_Jt, 1, 'omitnan');
+        mean_Curv = mean(all_data_Curv, 1, 'omitnan');
+        
+        % Et/Jt の計算 (Option 2と同じロジック)
+        mean_Res = (mean_Et ./ mean_Jt) * 1e3;
+        
+        err_Et = std(all_data_Et, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data_Et),1));
+        err_Jt = std(all_data_Jt, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data_Jt),1));
+        err_Curv = std(all_data_Curv, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data_Curv),1));
+        
+        % Et/Jt の誤差伝播
+        rel_err_Et = err_Et ./ abs(mean_Et);
+        rel_err_Jt = err_Jt ./ abs(mean_Jt);
+        err_Res = abs(mean_Res) .* sqrt(rel_err_Et.^2 + rel_err_Jt.^2);
+        
+        all_mean_data = mean_Et; 
+        stderr_mean = err_Et;
+    else
+        all_mean_data = mean(all_data,1,'omitnan');
+        stderr_mean = std(all_data, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(all_data),1));
+    end
+    
+    t = PCB.trange; 
+    % === プロット描画 ===
+    
+    if xpointdata == 7
+        range_idx = (PCB.trange >= PCB.start) & (PCB.trange <= PCB.end);
+        if xaxis == 1, x_plot = mean_merging_ratio(range_idx); x_lim = [0 100]; x_label_str='Merging ratio [%]';
+        elseif xaxis == 2, x_plot = PCB.trange(range_idx); x_lim = [PCB.start PCB.end]; x_label_str='time [s]'; end
+        
+        % データ準備
+        y1 = mean_Et(range_idx); e1 = err_Et(range_idx);       % Et (Black)
+        y2 = mean_Jt(range_idx); e2 = err_Jt(range_idx);       % Jt (Red)
+        y3 = mean_Curv(range_idx); e3 = err_Curv(range_idx);   % Curv (Blue)
+        y4 = mean_Res(range_idx); e4 = err_Res(range_idx);     % Et/Jt (Green)
+        
+        fig = figure('Units', 'pixels', 'Position', [100 100 1100 600], 'Color', 'w');
+        
+        % --- 軸位置の定義 ---
+        % メインのプロットエリアを少し狭くして、右側に軸を入れるスペースを作る
+        % [left bottom width height]
+        ax_pos = [0.10 0.15 0.60 0.75]; 
+        
+        % --- Axis 1: Et (Left, Black) ---
+        ax1 = axes('Position', ax_pos, 'YColor', 'k', 'Box', 'off', 'Color', 'none'); hold(ax1, 'on');
+        if xaxis == 2
+            fill_y = [-1e9 1e9]; 
+            % patch([475 483 483 475], [fill_y(1) fill_y(1) fill_y(2) fill_y(2)], ...
+            %       [0.85 0.92 1], 'EdgeColor', 'none', 'Parent', ax1, 'HandleVisibility', 'off');
+        end
+        plot_shaded_error(x_plot, y1, e1, [0.6 0.6 0.6], 0.3, ax1);
+        plot(ax1, x_plot, y1, '.-k', 'LineWidth', 1.2, 'MarkerSize', 10);
+        set(ax1, 'Layer', 'top'); 
+        ylabel(ax1, 'Et [V/m]', 'FontSize', 12, 'FontWeight', 'bold');
+        xlabel(ax1, x_label_str, 'FontSize', 12); grid(ax1, 'on'); ylim(ax1, [-350 350]); 
+        
+        % --- Axis 2: Jt (Right, Red) ---
+        ax2 = axes('Position', ax_pos, 'YAxisLocation', 'right', 'Color', 'none', 'XColor', 'none', 'YColor', 'r', 'Box', 'off'); hold(ax2, 'on');
+        plot_shaded_error(x_plot, y2, e2, [1 0.7 0.7], 0.3, ax2);
+        plot(ax2, x_plot, y2, '.-r', 'LineWidth', 1.2, 'MarkerSize', 10);
+        ylabel(ax2, 'Jt [MA/m^2]', 'FontSize', 12, 'FontWeight', 'bold'); ylim(ax2, [-1e6 1e6]); 
+        
+        % --- Axis 3: Curvature (Right+, Blue) ---
+        % ax2の右隣に配置
+        ax3_pos = ax_pos; 
+        ax3_pos(1) = ax_pos(1) + ax_pos(3) + 0.06; % メイン軸の右端から少し離す
+        ax3_pos(3) = 1e-5; % 幅はほぼゼロ
+        
+        % ダミー軸（プロット用）
+        ax3_plot = axes('Position', ax_pos, 'YAxisLocation', 'right', 'Color', 'none', 'XColor', 'none', 'YColor', 'b', 'Box', 'off', 'Visible', 'off'); hold(ax3_plot, 'on');
+        plot_shaded_error(x_plot, y3, e3, [0.7 0.7 1], 0.3, ax3_plot);
+        plot(ax3_plot, x_plot, y3, '.-b', 'LineWidth', 1.2, 'MarkerSize', 10);
+        ylim(ax3_plot, [0 150]); 
+        
+        % 目盛り表示用軸
+        ax3_scale = axes('Position', ax3_pos, 'YAxisLocation', 'right', 'Color', 'none', 'XColor', 'none', 'YColor', 'b', 'Box', 'off');
+        ylabel(ax3_scale, 'Curvature [m^{-1}]', 'FontSize', 12, 'FontWeight', 'bold');
+        ylim(ax3_scale, [0 150]);
+
+        % --- Axis 4: Et/Jt (Right++, Green) ---
+        % ax3のさらに右隣に配置
+        ax4_pos = ax3_pos;
+        ax4_pos(1) = ax3_pos(1) + 0.08; % ax3からさらに右へずらす
+        
+        % ダミー軸（プロット用）
+        ax4_plot = axes('Position', ax_pos, 'YAxisLocation', 'right', 'Color', 'none', 'XColor', 'none', 'YColor', [0 0.5 0], 'Box', 'off', 'Visible', 'off'); hold(ax4_plot, 'on');
+        plot_shaded_error(x_plot, y4, e4, [0.7 1 0.7], 0.3, ax4_plot);
+        plot(ax4_plot, x_plot, y4, '.-', 'Color', [0 0.5 0], 'LineWidth', 1.2, 'MarkerSize', 10);
+        ylim(ax4_plot, [-4 4]); 
+
+        % 目盛り表示用軸
+        ax4_scale = axes('Position', ax4_pos, 'YAxisLocation', 'right', 'Color', 'none', 'XColor', 'none', 'YColor', [0 0.5 0], 'Box', 'off');
+        ylabel(ax4_scale, 'Et/Jt [m\Omega m]', 'FontSize', 12, 'FontWeight', 'bold');
+        ylim(ax4_scale, [-4 4]);
+
+        % リンクの設定
+        linkaxes([ax1, ax2, ax3_plot, ax4_plot], 'x'); 
+        xlim(ax1, x_lim);
+        
+        title(ax1, ['Shot: ', num2str(date)]); hold off;
+        
+    else
+        % --- 単一プロットモード (Et/Jt を含む) ---
+        x_plot = mean_merging_ratio; 
+        E_rec_estimate = all_mean_data;
+        
+    end
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ---------------- 修正ここから ----------------
 % 3. プロット作成
 figure('Name', 'Dreicer Field Check');
 hold on;
 
-% 左軸: ドライサー電場
-disp(max(Ed_values))
-yyaxis left
-plot(time, Ed_values, 'LineWidth', 1.5, 'Color', 'b');
-ylabel('Dreicer Field E_D [V/m]');
-set(gca, 'YColor', 'b');
-% ylim([0, 1000]); % 予想される範囲に合わせて調整してください
+% 左軸: ドライサー電場 (時間軸は time)
+plot(time, Ed_values, 'LineWidth', 1.5, 'Color', 'b', 'DisplayName', 'Dreicer Field E_D');
 
-% 右軸: 参考としての密度 (ne)
-yyaxis right
-plot(time, ne_values, '--', 'LineWidth', 1.0, 'Color', [0.5 0.5 0.5]);
-ylabel('Density n_e [m^{-3}]');
-set(gca, 'YColor', [0.2 0.2 0.2]);
+% 計測された再結合電場 Et をプロット (時間軸は PCB.trange)
+% yline ではなく通常の plot を使用する
+plot(PCB.trange, abs(E_rec_estimate), 'r-', 'LineWidth', 2, 'DisplayName', 'Reconnection Field E_t');
 
-% --- 閾値ライン (ユーザー定義の再結合電場 E_rec) ---
-% 観測された/見積もった再結合電場 (例: 200 V/m)
-E_rec_estimate = 200; 
-yline(E_rec_estimate, 'r-', ['E_{rec} ~ ' num2str(E_rec_estimate) ' V/m'], 'LineWidth', 2);
-
-title(['Dreicer Field E_D vs Time (Shot ' num2str(shotnum) ')']);
+ylabel('Electric Field [V/m]');
+title(['Electric Field E_D vs E_t (Shot ' num2str(shotnum) ')']);
 xlabel('Time [\mus]');
-xlim([450, 500]);
+xlim([475, 490]);
+legend('show', 'Location', 'best');
 grid on;
 hold off;
 
@@ -615,3 +917,33 @@ end
 
 
 
+
+
+function plot_shaded_error(x, y, err, color, alpha, ax)
+    x = x(:)'; y = y(:)'; err = err(:)';
+    y_upper = y + err;
+    y_lower = y - err;
+    x_poly = [x, fliplr(x)];
+    y_poly = [y_upper, fliplr(y_lower)];
+    mask = ~isnan(x_poly) & ~isnan(y_poly);
+    if any(mask)
+        fill(ax, x_poly(mask), y_poly(mask), color, 'FaceAlpha', alpha, 'EdgeColor', 'none');
+    end
+end
+
+function set_ylabel(xpointdata)
+    if xpointdata == 1
+        ylim([-350 350]);
+        ylabel('Et [V/m]');
+    elseif xpointdata == 2
+        ylim([-4 4])
+        ylabel('Et/Jt [m\Omega m]')
+    elseif xpointdata == 4
+        ylabel('dEt/dt [V/m/s]');
+    elseif xpointdata == 5
+        ylabel('Jt [MA/m^2]'); 
+        ylim([-4 4])
+    elseif xpointdata == 6
+        ylabel('Curvature [m^{-1}]');
+    end
+end

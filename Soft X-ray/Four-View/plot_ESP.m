@@ -19,7 +19,7 @@ for i = 1:FIG.tate*FIG.yoko
         case 'phi'
             contourf(ESPdata2D.zq,ESPdata2D.rq,squeeze(ESPdata2D.phi(idx_ESP_t,:,:)),100,'edgecolor','none');
             c = colorbar;
-            clim([-100 100]);
+            clim([-200 200]);
             % clim([-240 240])
             c.Label.String = 'Floating Potential [V]';
         case 'Ez'
@@ -65,7 +65,7 @@ for i = 1:FIG.tate*FIG.yoko
             c.Label.String = 't component of V_{ExB} [km/s]';
         case 'psi'
             contourf(ESPdata2D.zq,ESPdata2D.rq,newPCBdata2D.psi(:,:,idx_PCB_t),80,'LineStyle','none')
-            clim([-10e-3,10e-3])%psi
+            clim([-1e-3,1e-3])%psi
             c = colorbar;
             c.Label.String = 'Psi [Wb]';
         case 'Bt'
@@ -145,10 +145,12 @@ for i = 1:FIG.tate*FIG.yoko
     end
     if not(multi_analysis)
         switch color_type
-            case {'phi','Ez','Er','Et','Jt','betatron','fermi','Epara'}
+            case {'Ez','Er','Et','Jt','betatron','fermi','Epara'}
                 colormap(redblue(3000));
             case {'psi','Bz','Br','Bt_ext','Bt_plasma','absB','absB2','VExBr','VExBz','VExBt','|VExB|'}
                 colormap(jet)
+            case {'phi'}
+                colormap(turbo)
         end
     end
     hold on
@@ -201,8 +203,8 @@ for i = 1:FIG.tate*FIG.yoko
     % plot(IDSP.z,IDSP.r3,'r+',"MarkerSize",8/FIG.tate+2,"LineWidth",2/FIG.tate)
     title([num2str(ESPdata2D.trange(idx_ESP_t)) 'us'])
     % xlim([-0.05 0.1])
-    % xlim([-0.2 0.2])
-    xlim([-0.1275 0.1275])
+    xlim([-0.15 0.15])
+    % xlim([-0.1275 0.1275])
     % ylim([0.08 0.27])
     % xlabel('Z [m]')
     % ylabel('R [m]')
@@ -249,108 +251,151 @@ savepath = fullfile(savename);
 saveas(gcf,savepath);
 hold off;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% X点におけるフェルミ加速度をプロット。
-if true
-    times = FIG.start:FIG.dt:FIG.start+FIG.dt*(FIG.tate*FIG.yoko-1);
-    mergerate = get_merging_ratio(PCBdata2D,PCBgrid2D,times)
-    all = zeros(size(times));
-    prevz = 0;
-    prevr = 0;
-    for t = 1:FIG.tate*FIG.yoko
+% % X点におけるフェルミ加速度をプロット。
+% if true
+%     times = FIG.start:FIG.dt:FIG.start+FIG.dt*(FIG.tate*FIG.yoko-1);
+%     mergerate = get_merging_ratio(PCBdata2D,PCBgrid2D,times);
+%     all = zeros(size(times));
+%     prevz = 0;
+%     prevr = 0;
+%     for t = 1:FIG.tate*FIG.yoko
         
 
-        i = FIG.tate*FIG.yoko; %X点暴れるから位置固定している
-        offset_PCB_t = knnsearch(PCBdata2D.trange',FIG.start);
-        idx_PCB_t = offset_PCB_t+(i-1)*FIG.dt;  
-        disp(idx_PCB_t)
-        z = xPointList.z(idx_PCB_t);
-        r = xPointList.r(idx_PCB_t);
-        % disp(z)
-        % disp(r)
-        difference = abs(ESPdata2D.zq - z);
+%         i = FIG.tate*FIG.yoko; %X点暴れるから位置固定している
+%         offset_PCB_t = knnsearch(PCBdata2D.trange',FIG.start);
+%         idx_PCB_t = offset_PCB_t+(i-1)*FIG.dt;  
+%         % disp(idx_PCB_t)
+%         z = xPointList.z(idx_PCB_t);
+%         r = xPointList.r(idx_PCB_t);
+%         % disp(z)
+%         % disp(r)
+%         difference = abs(ESPdata2D.zq - z);
         
-        % 行列全体で z に最も近い値の位置（行と列のインデックス）を取得
-        [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
+%         % 行列全体で z に最も近い値の位置（行と列のインデックス）を取得
+%         [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
         
-        [~, zidx] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
-        % if zidx == 15
-        %     zidx = 13;
-        % end
+%         [~, zidx] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
+%         % if zidx == 15
+%         %     zidx = 13;
+%         % end
         
-        difference = abs(ESPdata2D.rq - r);
-        % disp(difference)
-        % 行列全体で r に最も近い値の位置（行と列のインデックス）を取得
-        [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
-        % disp(linearIndex)
-        [ridx, ~] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
+%         difference = abs(ESPdata2D.rq - r);
+%         % disp(difference)
+%         % 行列全体で r に最も近い値の位置（行と列のインデックス）を取得
+%         [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
+%         % disp(linearIndex)
+%         [ridx, ~] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
         
         
-        if isnan(z) || isnan(r)
-            if t == 1
-                zidx = 3;
-                ridx = 13;
-            else
-                zidx = prevz;
-                ridx = prevr;
-            end
-        end
-        prevz = zidx;
-        prevr = ridx;
-        % disp(ridx)
-        % disp(zidx)
-        me = 9.11e-31;
-        v_p = 1e6;
-        % fermixpoint = ExBdata2D.fermi(zidx,ridx,t)*me*v_p*v_p*6.24e18*1e-6;
-        % all(1,t) = fermixpoint;
-        betatronxpoint = ExBdata2D.betatron(zidx,ridx,t)*1e-17*6.24e18*1e-6;
-        all(1,t) = betatronxpoint;
-    end
-    mergerate = fillmissing(mergerate, 'linear');
-    disp(mergerate)
-    figure;
-    smoothdata(all);
-    plot(mergerate, all,'LineWidth', 4);
-    xlim(mergerate([1 end]));
-    % plot(times,all);%,'LineWidth', 2
-    % xlim([times(1) times(end)]);
-    % ylim([-2 8]);
-    ylim([-0.5 0.5])
-    title('betatron acceleration');
-    xlabel('mergingrate [%]');
-    ylabel('Energy Gain(betatron) [eV/us]');
-end
+%         if isnan(z) || isnan(r)
+%             if t == 1
+%                 zidx = 3;
+%                 ridx = 13;
+%             else
+%                 zidx = prevz;
+%                 ridx = prevr;
+%             end
+%         end
+%         prevz = zidx;
+%         prevr = ridx;
+%         % disp(ridx)
+%         % disp(zidx)
+%         me = 9.11e-31;
+%         v_p = 1e6;
+%         % fermixpoint = ExBdata2D.fermi(zidx,ridx,t)*me*v_p*v_p*6.24e18*1e-6;
+%         % all(1,t) = fermixpoint;
+%         betatronxpoint = ExBdata2D.betatron(zidx,ridx,t)*1e-17*6.24e18*1e-6;
+%         all(1,t) = betatronxpoint;
+%     end
+%     mergerate = fillmissing(mergerate, 'linear');
+%     disp(mergerate)
+%     figure;
+%     smoothdata(all);
+%     plot(mergerate, all,'LineWidth', 4);
+%     xlim(mergerate([1 end]));
+%     % plot(times,all);%,'LineWidth', 2
+%     % xlim([times(1) times(end)]);
+%     % ylim([-2 8]);
+%     ylim([-0.5 0.5])
+%     title('betatron acceleration');
+%     xlabel('mergingrate [%]');
+%     ylabel('Energy Gain(betatron) [eV/us]');
+% end
 
-if false
-    figure; hold on;
+% if true
+%     figure; hold on;
+%     for i = 1:FIG.tate*FIG.yoko
+%         subplot(FIG.tate,round(FIG.yoko),i)
+%         offset_ESP_t = knnsearch(ESPdata2D.trange',FIG.start);
+%         idx_ESP_t = offset_ESP_t+(i-1)*FIG.dt*10;
+%         offset_PCB_t = knnsearch(PCBdata2D.trange',FIG.start);
+%         idx_PCB_t = offset_PCB_t+(i-1)*FIG.dt;
+%         z = xPointList.z(idx_PCB_t);
+        
+
+%         % [~,zidx] = min(min(abs(ESPdata2D.zq - z)));
+%         difference = abs(ESPdata2D.zq - z);
+%         % 行列全体で z に最も近い値の位置（行と列のインデックス）を取得
+%         [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
+%         [~, zidx] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
+%         if zidx == 15
+%             zidx = 13;
+%         end
+%         phi_on_xpoint = ESPdata2D.phi(idx_ESP_t, :,zidx);
+%         phierr = ESPdata2D.phi_err(idx_ESP_t, :,zidx);
+%         % disp(Er_on_xpoint);
+%         % disp(ESPdata2D.rq(:,1))
+%         plot(ESPdata2D.rq(:,1),squeeze(phi_on_xpoint));
+%         % disp(phierr)
+%         errorbar(ESPdata2D.rq(:,1),squeeze(phi_on_xpoint),phierr, 'vertical');
+%         % ylim([-125 -50])
+%         % ylim([ ])
+%         xlim([0.1 0.3])
+%         title([num2str(ESPdata2D.trange(idx_ESP_t)) 'us'])
+        
+%     end
+    % コード末尾に追加・有効化して実行してください
+    % X点におけるphiのR方向分布プロット
+if true 
+    figure('Position', [0 0 1500 1500],'visible','on'); 
     for i = 1:FIG.tate*FIG.yoko
-        subplot(FIG.tate,round(FIG.yoko),i)
-        offset_ESP_t = knnsearch(ESPdata2D.trange',FIG.start);
-        idx_ESP_t = offset_ESP_t+(i-1)*FIG.dt*10;
-        offset_PCB_t = knnsearch(PCBdata2D.trange',FIG.start);
-        idx_PCB_t = offset_PCB_t+(i-1)*FIG.dt;
-        z = xPointList.z(idx_PCB_t);
+        subplot(FIG.tate,round(FIG.yoko),i); hold on;
         
-
-        % [~,zidx] = min(min(abs(ESPdata2D.zq - z)));
-        difference = abs(ESPdata2D.zq - z);
-        % 行列全体で z に最も近い値の位置（行と列のインデックス）を取得
-        [~, linearIndex] = min(difference(:)); % 最小差分とその線形インデックス
-        [~, zidx] = ind2sub(size(difference), linearIndex); % 行と列のインデックスに変換
+        % 時間インデックスの取得
+        idx_ESP_t = knnsearch(ESPdata2D.trange', FIG.start) + (i-1)*FIG.dt*10;
+        idx_PCB_t = knnsearch(PCBdata2D.trange', FIG.start) + (i-1)*FIG.dt;
+        z_xpoint = xPointList.z(idx_PCB_t);
+        r_xpoint = xPointList.r(idx_PCB_t);
+        
+        % zidxを最小の計算量で取得 (1次元のみで比較)
+        [~, zidx] = min(abs(ESPdata2D.z_raw(1,:) - z_xpoint)); 
+        
+        % 特定のZインデックスの例外処理（元のロジックを保持）
         if zidx == 15
             zidx = 13;
         end
-        phi_on_xpoint = ESPdata2D.phi(idx_ESP_t, :,zidx);
-        phierr = ESPdata2D.phi_err(idx_ESP_t, :,zidx);
-        % disp(Er_on_xpoint);
-        % disp(ESPdata2D.rq(:,1))
-        plot(ESPdata2D.rq(:,1),squeeze(phi_on_xpoint));
-        % disp(phierr)
-        errorbar(ESPdata2D.rq(:,1),squeeze(phi_on_xpoint),phierr, 'vertical');
-        % ylim([-125 -50])
-        % ylim([ ])
-        xlim([0.1 0.3])
-        title([num2str(ESPdata2D.trange(idx_ESP_t)) 'us'])
         
+        % データの抽出
+        phi_on_xpoint = squeeze(ESPdata2D.phi_raw(idx_ESP_t,zidx , :));
+        phierr = movstd(phi_on_xpoint, 3);
+        
+        % プロット
+        errorbar(ESPdata2D.r_raw(:,1), phi_on_xpoint, phierr, 'vertical', 'LineWidth', 1.5);
+
+        xline(r_xpoint, '--r', 'X-point', 'LineWidth', 1.5);
+        
+        xlim([0.1 0.3]);
+        title([num2str(ESPdata2D.trange(idx_ESP_t)) 'us']);
+        xlabel('R [m]');
+        ylabel('\phi [V]');
+        % ylim([0 50])
+        if ESP.date == 260325
+            ylim([-75 75])
+        elseif ESP.date == 260331
+            ylim([-100 100])
+        end
+        grid on;
     end
+end
 
 end

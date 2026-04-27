@@ -1,6 +1,7 @@
 function merging_ratio = get_merging_ratio(data2D,grid2D,times)
     merging_ratio = zeros(numel(times),1);
     i = 1;
+    times = round(times);
     
     for time = times
         psi_timeseries = data2D.psi;
@@ -13,7 +14,7 @@ function merging_ratio = get_merging_ratio(data2D,grid2D,times)
         i = idx_nan(j);
         if times(i)<470
             merging_ratio(i) = 0;
-        elseif times(i)>480
+        elseif times(i)>500
             merging_ratio(i) = 1;
         end
     end
@@ -43,10 +44,21 @@ function merging_ratio = get_merging_ratio(data2D,grid2D,times)
     
     % if sum(pos_oz<pos_xz)==1 && sum(isnan(pos_oz))==0 % pos_xzがpos_ozの最大値と最小値の間にあることを判別＆O点が2つあることを判別
     % 必要な条件：O点が少なくとも一つある＋X点が（あれば）その二つの間
+
+    
     if max(sum(pos_oz<pos_xz),sum(pos_oz>pos_xz))==1 % pos_xzがpos_ozの最大値と最小値の間にあることを判別（NaNが入ってもいいように）
         common_flux = psi_x;
         % private_flux = mean(psi_o, 'omitnan');
         private_flux = min(psi_o,[],'omitnan');
+        % if private_flux < common_flux
+        %     disp('hi')
+        %     common_flux = NaN;
+        %     private_flux = NaN;
+        % end
+        % disp(strcat('time:',num2str(time)));
+        % disp(strcat('common_flux:',num2str(common_flux)));
+        % disp(strcat('private_flux:',num2str(private_flux)));
+        
     elseif sum(isnan(pos_oz))==0 && sum(pos_oz>0)==1 && isnan(pos_xz)% O点二つ（値が違う）あるけどX点なし
         pos_xz = mean(pos_oz);
         pos_xr = mean(pos_or);

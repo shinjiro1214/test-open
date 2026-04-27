@@ -1,7 +1,7 @@
 function [ExBdata2D,newPCBdata2D] = cal_ExB(pathname,PCBgrid2D,PCBdata2D,ESPdata2D,ESP,PCB,FIG)
 
 savename = [pathname.ESPmat,'/',num2str(ESP.date),'_shot',num2str(ESP.shotlist(1)),'-',num2str(ESP.shotlist(end)),'-a039_',num2str(PCB.shot(1)),'_',num2str(FIG.start),'_',num2str(FIG.dt),'_',num2str(FIG.tate*FIG.yoko),'.mat'];
-if exist(savename,"file")
+if exist(savename,"file") && ESP.Reset == false
     load(savename,'ExBdata2D','newPCBdata2D')
 else
     %磁気プローブデータを静電プローブデータのグリッドに合わせる
@@ -33,10 +33,10 @@ else
         % newPCBdata2D.Bt_plasma(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.Bt_plasma(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
         newPCBdata2D.Jt(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.Jt(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
         newPCBdata2D.Et(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.Et(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
-        newPCBdata2D.curvature_B_r(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_r(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
-        newPCBdata2D.curvature_B_t(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_t(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
-        newPCBdata2D.curvature_B_z(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_z(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
-        newPCBdata2D.dBdt_magnitude(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.dBdt_magnitude(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
+        % newPCBdata2D.curvature_B_r(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_r(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
+        % newPCBdata2D.curvature_B_t(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_t(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
+        % newPCBdata2D.curvature_B_z(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.curvature_B_z(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
+        % newPCBdata2D.dBdt_magnitude(:,:,i) = griddata(PCBgrid2D.zq(1,:), PCBgrid2D.rq(:,1), PCBdata2D.dBdt_magnitude(:,:,i), ESPdata2D.zq, ESPdata2D.rq);
         
         
         newPCBdata2D.absB2(:,:,i) = newPCBdata2D.Br(:,:,i).^2 + newPCBdata2D.Bz(:,:,i).^2 + newPCBdata2D.Bt(:,:,i).^2;
@@ -74,7 +74,7 @@ else
         lBl_t = zeros(size(lBl_z));
         ExBdata2D.betatron(:,:,i) = UEr.*lBl_r+UEt.*lBl_t+UEz.*lBl_z + newPCBdata2D.dBdt_magnitude(:,:,idx_PCB_t);
 
-        ExBdata2D.fermi(:,:,i) = newPCBdata2D.curvature_B_r(:,:,idx_PCB_t).*UEr + newPCBdata2D.curvature_B_t(:,:,idx_PCB_t).*UEt + newPCBdata2D.curvature_B_z(:,:,idx_PCB_t).*UEz;
+        % ExBdata2D.fermi(:,:,i) = newPCBdata2D.curvature_B_r(:,:,idx_PCB_t).*UEr + newPCBdata2D.curvature_B_t(:,:,idx_PCB_t).*UEt + newPCBdata2D.curvature_B_z(:,:,idx_PCB_t).*UEz;
 
         ExBdata2D.Epara(:,:,i) = squeeze(ESPdata2D.Er(idx_ESP_t,:,:)).*newPCBdata2D.Br(:,:,idx_PCB_t)./newPCBdata2D.absB(:,:,idx_PCB_t) + newPCBdata2D.Et(:,:,idx_PCB_t).*newPCBdata2D.Bt(:,:,idx_PCB_t)./newPCBdata2D.absB(:,:,idx_PCB_t) + squeeze(ESPdata2D.Ez(idx_ESP_t,:,:)).*newPCBdata2D.Bz(:,:,idx_PCB_t)./newPCBdata2D.absB(:,:,idx_PCB_t);
     end

@@ -1,5 +1,10 @@
-function [] = convert_images(foldername)
-path = foldername;% 軟X線画像の保存されているフォルダのパス
+function [] = convert_images(date_str)
+% path = foldername;% 軟X線画像の保存されているフォルダのパス
+
+% /Users/shohgookazaki/shohgo-okazaki@g.ecc.u-tokyo.ac.jp\ -\ Google\ Drive/My\ Drive/OnoLab/data/SXR_Images/260331
+base_dir = '/Users/shohgookazaki/shohgo-okazaki@g.ecc.u-tokyo.ac.jp - Google Drive/My Drive/OnoLab/data/SXR_Images';
+path = fullfile(base_dir, date_str);
+
 if exist(path,'dir') == 0
     disp('Inadequate path')
     return

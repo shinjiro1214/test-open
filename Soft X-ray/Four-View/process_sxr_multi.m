@@ -163,7 +163,11 @@ for t_idx_loop = 1:length(SXR.times) % インデックス管理のためにル�
 
 %         再構成計算
         disp('getting distribution')
-        EE1 = get_distribution(M,K,gm2d1,U1,s1,v1,VectorImage1,doPlot,ReconMethod, N_projection);
+        if SXR.date == 260325
+            EE1 = get_distribution(M,K,gm2d4,U4,s4,v4,VectorImage1,doPlot,ReconMethod, N_projection);
+        else
+            EE1 = get_distribution(M,K,gm2d1,U1,s1,v1,VectorImage1,doPlot,ReconMethod, N_projection);
+        end
         if 241110 <= SXR.date && SXR.date <= 250206
             EE2 = get_distribution(M,K,gm2d3,U3,s3,v3,VectorImage2,doPlot,ReconMethod, N_projection);
         else

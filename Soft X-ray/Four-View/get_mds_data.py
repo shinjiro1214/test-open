@@ -25,7 +25,7 @@ import scipy.io
 
 # --- 設定 ---
 MDS_SERVER = '192.168.1.140'
-# MDS_SERVER = 'localhost:8000'
+MDS_SERVER = 'localhost:8000'
 POST_SAMPLES = 1000
 
 def fetch_channels_batch(conn, ch_num, post_samples):

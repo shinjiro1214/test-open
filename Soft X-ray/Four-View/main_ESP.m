@@ -2,21 +2,23 @@ addpath '/Users/shohgookazaki/Documents/matlab/common';
 addpath '/Users/shohgookazaki/Documents/GitHub/test-open/pcb_experiment';
 run define_path.m
 
-ESP.date = 241230;
+ESP.date = 260331;
 TF = 4;
-Case = 'I';
+Case = 'O';
+gas = 'H';
 %【input】重ねる磁気面shot番号
-color_type = 'fermi';%【input】カラープロット種類('phi','psi','Ez','Er','Et',...
+color_type = 'phi';%【input】カラープロット種類('phi','psi','Ez','Er','Et',...
 % 'Bz','Br','Bt_ext','Bt_plasma','absB','absB2','Jt','VExBr','VExBz','|VExB|', 'betatron', 'fermi')
 vector_type = '';%【input】ベクトルプロット種類('Ep','VExB')
 ESP.restart = 0;
+ESP.Reset = true;
 
 %【input】静電プローブ解析shotlist(同一オペレーション)
 
 if ESP.date ==  240828 %【input】静電プローブ計測日 %TF6V
     ESP.probe = 1; % 1: Someyasan, 2: Uebosan
     if TF == 6
-        PCB.idx = 28;
+        PCB.idx = 28; % for exb とか
         ESP.shotlist = [3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29];
     elseif TF == 5
         PCB.idx = 30;
@@ -44,6 +46,24 @@ elseif ESP.date == 241230%異極性
         PCB.idx = 103;
         ESP.shotlist = [65, 67, 68, 70, 72:75, 77:84, 86:89]; % Case-O
     end
+elseif ESP.date == 260331
+    ESP.probe = 1;
+    PCB.idx = 95;
+    ESP.shotlist = [68, 72:80, 83:87, 89:90, 92:98]; %case o
+    if gas == 'H'
+        if Case == 'I'
+            PCB.idx = 99;
+            ESP.shotlist = [99:109 111];
+        elseif Case == 'O'
+            PCB.idx = 35;
+            ESP.shotlist = [54:65]; %case o
+        end
+    end
+
+elseif ESP.date == 260325
+    ESP.probe = 1;
+    PCB.idx = 14;
+    ESP.shotlist = [14:16 20:32];
 end
 
 
@@ -74,11 +94,15 @@ DOCID='1wG5fBaiQ7-jOzOI-2pkPAeV6SDiHc_LrOdcbWlvhHBw';%スプレッドシート�
 T=getTS6log(DOCID);
 node='date';
 T=searchlog(T,node,PCB.date);
+if isnan(T.shot(1))
+    T(1, :) = [];
+end
+[~, ESP.row_idx] = ismember(ESP.shotlist, T.shot);
 
 if ESP.probe == 1
-    ESP.rlist=T.ESProbeRPosition_mm_(ESP.shotlist);%静電プローブr座標[mm] % someyasan
+    ESP.rlist=T.ESProbeRPosition_mm_(ESP.row_idx);%静電プローブr座標[mm] % someyasan
 elseif ESP.probe == 2
-    ESP.rlist=T.MachProbeRPosition_cm_(ESP.shotlist)*10;%静電プローブr座標[mm] % Uebosan
+    ESP.rlist=T.MachProbeRPosition_cm_(ESP.row_idx)*10;%静電プローブr座標[mm] % Uebosan
 end
 
 shot_a039 =T.a039(PCB.idx);
@@ -101,6 +125,27 @@ elseif ESP.probe == 2
     ESPdata2D = cal_ESP_Uebosan(pathname, ESP); % Uebosan
 end
 
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 30);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
 %磁気プローブ計算
 [PCBgrid2D,PCBdata2D] = process_PCBdata_280ch(PCB, pathname);
 

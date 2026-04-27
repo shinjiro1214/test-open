@@ -44,8 +44,8 @@ date = str2double(cell2mat(answer(1)));
 IDXlist = str2num(cell2mat(answer(2))); 
 Area = [1 2 3]; % ,'Area(1:X点近傍、2:下流内側、3:下流外側):'
 times = 460:510;
-SXR.doFilter = 0;
-SXR.ReconMethod = 2;
+SXR.doFilter = 1;
+SXR.ReconMethod = 1;
 ESP.date = date;
 ESP.shotlist = [41:42, 54:57, 60:64];
 ESP.probe = 1; % 1: Someyasan, 2: Uebosan
@@ -79,6 +79,28 @@ ESP.PCBshot = [shot_a039, shot_a040];
 PCB.trange=400:800;%【input】計算時間範囲
 PCB.n=50; %【input】rz方向のメッシュ数
 PCB.restart = 0;
+
+
+disp('Getting coeff')
+file_id = '1izM2mY1kjGAxIqMIXwhyzw1iuuMF3k5VXFJqi9Sy2U4';
+url = sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=xlsx', file_id);
+    
+% 一時ファイルとしてダウンロード (計算資源節約のため websave を使用)
+temp_file = 'temp_coeff.xlsx';
+options = weboptions('Timeout', 10);
+websave(temp_file, url, options);
+% --- 既存のロジック (ファイル名を temp_file に変更) ---
+sheets = sheetnames(temp_file);
+sheets = str2double(sheets);
+    
+% 外部情報の参照と乖離の指摘（日付形式の確認）
+% 一般的な形式(YYMMDD)を想定していますが、桁数が異なるとロジックが破綻するため確認推奨
+
+sheet_date = max(sheets(sheets <= date));
+    
+% 指定シートを読み込み
+PCB.C = readmatrix(temp_file, 'Sheet', num2str(sheet_date));
+delete(temp_file); % ダウンロードした一時ファイルを削除
 
 % figure;hold on
 % xlabel('time [us]');ylabel('Merging ratio [%]');
@@ -131,7 +153,7 @@ for a = 1:3% ,'Area(1:X点近傍、2:下流内側、3:下流外側):'
 
         
 
-        SXRdata = SXR_multi(PCBdata,SXR,times,SXRdata);
+        SXRdata = SXR_multi(PCBdata,SXR,times,SXRdata,PCB);
 
 
         % savename = [pathname.ESPmat,'/',num2str(ESP.date),'_shot',num2str(ESP.shotlist(1)),'-',num2str(ESP.shotlist(end)),'-a039_',num2str(ESP.PCBshot(1)),'_',num2str(FIG.start),'_',num2str(FIG.dt),'_',num2str(FIG.tate*FIG.yoko),'.mat'];
@@ -204,14 +226,26 @@ for a = 1:3% ,'Area(1:X点近傍、2:下流内側、3:下流外側):'
         elseif SXR.area == 3
             area = 'outward downstream';
         end
-        if i == 1
-            filter = '1um Al';
-        elseif i == 2
-            filter = '2.5um Al';
-        elseif i == 3
-            filter = '2um Mylar';
-        elseif i == 4
-            filter = '1um Mylar';
+        if PCB.date <= 260131
+            if i == 1
+                filter = '1um Al';
+            elseif i == 2
+                filter = '2.5um Al';
+            elseif i == 3
+                filter = '2um Mylar';
+            elseif i == 4
+                filter = '1um Mylar';
+            end
+        elseif  PCB.date >= 260201 && PCB.date <= 260227
+            if i == 1
+                filter = '1um Al';
+            elseif i == 2
+                filter = '4um Tf';
+            elseif i == 3
+                filter = '0.5um Ti';
+            elseif i == 4
+                filter = '1um Mylar';
+            end
         end
 
         % 平均値とエラーバー（標準誤差）のプロット
@@ -280,7 +314,7 @@ function ExBdata2D = ESP_data(ExBdata2D,PCBdata, times)
     pcbgrid2D = PCBdata.grid2D;
     pcbdata2D = PCBdata.data2D;
 
-    [magAxisList,xPointList] = get_axis_x_multi(pcbgrid2D,pcbdata2D); %時間ごとの磁気軸、X点を検索
+    [magAxisList,xPointList] = get_axis_x_multi(pcbgrid2D,pcbdata2D,PCB); %時間ごとの磁気軸、X点を検索
     
     
 
@@ -308,7 +342,7 @@ function ExBdata2D = ESP_data(ExBdata2D,PCBdata, times)
     
 end
 
-function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata)
+function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata,PCB)
     
 
     %plot_sxr_multiの一部を抜き出しただけ
@@ -380,8 +414,8 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata)
         z_space_SXR1 = linspace(zmin1,zmax1,size(EE,2));
         z_space_SXR2 = linspace(zmin2,zmax2,size(EE,2));
 
-        t_idx = find(data2D.trange==t);
-        [~,xPointList] = get_axis_x_multi(grid2D,data2D); %時間ごとの磁気軸、X点を検索
+        t_idx = find(data2D.trange==round(t));
+        [~,xPointList] = get_axis_x_multi(grid2D,data2D,PCB); %時間ごとの磁気軸、X点を検索
         
         z = xPointList.z(t_idx);
         r = xPointList.r(t_idx);
@@ -393,7 +427,10 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata)
                 z = prevz;
                 r = prevr;
             end
+            % disp('hi')
         end
+
+        disp(strcat('r=',num2str(r),' z=',num2str(z)))
         prevz = z;
         prevr = r;
 
@@ -422,6 +459,9 @@ function SXRdata = SXR_multi(PCBdata, SXR,pcbtimes,SXRdata)
             
             
             if SXR.area == 1
+                % disp(r_space_SXR)
+                % disp(r)
+                % disp(dr)
                 SXRdata.r_xrange = r_space_SXR>=r-dr & r_space_SXR <= r+dr & r_space_SXR>0.1 & r_space_SXR<0.35;
             elseif SXR.area  == 2
                 SXRdata.r_xrange = r_space_SXR<=r-dr & r_space_SXR>0.1 & r_space_SXR<0.35;
